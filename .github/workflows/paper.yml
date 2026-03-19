@@ -137,7 +137,6 @@ jobs:
         uses: xu-cheng/texlive-action@v3
         with:
           texlive_version: ${{ env.TEXLIVE_VERSION }}
-          os: debian
           run: |
             export PAPER_DIR='${{ env.PAPER_DIR }}'
             export PAPER_ROOT_FILE='${{ env.PAPER_ROOT_FILE }}'
