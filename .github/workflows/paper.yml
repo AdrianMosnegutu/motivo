@@ -39,6 +39,8 @@ env:
   PAPER_ARTIFACT_FILE: Design and Implementation of a Domain-Specific Language for Music Composition.pdf
   PAPER_ARTIFACT_RETENTION_DAYS: "30"
 
+  DEMO_URL: https://bachelor-thesis.up.railway.app/
+
   TEXLIVE_VERSION: "2024"
   RUST_TOOLCHAIN_VERSION: "1.85.0"
   TEX_FMT_VERSION: "0.5.6"

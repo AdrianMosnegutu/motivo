@@ -51,9 +51,15 @@ cat > "${PAPER_PAGES_DIR}/index.html" <<EOF
   </head>
   <body>
     <main>
-      <h1>Thesis Paper</h1>
+      <h1>Adrian Mosnegutu - Bachelor Thesis</h1>
+
+      <h2>Thesis Paper</h2>
       <p>The latest PDF build for this repository is published here.</p>
       <p><a href="./${PAPER_ARTIFACT_FILE}">Open the PDF</a></p>
+
+      <h2>Thesis Demo</h2>
+      <p>The latest deployment of the application is available here.</p>
+      <p><a href="./${DEMO_URL}">Demo link</a></p>
     </main>
   </body>
 </html>
