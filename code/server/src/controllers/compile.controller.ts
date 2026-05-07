@@ -3,7 +3,10 @@ import { type NextFunction, type Request, type Response } from 'express';
 import { type ApiErrorCode, AppError } from '@/middleware/errors';
 import { type CompileSourceSchema } from '@/schemas/compile.schema';
 import { compile } from '@/services/compiler';
-import { type CompileResult, type CompilerInfrastructureErrorCode, } from '@/services/compiler/types';
+import {
+  type CompileResult,
+  type CompilerInfrastructureErrorCode,
+} from '@/services/compiler/types';
 
 export type CompileService = (source: string) => Promise<CompileResult>;
 
