@@ -59,7 +59,7 @@ cat > "${PAPER_PAGES_DIR}/index.html" <<EOF
 
       <h2>Thesis Demo</h2>
       <p>The latest deployment of the application is available here.</p>
-      <p><a href="./${DEMO_URL}">Demo link</a></p>
+      <p><a href="${DEMO_URL}">Demo link</a></p>
     </main>
   </body>
 </html>

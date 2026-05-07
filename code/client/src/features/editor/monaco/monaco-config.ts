@@ -4,10 +4,9 @@ export const EDITOR_STORAGE_KEY = 'dsl-editor-content';
 
 export const DEFAULT_DSL_SNIPPET = `tempo 120;
 signature 4/4;
-key C major;
 
-track {
-
+track hello_world {
+    play [A3, B3, C4, C#4, D4];
 }
 `;
 
