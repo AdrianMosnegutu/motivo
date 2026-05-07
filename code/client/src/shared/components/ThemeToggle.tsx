@@ -1,26 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return <div className="w-8 h-8" />;
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme !== 'light';
 
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className="p-2 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
       aria-label="Toggle theme"
+      suppressHydrationWarning
     >
-      {theme === 'dark' ? (
+      {isDark ? (
         <Sun className="w-5 h-5 text-yellow-400" />
       ) : (
         <Moon className="w-5 h-5 text-zinc-700" />

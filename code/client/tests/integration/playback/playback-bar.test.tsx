@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { useMidi } from '@/features/midi/MidiContext';
 import PlaybackBar from '@/features/playback/components/PlaybackBar';
 
 const downloadMidi = vi.fn();
 const useMidiPlayback = vi.fn();
-let midiState: any;
+let midiState: ReturnType<typeof useMidi>;
 
 vi.mock('@/features/midi/MidiContext', () => ({
   useMidi: () => midiState,
@@ -27,7 +28,10 @@ describe('PlaybackBar', () => {
   beforeEach(() => {
     midiState = {
       midiBytes: new Uint8Array([1, 2]),
-      parsedMidi: { duration: 4, tracks: [] },
+      parsedMidi: { duration: 4, tracks: [] } as unknown as ReturnType<
+        typeof useMidi
+      >['parsedMidi'],
+      setMidiBytes: vi.fn(),
     };
     useMidiPlayback.mockReturnValue({
       canPlay: true,

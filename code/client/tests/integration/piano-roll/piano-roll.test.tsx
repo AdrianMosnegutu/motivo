@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { useMidi } from '@/features/midi/MidiContext';
 import PianoRoll from '@/features/piano-roll/components/PianoRoll';
 
 const renderPianoRollFrame = vi.fn();
-let midiState: any;
+let midiState: ReturnType<typeof useMidi>;
 
 vi.mock('next-themes', () => ({
   useTheme: () => ({ resolvedTheme: 'dark' }),
@@ -29,8 +30,14 @@ vi.mock('@/features/piano-roll/lib/render-frame', () => ({
 describe('PianoRoll', () => {
   beforeEach(() => {
     renderPianoRollFrame.mockReset();
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({}) as CanvasRenderingContext2D);
-    midiState = { parsedMidi: null };
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => ({}) as CanvasRenderingContext2D,
+    ) as unknown as HTMLCanvasElement['getContext'];
+    midiState = {
+      midiBytes: null,
+      parsedMidi: null,
+      setMidiBytes: vi.fn(),
+    };
   });
 
   it('shows an empty state without parsed MIDI', () => {
@@ -40,9 +47,11 @@ describe('PianoRoll', () => {
 
   it('renders a canvas frame when MIDI is available', () => {
     midiState = {
+      midiBytes: null,
       parsedMidi: {
         tracks: [{ notes: [{ midi: 60 }] }],
-      },
+      } as ReturnType<typeof useMidi>['parsedMidi'],
+      setMidiBytes: vi.fn(),
     };
 
     render(<PianoRoll />);

@@ -167,7 +167,7 @@ function drawPianoKeys(
     width: number;
   },
 ) {
-  const { activeNotes, columnWidth, height, isDark, keyStripY, maxMidi, minMidi, width } = input;
+  const { activeNotes, columnWidth, isDark, keyStripY, maxMidi, minMidi, width } = input;
   const whiteKeyColor = isDark ? '#e8e8e8' : '#ffffff';
   const whiteKeyBorder = isDark ? '#333344' : '#d1d1d6';
 

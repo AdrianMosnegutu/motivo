@@ -33,6 +33,7 @@ COPY --from=compiler-builder /compiler/build/apps/dslrc /usr/local/bin/dslrc
 
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV HOSTNAME=0.0.0.0
 ENV COMPILER_BIN=/usr/local/bin/dslrc
 
 EXPOSE 3001

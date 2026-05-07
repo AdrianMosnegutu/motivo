@@ -114,8 +114,9 @@ describe('compile and shortcut hooks', () => {
     const onPlay = vi.fn();
     const onPause = vi.fn();
     const { rerender } = renderHook(
-      ({ playState }) => usePlaybackShortcut({ playState, onPlay, onPause }),
-      { initialProps: { playState: 'stopped' as const } },
+      ({ playState }: { playState: 'playing' | 'stopped' }) =>
+        usePlaybackShortcut({ playState, onPlay, onPause }),
+      { initialProps: { playState: 'stopped' } },
     );
 
     fireEvent.keyDown(window, { code: 'Space' });

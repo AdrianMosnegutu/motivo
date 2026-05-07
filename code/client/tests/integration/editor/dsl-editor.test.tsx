@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import DslEditor, { type DslEditorHandle } from '@/features/editor/components/DslEditor';
+import DslEditor, {
+  type DslEditorHandle,
+  type DslEditorProps,
+} from '@/features/editor/components/DslEditor';
 
 let currentTheme = 'dark';
 const setTheme = vi.fn();
@@ -34,7 +37,19 @@ vi.mock('next-themes', () => ({
 }));
 
 vi.mock('@monaco-editor/react', () => ({
-  default: ({ beforeMount, onMount, onChange, theme, defaultValue }: any) => {
+  default: ({
+    beforeMount,
+    onMount,
+    onChange,
+    theme,
+    defaultValue,
+  }: {
+    beforeMount: (monaco: typeof monacoMock) => void;
+    onMount: (editor: unknown, monaco: typeof monacoMock) => void;
+    onChange: NonNullable<DslEditorProps['onChange']>;
+    theme: string;
+    defaultValue: string;
+  }) => {
     beforeMount(monacoMock);
     onMount(
       {

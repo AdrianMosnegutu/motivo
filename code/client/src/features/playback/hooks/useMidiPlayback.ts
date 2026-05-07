@@ -13,8 +13,9 @@ type ParsedMidi = NonNullable<ReturnType<typeof useMidi>['parsedMidi']>;
 
 export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   const [playState, setPlayState] = useState<PlayState>('stopped');
-  const [loadState, setLoadState] = useState<LoadState>('idle');
+  const [midiLoadState, setMidiLoadState] = useState<LoadState>('idle');
   const [position, setPosition] = useState('0.0s / 0.0s');
+  const loadState = parsedMidi ? midiLoadState : 'idle';
 
   const playersRef = useRef<SfPlayer[]>([]);
   const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
@@ -128,17 +129,24 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
 
   useEffect(() => {
     if (!parsedMidi) {
-      setLoadState('idle');
       playersRef.current = [];
       return;
     }
 
     let cancelled = false;
-    setLoadState('loading');
-    stopAll();
+    stopScheduledAudio();
+    Tone.getTransport().stop();
+    Tone.getTransport().seconds = 0;
+    pauseOffsetRef.current = 0;
 
     (async () => {
       try {
+        await Promise.resolve();
+        if (cancelled) return;
+
+        setPlayState('stopped');
+        setPosition('0.0s');
+        setMidiLoadState('loading');
         const { default: Soundfont } = await import('soundfont-player');
         const audioContext = Tone.getContext().rawContext as AudioContext;
         const trackNames = parsedMidi.tracks.map((track) =>
@@ -156,16 +164,16 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
           uniqueNames.map((name, index) => [name, loaded[index] as unknown as SfPlayer]),
         );
         playersRef.current = trackNames.map((name) => nameToPlayer.get(name)!);
-        setLoadState('ready');
+        setMidiLoadState('ready');
       } catch {
-        if (!cancelled) setLoadState('error');
+        if (!cancelled) setMidiLoadState('error');
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [parsedMidi, stopAll]);
+  }, [parsedMidi, stopScheduledAudio]);
 
   useEffect(() => {
     const tick = () => {

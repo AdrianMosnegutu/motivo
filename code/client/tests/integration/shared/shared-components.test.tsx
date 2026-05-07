@@ -10,6 +10,7 @@ let currentTheme = 'dark';
 
 vi.mock('next-themes', () => ({
   useTheme: () => ({
+    resolvedTheme: currentTheme,
     theme: currentTheme,
     setTheme,
   }),
