@@ -1,0 +1,206 @@
+name: Client Workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "code/client/**"
+      - ".github/workflows/client.yml"
+      - ".github/scripts/web/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-ci-${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  CLIENT_DIR: code/client
+  CLIENT_REPORT_DIR: code/client/ci-reports
+  CLIENT_COVERAGE_DIR: code/client/coverage
+  WEB_ARTIFACT_RETENTION_DAYS: "7"
+
+jobs:
+  lint:
+    name: Check Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.CLIENT_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm run lint
+
+  typecheck:
+    name: Check Types
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.CLIENT_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Run TypeScript
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm run typecheck
+
+  format-check:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.CLIENT_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Prettier check
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm run format:check
+
+  test:
+    name: Test Client
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - typecheck
+      - format-check
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.CLIENT_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Prepare report directory
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: mkdir -p ci-reports
+
+      - name: Run Vitest
+        id: run_tests
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: |
+          set +e
+          npm run test:ci
+          rc=$?
+          echo "exit_code=${rc}" >> "${GITHUB_OUTPUT}"
+          exit 0
+
+      - name: Summarize test and coverage reports
+        if: always()
+        env:
+          APP_NAME: Client
+          VITEST_REPORT_PATH: ${{ env.CLIENT_REPORT_DIR }}/vitest.json
+          COVERAGE_SUMMARY_PATH: ${{ env.CLIENT_COVERAGE_DIR }}/coverage-summary.json
+        run: python3 .github/scripts/web/summarize-vitest.py
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-test-reports
+          path: ${{ env.CLIENT_REPORT_DIR }}
+          retention-days: ${{ env.WEB_ARTIFACT_RETENTION_DAYS }}
+          if-no-files-found: warn
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-coverage
+          path: ${{ env.CLIENT_COVERAGE_DIR }}
+          retention-days: ${{ env.WEB_ARTIFACT_RETENTION_DAYS }}
+          if-no-files-found: warn
+
+      - name: Fail on test errors
+        if: steps.run_tests.outputs.exit_code != '0'
+        run: exit 1
+
+  build:
+    name: Build Client
+    runs-on: ubuntu-latest
+    needs:
+      - test
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.CLIENT_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Next.js app
+        working-directory: ${{ env.CLIENT_DIR }}
+        run: npm run build
+
+  package:
+    name: Package Client Image
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build production Docker image
+        run: docker build --tag dsl-client-ci:${{ github.sha }} --file code/client/Dockerfile code/client

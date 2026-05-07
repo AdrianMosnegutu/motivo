@@ -15,7 +15,7 @@ FROM node:20-slim AS ts-builder
 
 WORKDIR /app
 COPY server/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 COPY server/ .
 RUN npm run build
@@ -26,7 +26,7 @@ FROM node:20-slim AS runtime
 WORKDIR /app
 
 COPY server/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --legacy-peer-deps
 
 COPY --from=ts-builder /app/dist ./dist
 COPY --from=compiler-builder /compiler/build/apps/dslrc /usr/local/bin/dslrc
@@ -36,4 +36,4 @@ ENV PORT=3001
 ENV COMPILER_BIN=/usr/local/bin/dslrc
 
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/server.js"]
