@@ -53,8 +53,6 @@ with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
         message = message.replace("|", "\\|")
         summary.write(f"| [{file_path}:{line_no}]({link}) | {message} | {severity.lower()} |\n")
 PY
-fi
 
-if [ "${warnings}" -gt 0 ] || [ "${errors}" -gt 0 ]; then
   exit 1
 fi

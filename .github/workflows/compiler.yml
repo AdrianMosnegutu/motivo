@@ -27,6 +27,8 @@ env:
   COMPILER_ARTIFACT_RETENTION_DAYS: "7"
   CI_CMAKE_GENERATOR: Ninja
   CI_FETCHCONTENT_BASE_DIR: /home/runner/.cache/compiler-ci/fetchcontent
+  REPORT_REPO: ${{ github.repository }}
+  REPORT_SHA: ${{ github.sha }}
 
 jobs:
   static:
@@ -93,10 +95,6 @@ jobs:
 
       - name: Summarize build findings
         if: always() && steps.build_compiler.outputs.exit_code != '0'
-        env:
-          COMPILER_REPORT_DIR: ${{ env.COMPILER_REPORT_DIR }}
-          REPORT_REPO: ${{ github.repository }}
-          REPORT_SHA: ${{ github.sha }}
         run: python3 .github/scripts/compiler/summarize-build.py
 
       - name: Upload build logs
@@ -182,8 +180,6 @@ jobs:
 
       - name: Summarize test findings
         if: always()
-        env:
-          COMPILER_REPORT_DIR: ${{ env.COMPILER_REPORT_DIR }}
         run: python3 .github/scripts/compiler/summarize-tests.py
 
       - name: Upload test reports
