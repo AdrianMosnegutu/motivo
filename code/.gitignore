@@ -1,7 +1,7 @@
 .specs*/
-node_modules/
 build/
 
 .codex
+.codex/
 .claude/
 .gemini/
