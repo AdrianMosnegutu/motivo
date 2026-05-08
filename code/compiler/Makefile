@@ -13,6 +13,8 @@ CI_CMAKE_GENERATOR ?=
 CI_CMAKE_GENERATOR_ARG = $(if $(CI_CMAKE_GENERATOR),-G "$(CI_CMAKE_GENERATOR)",)
 CI_FETCHCONTENT_BASE_DIR ?=
 CI_FETCHCONTENT_ARG = $(if $(CI_FETCHCONTENT_BASE_DIR),-D FETCHCONTENT_BASE_DIR="$(CI_FETCHCONTENT_BASE_DIR)",)
+CI_ENABLE_COVERAGE ?= OFF
+CI_COVERAGE_ON = $(if $(filter ON on 1 true yes,$(CI_ENABLE_COVERAGE)),ON,OFF)
 CI_PACKAGE_TAG ?= motivo-studio-server-ci:local
 CI_BISON_EXECUTABLE ?= $(firstword $(wildcard /opt/homebrew/opt/bison/bin/bison /usr/local/opt/bison/bin/bison))
 CI_FLEX_EXECUTABLE ?= $(firstword $(wildcard /opt/homebrew/opt/flex/bin/flex /usr/local/opt/flex/bin/flex))
@@ -96,7 +98,7 @@ ci-format:
 ci-build:
 	@mkdir -p "$(CI_REPORT_DIR)"
 	@printf 'configure\n' > "$(CI_REPORT_DIR)/build-phase.txt"
-	set -o pipefail; cmake -S . -B "$(CI_BUILD_DIR)" $(CI_CMAKE_GENERATOR_ARG) -D CMAKE_BUILD_TYPE="$(CI_BUILD_TYPE)" -D BUILD_TESTING=ON -D CMAKE_EXPORT_COMPILE_COMMANDS=ON $(CI_BISON_ARG) $(CI_FLEX_ARG) $(CI_FETCHCONTENT_ARG) 2>&1 | tee "$(CI_REPORT_DIR)/configure.log"
+	set -o pipefail; cmake -S . -B "$(CI_BUILD_DIR)" $(CI_CMAKE_GENERATOR_ARG) -D CMAKE_BUILD_TYPE="$(CI_BUILD_TYPE)" -D BUILD_TESTING=ON -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D MOTIVO_ENABLE_COVERAGE="$(CI_COVERAGE_ON)" $(CI_BISON_ARG) $(CI_FLEX_ARG) $(CI_FETCHCONTENT_ARG) 2>&1 | tee "$(CI_REPORT_DIR)/configure.log"
 	@printf 'build\n' > "$(CI_REPORT_DIR)/build-phase.txt"
 	set -o pipefail; cmake --build "$(CI_BUILD_DIR)" --config "$(CI_BUILD_TYPE)" -j$(NPROC) 2>&1 | tee "$(CI_REPORT_DIR)/build.log"
 

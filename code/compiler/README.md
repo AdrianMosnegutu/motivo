@@ -35,7 +35,9 @@ make test COVERAGE=ON
 make coverage
 ```
 
-`make test` builds the compiler and runs the full CTest suite. Coverage builds use `build-coverage/` and write an HTML report to `build-coverage/coverage-html/index.html`.
+`make test` builds the compiler and runs the full CTest suite. Local coverage builds use `build-coverage/` and write an HTML report to `build-coverage/coverage-html/index.html`.
+
+The compiler CI test job runs the CTest suite with coverage instrumentation, publishes the JUnit report through `dorny/test-reporter`, and writes a `gcovr` coverage summary to the GitHub step summary.
 
 ## Other Useful Targets
 

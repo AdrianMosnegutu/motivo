@@ -8,10 +8,10 @@ on:
     paths:
       - "code/client/**"
       - ".github/workflows/client.yml"
-      - ".github/scripts/web/**"
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: client-ci-${{ github.workflow }}-${{ github.ref_name }}
@@ -135,13 +135,12 @@ jobs:
           echo "exit_code=${rc}" >> "${GITHUB_OUTPUT}"
           exit 0
 
-      - name: Summarize test and coverage reports
+      - name: Report Vitest coverage
         if: always()
-        env:
-          APP_NAME: Client
-          VITEST_REPORT_PATH: ${{ env.CLIENT_REPORT_DIR }}/vitest.json
-          COVERAGE_SUMMARY_PATH: ${{ env.CLIENT_COVERAGE_DIR }}/coverage-summary.json
-        run: python3 .github/scripts/web/summarize-vitest.py
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Client
+          working-directory: ${{ env.CLIENT_DIR }}
 
       - name: Upload test reports
         if: always()

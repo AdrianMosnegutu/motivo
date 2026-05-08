@@ -12,6 +12,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  checks: write
 
 concurrency:
   group: compiler-ci-${{ github.workflow }}-${{ github.ref_name }}
@@ -22,6 +24,7 @@ env:
   COMPILER_BUILD_DIR: build/compiler-ci
   COMPILER_BUILD_TYPE: Debug
   COMPILER_REPORT_DIR: build/compiler-ci/.ci-reports
+  COMPILER_ENABLE_COVERAGE: "ON"
   COMPILER_BUILD_ARTIFACT_NAME: compiler-build
   COMPILER_TEST_REPORT_ARTIFACT_NAME: compiler-test-reports
   COMPILER_ARTIFACT_RETENTION_DAYS: "7"
@@ -86,6 +89,7 @@ jobs:
           CI_REPORT_DIR: ../../${{ env.COMPILER_REPORT_DIR }}
           CI_CMAKE_GENERATOR: ${{ env.CI_CMAKE_GENERATOR }}
           CI_FETCHCONTENT_BASE_DIR: ${{ env.CI_FETCHCONTENT_BASE_DIR }}
+          CI_ENABLE_COVERAGE: ${{ env.COMPILER_ENABLE_COVERAGE }}
         run: |
           set +e
           make ci-build
@@ -164,6 +168,11 @@ jobs:
             --file "${RUNNER_TEMP}/compiler-build-artifact/compiler-build.tar" \
             --directory "${COMPILER_BUILD_DIR}"
 
+      - name: Install coverage reporter
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user "gcovr==8.6"
+
       - name: Run compiler tests
         id: run_tests
         working-directory: ${{ env.COMPILER_DIR }}
@@ -171,6 +180,7 @@ jobs:
           CI_BUILD_DIR: ../../${{ env.COMPILER_BUILD_DIR }}
           CI_BUILD_TYPE: ${{ env.COMPILER_BUILD_TYPE }}
           CI_REPORT_DIR: ../../${{ env.COMPILER_REPORT_DIR }}
+          CI_ENABLE_COVERAGE: ${{ env.COMPILER_ENABLE_COVERAGE }}
         run: |
           set +e
           make ci-test
@@ -178,9 +188,44 @@ jobs:
           echo "exit_code=${rc}" >> "${GITHUB_OUTPUT}"
           exit 0
 
-      - name: Summarize test findings
+      - name: Report CTest results
         if: always()
-        run: python3 .github/scripts/compiler/summarize-tests.py
+        uses: dorny/test-reporter@v3
+        with:
+          name: CTest Test Report
+          path: ${{ env.COMPILER_REPORT_DIR }}/ctest-junit.xml
+          reporter: java-junit
+          use-actions-summary: true
+          report-title: CTest Test Report
+          list-suites: failed
+          list-tests: failed
+          fail-on-error: false
+          fail-on-empty: false
+
+      - name: Report compiler coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          for coverage_dir in \
+            "${GITHUB_WORKSPACE}/${COMPILER_BUILD_DIR}/tests" \
+            "${GITHUB_WORKSPACE}/${COMPILER_BUILD_DIR}/_deps"; do
+            if [ -d "${coverage_dir}" ]; then
+              find "${coverage_dir}" -name '*.gcda' -delete
+            fi
+          done
+          python3 -m gcovr \
+            --root "${GITHUB_WORKSPACE}/${COMPILER_DIR}" \
+            --object-directory "${GITHUB_WORKSPACE}/${COMPILER_BUILD_DIR}" \
+            --filter "${GITHUB_WORKSPACE}/${COMPILER_DIR}/src/.*" \
+            --filter "${GITHUB_WORKSPACE}/${COMPILER_DIR}/include/.*" \
+            --filter "${GITHUB_WORKSPACE}/${COMPILER_DIR}/apps/.*" \
+            --exclude "${GITHUB_WORKSPACE}/${COMPILER_DIR}/tests/.*" \
+            --gcov-exclude-directories "${GITHUB_WORKSPACE}/${COMPILER_BUILD_DIR}/tests" \
+            --gcov-exclude-directories "${GITHUB_WORKSPACE}/${COMPILER_BUILD_DIR}/_deps" \
+            --gcov-ignore-errors all \
+            --markdown-summary "${GITHUB_STEP_SUMMARY}" \
+            --markdown-title "GCovr Coverage Report" \
+            --markdown-heading-level 2
 
       - name: Upload test reports
         if: always()
