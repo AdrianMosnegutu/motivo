@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DSL Compiler Client
 
-## Getting Started
+Next.js web IDE for writing music DSL programs, compiling them through the server, visualizing generated MIDI, and controlling playback.
 
-First, run the development server:
+## Requirements
 
-```bash
+- Node.js 20 or newer
+- npm
+- A running API server for real compile requests
+
+## Setup
+
+```sh
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The development server runs at `http://localhost:3000`. By default, `/api/*` requests are proxied to `http://localhost:3001`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To point the client at another API server:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+API_PROXY_URL=http://localhost:3001 npm run dev
+```
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+npm run dev            # Start the Next.js dev server
+npm run build          # Build the production app
+npm start              # Run the production server
+npm test               # Run Vitest in watch mode
+npm run test:run       # Run tests once
+npm run test:coverage  # Run tests with coverage
+npm run typecheck      # Check TypeScript types
+npm run lint           # Run ESLint
+npm run format:check   # Check Prettier formatting
+npm run ci             # Static checks, CI tests, build, and package image
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+src/
+|-- app/                Next.js app shell and global styles
+|-- config/             App constants and routes
+|-- features/
+|   |-- compile/        API client and diagnostic mapping
+|   |-- editor/         Monaco DSL editor integration
+|   |-- ide/            Main workspace layout and workflow hooks
+|   |-- midi/           MIDI parsing and context
+|   |-- piano-roll/     Piano-roll visualization
+|   `-- playback/       Playback controls and audio helpers
+`-- shared/             Shared UI components
+tests/
+|-- integration/        Component-level integration tests
+`-- unit/               Utility and hook tests
+```
 
-## Deploy on Vercel
+## API Proxy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`next.config.ts` rewrites `/api/:path*` to `API_PROXY_URL`, falling back to `NEXT_PUBLIC_API_URL` and then `http://localhost:3001`. Docker Compose sets this to the internal server URL automatically.
