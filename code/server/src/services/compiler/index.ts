@@ -32,8 +32,8 @@ function runCompiler(
 
 export async function compile(source: string): Promise<CompileResult> {
   const id = randomUUID();
-  const src = join(tmpdir(), `dsl-${id}.dsl`);
-  const out = join(tmpdir(), `dsl-${id}.mid`);
+  const src = join(tmpdir(), `motivo-${id}.motivo`);
+  const out = join(tmpdir(), `motivo-${id}.mid`);
   const cleanup = () => Promise.all([unlink(src).catch(() => {}), unlink(out).catch(() => {})]);
 
   try {

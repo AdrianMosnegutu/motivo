@@ -20,9 +20,9 @@ type StandardErrorResponse = {
 };
 
 async function createFakeCompiler(source: string) {
-  const directory = await mkdtemp(join(tmpdir(), 'dsl-server-test-'));
+  const directory = await mkdtemp(join(tmpdir(), 'motivo-server-test-'));
   tempDirs.push(directory);
-  const binary = join(directory, 'dslrc');
+  const binary = join(directory, 'motivoc');
   await writeFile(binary, source, 'utf8');
   await chmod(binary, 0o755);
   return binary;
@@ -56,7 +56,7 @@ describe('app', () => {
     process.env.COMPILER_BIN = await createFakeCompiler(`#!/usr/bin/env node
 const { writeFileSync } = require("fs");
 const sourcePath = process.argv[2];
-const outPath = sourcePath.replace(/\\.dsl$/, ".mid");
+const outPath = sourcePath.replace(/\\.motivo$/, ".mid");
 writeFileSync(outPath, Buffer.from([0x4d, 0x54, 0x68, 0x64]));
 `);
 
@@ -71,7 +71,7 @@ writeFileSync(outPath, Buffer.from([0x4d, 0x54, 0x68, 0x64]));
     expect(response.body).toEqual(midiBytes);
   });
 
-  it('returns compile-only diagnostics when the compiler reports DSL errors', async () => {
+  it('returns compile-only diagnostics when the compiler reports Motivo errors', async () => {
     process.env.COMPILER_BIN = await createFakeCompiler(`#!/usr/bin/env node
 const sourcePath = process.argv[2];
 console.error(\`\${sourcePath}: error: semantic: 3:5: unknown identifier\`);
@@ -95,7 +95,7 @@ process.exit(1);
   });
 
   it('returns a standard server error when the compiler binary is missing', async () => {
-    process.env.COMPILER_BIN = join(tmpdir(), 'missing-dslrc');
+    process.env.COMPILER_BIN = join(tmpdir(), 'missing-motivoc');
 
     const response = await request(app)
       .post('/compile')

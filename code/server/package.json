@@ -1,7 +1,7 @@
 {
-  "name": "dsl-compiler-server",
+  "name": "motivo-studio-server",
   "version": "0.1.0",
-  "description": "Express API backend for the DSL music compiler web IDE",
+  "description": "Express API backend for Motivo Studio",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit --pretty false",
     "ci:static": "npm run lint && npm run typecheck && npm run format:check",
-    "ci:package": "docker build --tag dsl-server-ci:local --file Dockerfile ..",
+    "ci:package": "docker build --tag motivo-studio-server-ci:local --file Dockerfile ..",
     "ci": "npm run ci:static && npm run test:ci && npm run build && npm run ci:package",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

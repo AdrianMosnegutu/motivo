@@ -1,2 +1,2 @@
-add_executable(dslrc dslrc.cpp)
-target_link_libraries(dslrc PRIVATE dsl_compiler)
+add_executable(motivoc motivoc.cpp)
+target_link_libraries(motivoc PRIVATE motivo_compiler)

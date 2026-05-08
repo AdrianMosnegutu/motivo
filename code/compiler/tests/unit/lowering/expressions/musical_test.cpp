@@ -4,7 +4,7 @@
 
 #include "support/lowerer_test_support.hpp"
 
-using namespace dsl::testing::lowerer;
+using namespace motivo::testing::lowerer;
 
 TEST(MusicalEval, NoteLiteralProducesCorrectMidiNote) {
     const auto ir = lower_ok("track { play A4; }");

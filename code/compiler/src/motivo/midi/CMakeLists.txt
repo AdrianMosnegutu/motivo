@@ -1,0 +1,3 @@
+add_library(motivo_midi STATIC write_midi.cpp)
+motivo_configure_library(motivo_midi)
+target_link_libraries(motivo_midi PRIVATE motivo_lowering)

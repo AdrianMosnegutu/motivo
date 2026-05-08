@@ -17,16 +17,16 @@ extern int yylineno;
 void scanner_reset();
 
 // -- Aliases ---------------------------------------------------------------
-using P = dsl::parsing::detail::Parser;
+using P = motivo::parsing::detail::Parser;
 using SK = P::symbol_kind_type;
 using S = P::symbol_kind;
-using dsl::source::Location;
+using motivo::source::Location;
 
-using dsl::music::Accidental;
-using dsl::music::DrumNote;
-using dsl::music::Instrument;
-using dsl::music::Note;
-using dsl::music::Pitch;
+using motivo::music::Accidental;
+using motivo::music::DrumNote;
+using motivo::music::Instrument;
+using motivo::music::Note;
+using motivo::music::Pitch;
 
 // -- Test helpers ----------------------------------------------------------
 namespace {

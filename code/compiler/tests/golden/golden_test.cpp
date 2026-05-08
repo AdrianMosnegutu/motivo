@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "dsl/compiler.hpp"
+#include "motivo/compiler.hpp"
 
 namespace {
 
@@ -17,11 +17,11 @@ fs::path fixture(const std::string& name) { return fs::path(GOLDEN_FIXTURES_DIR)
 
 fs::path temp_midi(const std::string& stem) { return fs::temp_directory_path() / (stem + ".mid"); }
 
-dsl::CompileResult compile_fixture(const std::string& fixture_name, const fs::path& output) {
+motivo::CompileResult compile_fixture(const std::string& fixture_name, const fs::path& output) {
     const fs::path src = fixture(fixture_name);
     const FilePtr input(std::fopen(src.string().c_str(), "r"), &std::fclose);
     EXPECT_NE(input, nullptr) << "Could not open fixture: " << src;
-    return dsl::compile(input.get(), src.string(), output.string());
+    return motivo::compile(input.get(), src.string(), output.string());
 }
 
 std::vector<uint8_t> read_bytes(const fs::path& path) {
@@ -36,7 +36,7 @@ bool contains_note_on(const std::vector<uint8_t>& bytes, uint8_t note) {
     return false;
 }
 
-int count_diagnostics_at_stage(const dsl::CompileResult& result, dsl::DiagnosticStage stage) {
+int count_diagnostics_at_stage(const motivo::CompileResult& result, motivo::DiagnosticStage stage) {
     int n = 0;
     for (const auto& d : result.get_diagnostics()) {
         if (d.stage == stage) ++n;
@@ -50,7 +50,7 @@ TEST(Golden, HappyPathCompilesAndProducesValidMidi) {
     const auto out = temp_midi("golden_happy");
     fs::remove(out);
 
-    const auto result = compile_fixture("happy_path.dsl", out);
+    const auto result = compile_fixture("happy_path.motivo", out);
 
     EXPECT_TRUE(result.ok());
     EXPECT_TRUE(result.get_diagnostics().empty());
@@ -73,7 +73,7 @@ TEST(Golden, HappyPathCompilesAndProducesValidMidi) {
     EXPECT_EQ(bytes[10], 0x00);
     EXPECT_EQ(bytes[11], 0x03);
 
-    // Notes from the DSL program: motif plays A4 and C5, bass_line plays A2 and E3
+    // Notes from the Motivo program: motif plays A4 and C5, bass_line plays A2 and E3
     EXPECT_TRUE(contains_note_on(bytes, 69));  // A4
     EXPECT_TRUE(contains_note_on(bytes, 72));  // C5
     EXPECT_TRUE(contains_note_on(bytes, 45));  // A2
@@ -86,10 +86,10 @@ TEST(Golden, ParseErrorsAreCollected) {
     const auto out = temp_midi("golden_parse");
     fs::remove(out);
 
-    const auto result = compile_fixture("parse_errors.dsl", out);
+    const auto result = compile_fixture("parse_errors.motivo", out);
 
     EXPECT_FALSE(result.ok());
-    EXPECT_GE(count_diagnostics_at_stage(result, dsl::DiagnosticStage::Parsing), 2);
+    EXPECT_GE(count_diagnostics_at_stage(result, motivo::DiagnosticStage::Parsing), 2);
     EXPECT_FALSE(fs::exists(out));
 
     fs::remove(out);
@@ -99,11 +99,11 @@ TEST(Golden, SemanticErrorsAreCollectedAndGateLowering) {
     const auto out = temp_midi("golden_semantic");
     fs::remove(out);
 
-    const auto result = compile_fixture("semantic_errors.dsl", out);
+    const auto result = compile_fixture("semantic_errors.motivo", out);
 
     EXPECT_FALSE(result.ok());
-    EXPECT_GE(count_diagnostics_at_stage(result, dsl::DiagnosticStage::Semantic), 3);
-    EXPECT_EQ(count_diagnostics_at_stage(result, dsl::DiagnosticStage::Lowering), 0);
+    EXPECT_GE(count_diagnostics_at_stage(result, motivo::DiagnosticStage::Semantic), 3);
+    EXPECT_EQ(count_diagnostics_at_stage(result, motivo::DiagnosticStage::Lowering), 0);
     EXPECT_FALSE(fs::exists(out));
 
     fs::remove(out);
@@ -113,11 +113,11 @@ TEST(Golden, LoweringErrorsAreCollectedAcrossTracks) {
     const auto out = temp_midi("golden_lowering");
     fs::remove(out);
 
-    const auto result = compile_fixture("lowering_errors.dsl", out);
+    const auto result = compile_fixture("lowering_errors.motivo", out);
 
     EXPECT_FALSE(result.ok());
-    EXPECT_GE(count_diagnostics_at_stage(result, dsl::DiagnosticStage::Lowering), 2);
-    EXPECT_EQ(count_diagnostics_at_stage(result, dsl::DiagnosticStage::Semantic), 0);
+    EXPECT_GE(count_diagnostics_at_stage(result, motivo::DiagnosticStage::Lowering), 2);
+    EXPECT_EQ(count_diagnostics_at_stage(result, motivo::DiagnosticStage::Semantic), 0);
     EXPECT_FALSE(fs::exists(out));
 
     fs::remove(out);

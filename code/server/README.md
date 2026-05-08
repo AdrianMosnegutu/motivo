@@ -1,14 +1,14 @@
-# DSL Compiler Server
+# Motivo Studio Server
 
-Express API backend for the music DSL web IDE. The server accepts DSL source code, invokes the native `dslrc` compiler, and returns either MIDI bytes or structured diagnostics.
+Express API backend for Motivo Studio. The server accepts Motivo source code, invokes the native `motivoc` compiler, and returns either MIDI bytes or structured diagnostics.
 
 ## Requirements
 
 - Node.js 20 or newer
 - npm
-- A built `dslrc` binary for real compile requests
+- A built `motivoc` binary for real compile requests
 
-In Docker, the compiler is built into the image and installed at `/usr/local/bin/dslrc`.
+In Docker, the compiler is built into the image and installed at `/usr/local/bin/motivoc`.
 
 ## Setup
 
@@ -22,10 +22,10 @@ Common environment variables:
 ```sh
 PORT=3001
 HOSTNAME=0.0.0.0
-COMPILER_BIN=/usr/local/bin/dslrc
+COMPILER_BIN=/usr/local/bin/motivoc
 ```
 
-For local development outside Docker, set `COMPILER_BIN` to your local compiler binary, usually `../compiler/build/apps/dslrc`.
+For local development outside Docker, set `COMPILER_BIN` to your local compiler binary, usually `../compiler/build/apps/motivoc`.
 
 ## Scripts
 

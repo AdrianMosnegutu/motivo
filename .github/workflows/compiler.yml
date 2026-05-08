@@ -210,5 +210,5 @@ jobs:
       - name: Build server image with compiler
         working-directory: ${{ env.COMPILER_DIR }}
         env:
-          CI_PACKAGE_TAG: dsl-server-ci:${{ github.sha }}
+          CI_PACKAGE_TAG: motivo-studio-server-ci:${{ github.sha }}
         run: make ci-package

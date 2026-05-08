@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 
-#include "dsl/semantic/type.hpp"
+#include "motivo/semantic/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
-using namespace dsl::testing::semantic;
-using dsl::semantic::TypeKind;
+using namespace motivo::testing::semantic;
+using motivo::semantic::TypeKind;
 
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
     const auto [prog, result] = analyze_ok("let x = true ? 1 : 2;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Int);
@@ -18,7 +18,7 @@ TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
 
 TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
     const auto [prog, result] = analyze_ok("let x = false ? 1.5 : 2.5;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Double);
@@ -26,7 +26,7 @@ TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
 
 TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
     const auto [prog, result] = analyze_ok("let x = true ? false : true;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Bool);
@@ -34,7 +34,7 @@ TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
 
 TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
     const auto [prog, result] = analyze_ok("let x = true ? A4 : B4;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Note);

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { Group, Panel, usePanelRef } from 'react-resizable-panels';
 import dynamic from 'next/dynamic';
 
-import type { DslEditorHandle } from '@/features/editor/components/DslEditor';
+import type { MotivoEditorHandle } from '@/features/editor/components/MotivoEditor';
 import ResizeHandle from '@/shared/components/ResizeHandle';
 
 import { useIdeCompile } from '../hooks/useIdeCompile';
@@ -15,7 +15,7 @@ import LoadingPane from './LoadingPane';
 import LogsPanel from './LogsPanel';
 import VisualizerPane from './VisualizerPane';
 
-const DslEditor = dynamic(() => import('@/features/editor/components/DslEditor'), {
+const MotivoEditor = dynamic(() => import('@/features/editor/components/MotivoEditor'), {
   ssr: false,
   loading: () => <LoadingPane label="Loading editor..." />,
 });
@@ -26,7 +26,7 @@ const PianoRoll = dynamic(() => import('@/features/piano-roll/components/PianoRo
 });
 
 export default function IdeWorkspace() {
-  const editorRef = useRef<DslEditorHandle>(null);
+  const editorRef = useRef<MotivoEditorHandle>(null);
   const logsPanelRef = usePanelRef();
   const { compiling, log, setLog, handleCompile, handleEditorChange, handleJumpToError } =
     useIdeCompile(editorRef);
@@ -39,7 +39,7 @@ export default function IdeWorkspace() {
         <Panel defaultSize={60} minSize={30}>
           <Group orientation="vertical">
             <EditorPane
-              DslEditor={DslEditor}
+              MotivoEditor={MotivoEditor}
               editorRef={editorRef}
               compiling={compiling}
               onCompile={handleCompile}

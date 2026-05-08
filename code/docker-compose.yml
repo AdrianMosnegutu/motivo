@@ -1,28 +1,30 @@
+name: motivo-studio
+
 services:
-  server:
+  motivo-studio-server:
     build:
       context: .
       dockerfile: server/Dockerfile
     environment:
       PORT: "3001"
-      COMPILER_BIN: /usr/local/bin/dslrc
+      COMPILER_BIN: /usr/local/bin/motivoc
       HOSTNAME: "0.0.0.0"
 
-  client:
+  motivo-studio-client:
     build:
       context: client
       dockerfile: Dockerfile
       args:
-        API_PROXY_URL: http://server:3001
+        API_PROXY_URL: http://motivo-studio-server:3001
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
-      API_PROXY_URL: http://server:3001
+      API_PROXY_URL: http://motivo-studio-server:3001
       HOSTNAME: "0.0.0.0"
     depends_on:
-      - server
+      - motivo-studio-server
 
-  nginx:
+  motivo-studio-gateway:
     build:
       context: nginx
       dockerfile: Dockerfile
@@ -30,5 +32,5 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - client
-      - server
+      - motivo-studio-client
+      - motivo-studio-server

@@ -1,6 +1,6 @@
-# DSL Compiler Client
+# Motivo Studio Client
 
-Next.js web IDE for writing music DSL programs, compiling them through the server, visualizing generated MIDI, and controlling playback.
+Next.js editor for writing Motivo programs, compiling them through the server, visualizing generated MIDI, and controlling playback.
 
 ## Requirements
 
@@ -46,7 +46,7 @@ src/
 |-- config/             App constants and routes
 |-- features/
 |   |-- compile/        API client and diagnostic mapping
-|   |-- editor/         Monaco DSL editor integration
+|   |-- editor/         Monaco Motivo editor integration
 |   |-- ide/            Main workspace layout and workflow hooks
 |   |-- midi/           MIDI parsing and context
 |   |-- piano-roll/     Piano-roll visualization

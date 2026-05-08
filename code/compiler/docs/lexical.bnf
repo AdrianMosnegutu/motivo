@@ -1,4 +1,4 @@
-; DSL — Lexical grammar
+; Motivo — Lexical grammar
 ; Notation: `?` optional, `+` one-or-more, `*` zero-or-more, `..` char range.
 
 <whitespace>     ::= (' ' | '\t' | '\r' | '\n')+

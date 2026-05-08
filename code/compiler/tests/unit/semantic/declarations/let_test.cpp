@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 
-#include "dsl/semantic/type.hpp"
+#include "motivo/semantic/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
-using namespace dsl::testing::semantic;
-using dsl::semantic::TypeKind;
+using namespace motivo::testing::semantic;
+using motivo::semantic::TypeKind;
 
 // -- Basic let declarations ----------------------------------------------------
 
 TEST(LetDeclaration, IntLiteralInfersIntType) {
     const auto [prog, result] = analyze_ok("let x = 42;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Int);
@@ -18,7 +18,7 @@ TEST(LetDeclaration, IntLiteralInfersIntType) {
 
 TEST(LetDeclaration, DoubleLiteralInfersDoubleType) {
     const auto [prog, result] = analyze_ok("let x = 1.5;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Double);
@@ -26,7 +26,7 @@ TEST(LetDeclaration, DoubleLiteralInfersDoubleType) {
 
 TEST(LetDeclaration, BoolLiteralInfersBoolType) {
     const auto [prog, result] = analyze_ok("let x = true;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Bool);
@@ -34,7 +34,7 @@ TEST(LetDeclaration, BoolLiteralInfersBoolType) {
 
 TEST(LetDeclaration, NoteLiteralInfersNoteType) {
     const auto [prog, result] = analyze_ok("let x = A4;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Note);
@@ -44,7 +44,7 @@ TEST(LetDeclaration, NoteLiteralInfersNoteType) {
 
 TEST(LetDeclaration, LetBoundToArithmeticExpressionIsValid) {
     const auto [prog, result] = analyze_ok("let x = 1 + 2;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Int);
@@ -59,7 +59,7 @@ TEST(LetDeclaration, LetBoundToAnotherIdentifierIsValid) {
 
 TEST(LetDeclaration, LetBoundToChordIsValid) {
     const auto [prog, result] = analyze_ok("let c = (A4, C5);");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Chord);
@@ -67,7 +67,7 @@ TEST(LetDeclaration, LetBoundToChordIsValid) {
 
 TEST(LetDeclaration, LetBoundToSequenceIsValid) {
     const auto [prog, result] = analyze_ok("let s = [A4, B4];");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Sequence);
@@ -75,7 +75,7 @@ TEST(LetDeclaration, LetBoundToSequenceIsValid) {
 
 TEST(LetDeclaration, LetBoundToTernaryIsValid) {
     const auto [prog, result] = analyze_ok("let x = true ? 1.3 : 2.4;");
-    const auto& let = std::get<dsl::ast::LetStatement>(std::get<dsl::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*let.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(t->kind, TypeKind::Double);

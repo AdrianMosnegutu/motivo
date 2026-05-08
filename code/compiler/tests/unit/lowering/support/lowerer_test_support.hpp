@@ -8,15 +8,15 @@
 #include <string>
 #include <vector>
 
-#include "dsl/common/ast/program.hpp"
-#include "dsl/common/diagnostics/diagnostics_engine.hpp"
-#include "dsl/common/ir/program.hpp"
-#include "dsl/diagnostics/diagnostic.hpp"
-#include "dsl/lowering/lower.hpp"
-#include "dsl/parsing/parse.hpp"
-#include "dsl/semantic/analyze.hpp"
+#include "motivo/common/ast/program.hpp"
+#include "motivo/common/diagnostics/diagnostics_engine.hpp"
+#include "motivo/common/ir/program.hpp"
+#include "motivo/diagnostics/diagnostic.hpp"
+#include "motivo/lowering/lower.hpp"
+#include "motivo/parsing/parse.hpp"
+#include "motivo/semantic/analyze.hpp"
 
-namespace dsl::testing::lowerer {
+namespace motivo::testing::lowerer {
 
 // -- Result types --------------------------------------------------------------
 
@@ -86,4 +86,4 @@ inline bool has_lowering_error(const Diagnostics& diags, const std::string& text
     });
 }
 
-}  // namespace dsl::testing::lowerer
+}  // namespace motivo::testing::lowerer

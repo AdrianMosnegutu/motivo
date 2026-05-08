@@ -1,8 +1,8 @@
 import type { EditorProps } from '@monaco-editor/react';
 
-export const EDITOR_STORAGE_KEY = 'dsl-editor-content';
+export const EDITOR_STORAGE_KEY = 'motivo-studio-editor-content';
 
-export const DEFAULT_DSL_SNIPPET = `tempo 120;
+export const DEFAULT_MOTIVO_SNIPPET = `tempo 120;
 signature 4/4;
 
 track hello_world {

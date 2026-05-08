@@ -1,15 +1,15 @@
-#include "dsl/lowering/detail/value_flattener.hpp"
+#include "motivo/lowering/detail/value_flattener.hpp"
 
 #include <gtest/gtest.h>
 
 #include <memory>
 #include <vector>
 
-#include "dsl/common/ir/note_event.hpp"
-#include "dsl/common/ir/values.hpp"
+#include "motivo/common/ir/note_event.hpp"
+#include "motivo/common/ir/values.hpp"
 
-using namespace dsl::lowering::detail;
-using namespace dsl::ir;
+using namespace motivo::lowering::detail;
+using namespace motivo::ir;
 
 // -- flatten_note_value --------------------------------------------------------
 

@@ -203,4 +203,4 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Build production Docker image
-        run: docker build --tag dsl-server-ci:${{ github.sha }} --file code/server/Dockerfile code
+        run: docker build --tag motivo-studio-server-ci:${{ github.sha }} --file code/server/Dockerfile code

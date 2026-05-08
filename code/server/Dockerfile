@@ -29,12 +29,12 @@ COPY server/package*.json ./
 RUN npm ci --omit=dev --legacy-peer-deps
 
 COPY --from=ts-builder /app/dist ./dist
-COPY --from=compiler-builder /compiler/build/apps/dslrc /usr/local/bin/dslrc
+COPY --from=compiler-builder /compiler/build/apps/motivoc /usr/local/bin/motivoc
 
 ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
-ENV COMPILER_BIN=/usr/local/bin/dslrc
+ENV COMPILER_BIN=/usr/local/bin/motivoc
 
 EXPOSE 3001
 CMD ["node", "dist/server.js"]
