@@ -182,7 +182,7 @@ jobs:
         if: always()
         env:
           TEST_REPORT_NAME: CTest
-        run: python3 .github/scripts/compiler/summarize-tests.py
+        run: python3 .github/scripts/compiler/summarize-ctest.py
 
       - name: Upload test reports
         if: always()
