@@ -37,9 +37,14 @@ def collect_failed_tests(report: dict[str, Any]) -> list[tuple[str, str]]:
     return failed
 
 
-def write_summary(summary_path: Path, app_name: str, report: dict[str, Any] | None, coverage: dict[str, Any] | None) -> None:
+def write_summary(
+    summary_path: Path,
+    report_name: str,
+    report: dict[str, Any] | None,
+    coverage: dict[str, Any] | None,
+) -> None:
     with summary_path.open("a", encoding="utf-8") as summary:
-        summary.write(f"## {app_name} test report\n\n")
+        summary.write(f"## {report_name} Test Report\n\n")
 
         if report is None:
             summary.write("Vitest JSON report was not generated. See the job logs for details.\n\n")
@@ -81,13 +86,13 @@ def main() -> None:
     if not summary_path:
         return
 
-    app_name = os.environ.get("APP_NAME", "App")
+    report_name = os.environ.get("TEST_REPORT_NAME") or os.environ.get("APP_NAME", "Vitest")
     report_path = Path(os.environ["VITEST_REPORT_PATH"])
     coverage_path = Path(os.environ["COVERAGE_SUMMARY_PATH"])
 
     write_summary(
         Path(summary_path),
-        app_name,
+        report_name,
         read_json(report_path),
         read_json(coverage_path),
     )

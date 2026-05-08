@@ -138,7 +138,7 @@ jobs:
       - name: Summarize test and coverage reports
         if: always()
         env:
-          APP_NAME: Client
+          TEST_REPORT_NAME: Vitest
           VITEST_REPORT_PATH: ${{ env.CLIENT_REPORT_DIR }}/vitest.json
           COVERAGE_SUMMARY_PATH: ${{ env.CLIENT_COVERAGE_DIR }}/coverage-summary.json
         run: python3 .github/scripts/web/summarize-vitest.py

@@ -7,11 +7,41 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def truncate(text: str, limit: int = 220) -> str:
+def int_attr(node: ET.Element, name: str) -> int:
+    return int(node.attrib.get(name, 0) or 0)
+
+
+def truncate(text: str, limit: int = 240) -> str:
     text = " ".join(text.split())
     if len(text) <= limit:
         return text
     return text[: limit - 3] + "..."
+
+
+def collect_suites(root: ET.Element) -> list[ET.Element]:
+    if root.tag == "testsuite":
+        return [root]
+    return list(root.findall("testsuite"))
+
+
+def collect_failed_cases(suites: list[ET.Element]) -> list[tuple[str, str]]:
+    failed_cases: list[tuple[str, str]] = []
+
+    for suite in suites:
+        suite_name = suite.attrib.get("name", "")
+        for case in suite.findall("testcase"):
+            failure = case.find("failure")
+            error = case.find("error")
+            if failure is None and error is None:
+                continue
+
+            detail_node = failure if failure is not None else error
+            case_name = case.attrib.get("name", "<unnamed test>")
+            name = f"{suite_name}.{case_name}" if suite_name else case_name
+            detail = detail_node.attrib.get("message", "") or detail_node.text or "See test report for details."
+            failed_cases.append((name, truncate(detail)))
+
+    return failed_cases
 
 
 def main() -> None:
@@ -21,48 +51,37 @@ def main() -> None:
 
     report_dir = Path(os.environ["COMPILER_REPORT_DIR"])
     junit_path = report_dir / "ctest-junit.xml"
-    log_path = report_dir / "ctest.log"
 
-    if not junit_path.exists():
-        return
-
-    root = ET.parse(junit_path).getroot()
-    suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
-
-    tests = 0
-    failures = 0
-    skipped = 0
-    duration = 0.0
-    failed_cases: list[tuple[str, str]] = []
-
-    for suite in suites:
-        tests += int(suite.attrib.get("tests", 0))
-        failures += int(suite.attrib.get("failures", 0)) + int(suite.attrib.get("errors", 0))
-        skipped += int(suite.attrib.get("skipped", 0))
-        duration += float(suite.attrib.get("time", 0.0) or 0.0)
-
-        for case in suite.findall("testcase"):
-            failure = case.find("failure")
-            error = case.find("error")
-            if failure is None and error is None:
-                continue
-            detail_node = failure if failure is not None else error
-            name = case.attrib.get("name", "<unnamed test>")
-            detail = detail_node.attrib.get("message", "") or detail_node.text or "See ctest log for details."
-            failed_cases.append((name, truncate(detail)))
-
-    passed = tests - failures - skipped
+    report_name = os.environ.get("TEST_REPORT_NAME") or os.environ.get("APP_NAME", "CTest")
 
     with open(summary_path, "a", encoding="utf-8") as summary:
-        summary.write("## Unit test report\n\n")
+        summary.write(f"## {report_name} Test Report\n\n")
+
+        if not junit_path.exists():
+            summary.write("CTest JUnit report was not generated. See the job logs for details.\n\n")
+            return
+
+        root = ET.parse(junit_path).getroot()
+        suites = collect_suites(root)
+
+        tests = 0
+        failures = 0
+        skipped = 0
+
+        for suite in suites:
+            tests += int_attr(suite, "tests")
+            failures += int_attr(suite, "failures") + int_attr(suite, "errors")
+            skipped += int_attr(suite, "skipped") or sum(
+                1 for case in suite.findall("testcase") if case.find("skipped") is not None
+            )
+
+        passed = tests - failures - skipped
         summary.write(f"- Total: `{tests}`\n")
         summary.write(f"- Passed: `{passed}`\n")
         summary.write(f"- Failed: `{failures}`\n")
-        summary.write(f"- Skipped: `{skipped}`\n")
-        summary.write(f"- Duration: `{duration:.2f}s`\n")
-        summary.write(f"- JUnit report: `{junit_path}`\n")
-        summary.write(f"- Test log: `{log_path}`\n\n")
+        summary.write(f"- Skipped: `{skipped}`\n\n")
 
+        failed_cases = collect_failed_cases(suites)
         if failed_cases:
             summary.write("| Failing test | Details |\n")
             summary.write("| --- | --- |\n")
