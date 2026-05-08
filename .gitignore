@@ -1,6 +1,87 @@
-.git/
-.idea/
-
+# macOS
 .DS_Store
+
+# Editors and local assistants
+.idea/
+.vscode/
+.codex/
+.claude/
+.gemini/
+*.swp
+*.swo
+*~
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# JavaScript dependencies and package-manager state
+**/node_modules/
+**/.pnp
+**/.pnp.*
+**/.yarn/*
+!**/.yarn/patches/
+!**/.yarn/plugins/
+!**/.yarn/releases/
+!**/.yarn/versions/
+
+# JavaScript build, test, and framework output
+**/dist/
+**/coverage/
+**/ci-reports/
+**/.specs*/
+code/client/.next/
+code/client/out/
+code/client/build/
+code/client/.vercel/
+code/client/next-env.d.ts
+code/client/*.tsbuildinfo
+code/server/dist/
+
+# JavaScript logs and secrets
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.pem
+
+# CMake and native compiler output
+**/build/
+**/build-coverage/
+**/cmake-build-*/
+**/out/
+**/CMakeCache.txt
+**/CMakeFiles/
+**/cmake_install.cmake
+**/install_manifest.txt
+**/CTestTestfile.cmake
+**/.cache/
+**/*.o
+**/*.a
+**/*.so
+**/*.dylib
+**/*.dll
+**/*.exe
+**/*.tab.c
+**/*.tab.h
+**/*.tab.cpp
+**/*.tab.hpp
+**/lex.yy.c
+**/lex.yy.cpp
+**/.ninja_deps
+**/.ninja_log
+**/compile_commands.json
+
+# Generated MIDI examples
+code/compiler/**/*.mid
+code/compiler/**/*.midi
+
+# LaTeX output
+paper/**/*.pdf
+paper/**/*.bbl
+paper/**/*.original
