@@ -81,7 +81,9 @@ yarn-error.log*
 code/compiler/**/*.mid
 code/compiler/**/*.midi
 
-# LaTeX output
+# Paper module output
+paper/build/
+paper/out/
 paper/**/*.pdf
 paper/**/*.bbl
 paper/**/*.original
