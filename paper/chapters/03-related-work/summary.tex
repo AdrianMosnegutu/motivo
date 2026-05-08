@@ -13,8 +13,8 @@ While these systems offer high flexibility, they operate at a relatively low lev
 manage details related to signal processing, concurrency, and timing explicitly.
 
 Formats for musical representation and exchange such as \textbf{MIDI} and \textbf{ABC notation} focus on encoding
-musical information for storage, transmission, and playback.
-While widely adopted, these formats serve different goals from a composition-oriented DSL: \textbf{MIDI} is effective
+musical information for storage, transmission, and playback\@.
+While widely adopted, these formats serve different goals from a composition-oriented DSL\@: \textbf{MIDI} is effective
 as an interchange and playback format, and \textbf{ABC notation} is effective as a human-readable notation format.
 Neither is intended to serve as a high-level, executable model for structured composition.
 
@@ -25,38 +25,31 @@ highlights the design trade-offs that motivate the proposed DSL\@.
   \centering
   \footnotesize
   \renewcommand{\arraystretch}{1.5}
-  \begin{tabular}{|p{2.2cm}|p{2.5cm}|p{4cm}|p{5cm}|}
-    \hline
+  \begin{tabular}{p{2.2cm}p{2.5cm}p{4cm}p{5cm}}
+    \toprule
     \textbf{System / Language} & \textbf{Class} & \textbf{Temporal / structural model} & \textbf{Main gap
     relative to this thesis} \\
-    \hline
+    \midrule
     Sonic Pi & High-level composition & Sequential execution with notes, sleeps, and simple patterns &
     Limited structural abstraction and weak support for complex temporal relationships \\
-    \hline
     Tidal & High-level composition & Time-varying patterns with functional composition over discrete or
     continuous time & Haskell-centric syntax and focus on event streaming rather than direct compilation or
     explicit timeline structure \\
-    \hline
     HMusic & High-level composition & Grid-like patterns and parallel tracks for rhythmic structure & Relies
     on Sonic Pi, remains pattern-centric, and does not model higher-level timelines explicitly \\
-    \hline
     ChucK & Real-time audio control and synthesis & Explicit time advancement and synchronized concurrent
     shreds & Low-level time management makes high-level compositional structure harder to express \\
-    \hline
     Super\-Collider & Real-time audio control and synthesis & Object-oriented and functional model with
     UGens, patterns, and streams & Powerful but synthesis-oriented, with substantial complexity and weaker
     support for structured high-level composition \\
-    \hline
     MIDI & Musical representation & Discrete message stream of note and control events & Strong backend and
     interchange format, but too low-level to serve as the primary model for structured composition \\
-    \hline
     ABC notation & Musical representation & Declarative textual notation with implicit ordering, bars, and
     voices & Clear notation format, but not an executable high-level composition language with explicit
     temporal abstraction \\
-    \hline
+    \bottomrule
   \end{tabular}
-  \caption{Comparison of the main systems and languages discussed in this chapter.}
-  \label{tab:related-work-comparison}
+  \caption{Comparison of the main systems and languages discussed in this chapter.}\label{tab:related-work-comparison}
 \end{table}
 
 From this analysis, several key gaps relative to the goals of this thesis emerge.

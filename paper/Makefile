@@ -1,6 +1,4 @@
-.PHONY: all build format lint clean
-
-all: build
+.PHONY: build format lint clean
 
 build:
 	bash scripts/build.sh
