@@ -2,7 +2,7 @@ import type { ComponentProps, MutableRefObject, ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { DslEditorProps } from '@/features/editor/components/DslEditor';
+import type { MotivoEditorProps } from '@/features/editor/components/MotivoEditor';
 import EditorPane from '@/features/ide/components/EditorPane';
 import LoadingPane from '@/features/ide/components/LoadingPane';
 import LogsPanel from '@/features/ide/components/LogsPanel';
@@ -12,7 +12,7 @@ type MockPanelRef = MutableRefObject<{
   collapse: ReturnType<typeof vi.fn>;
   expand: ReturnType<typeof vi.fn>;
 } | null>;
-type EditorComponent = ComponentProps<typeof EditorPane>['DslEditor'];
+type EditorComponent = ComponentProps<typeof EditorPane>['MotivoEditor'];
 
 vi.mock('react-resizable-panels', () => ({
   Panel: ({
@@ -46,7 +46,7 @@ describe('IDE shell components', () => {
   it('renders editor controls and forwards editor callbacks', () => {
     const onCompile = vi.fn();
     const onEditorChange = vi.fn();
-    const DslEditor: EditorComponent = ({ onChange, onCompile: compile }: DslEditorProps) => (
+    const MotivoEditor: EditorComponent = ({ onChange, onCompile: compile }: MotivoEditorProps) => (
       <button
         onClick={() => {
           onChange?.('tempo 120;');
@@ -59,7 +59,7 @@ describe('IDE shell components', () => {
 
     render(
       <EditorPane
-        DslEditor={DslEditor}
+        MotivoEditor={MotivoEditor}
         editorRef={{ current: null }}
         compiling={false}
         onCompile={onCompile}
@@ -77,7 +77,7 @@ describe('IDE shell components', () => {
   it('renders compiling state', () => {
     render(
       <EditorPane
-        DslEditor={() => null}
+        MotivoEditor={() => null}
         editorRef={{ current: null }}
         compiling
         onCompile={vi.fn()}

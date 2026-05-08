@@ -11,26 +11,26 @@ include(GoogleTest)
 
 # -- Shared include paths -------------------------------------------------------
 
-set(DSL_SRC ${PROJECT_SOURCE_DIR}/src)
-set(DSL_BINARY_PARSING ${CMAKE_BINARY_DIR}/src/dsl/parsing)
+set(MOTIVO_SRC ${PROJECT_SOURCE_DIR}/src)
+set(MOTIVO_BINARY_PARSING ${CMAKE_BINARY_DIR}/src/motivo/parsing)
 
 # -- Common module unit tests ---------------------------------------------------
 
-dsl_add_gtest(common_tests
+motivo_add_gtest(common_tests
         unit/common/music/note_test.cpp)
-target_link_libraries(common_tests PRIVATE dsl_music)
-target_include_directories(common_tests PRIVATE ${DSL_SRC})
+target_link_libraries(common_tests PRIVATE motivo_music)
+target_include_directories(common_tests PRIVATE ${MOTIVO_SRC})
 
 # -- Parsing unit tests ---------------------------------------------------------
 
 file(GLOB_RECURSE PARSING_SOURCES
         unit/parsing/*.cpp)
 
-dsl_add_gtest(parsing_tests ${PARSING_SOURCES})
-target_link_libraries(parsing_tests PRIVATE dsl_parsing)
+motivo_add_gtest(parsing_tests ${PARSING_SOURCES})
+target_link_libraries(parsing_tests PRIVATE motivo_parsing)
 target_include_directories(parsing_tests PRIVATE
-        ${DSL_BINARY_PARSING}
-        ${DSL_SRC}
+        ${MOTIVO_BINARY_PARSING}
+        ${MOTIVO_SRC}
         unit/parsing)
 
 # -- Semantic unit tests --------------------------------------------------------
@@ -43,10 +43,10 @@ file(GLOB_RECURSE SEMANTIC_SOURCES
         unit/semantic/declarations/*.cpp
         unit/semantic/statements/*.cpp)
 
-dsl_add_gtest(semantic_tests ${SEMANTIC_SOURCES})
-target_link_libraries(semantic_tests PRIVATE dsl_parsing dsl_semantic)
+motivo_add_gtest(semantic_tests ${SEMANTIC_SOURCES})
+target_link_libraries(semantic_tests PRIVATE motivo_parsing motivo_semantic)
 target_include_directories(semantic_tests PRIVATE
-        ${DSL_SRC}
+        ${MOTIVO_SRC}
         unit/semantic)
 
 # -- Lowering unit tests --------------------------------------------------------
@@ -61,18 +61,18 @@ file(GLOB_RECURSE LOWERING_SOURCES
         unit/lowering/voices/*.cpp
         unit/lowering/variables/*.cpp)
 
-dsl_add_gtest(ir_tests ${LOWERING_SOURCES})
-target_link_libraries(ir_tests PRIVATE dsl_parsing dsl_lowering)
+motivo_add_gtest(ir_tests ${LOWERING_SOURCES})
+target_link_libraries(ir_tests PRIVATE motivo_parsing motivo_lowering)
 target_include_directories(ir_tests PRIVATE
-        ${DSL_SRC}
+        ${MOTIVO_SRC}
         unit/lowering)
 
 # -- MIDI unit tests ------------------------------------------------------------
 
-dsl_add_gtest(midi_tests
+motivo_add_gtest(midi_tests
         unit/midi/midi_writer_test.cpp)
-target_link_libraries(midi_tests PRIVATE dsl_midi)
-target_include_directories(midi_tests PRIVATE ${DSL_SRC})
+target_link_libraries(midi_tests PRIVATE motivo_midi)
+target_include_directories(midi_tests PRIVATE ${MOTIVO_SRC})
 
 # -- Integration tests ----------------------------------------------------------
 
@@ -109,7 +109,7 @@ add_custom_target(run_integration_unit_tests
             midi_tests
             compiler_api_tests
             golden_tests
-            dslrc
+            motivoc
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         USES_TERMINAL
         VERBATIM)

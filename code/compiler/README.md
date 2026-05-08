@@ -1,6 +1,6 @@
-# DSL Compiler
+# Motivo Compiler
 
-C++23 compiler for the thesis music DSL. It parses DSL source, performs semantic analysis, lowers the program into an internal musical representation, and writes MIDI output through the `dslrc` command-line tool.
+C++23 compiler for the Motivo music language. It parses Motivo source, performs semantic analysis, lowers the program into an internal musical representation, and writes MIDI output through the `motivoc` command-line tool.
 
 ## Requirements
 
@@ -19,12 +19,12 @@ make build
 make run
 ```
 
-`make run` compiles and runs `examples/example.dsl` through `build/apps/dslrc`.
+`make run` compiles and runs `examples/example.motivo` through `build/apps/motivoc`.
 
 To use another example:
 
 ```sh
-make run EXAMPLE=examples/fur_elise.dsl
+make run EXAMPLE=examples/fur_elise.motivo
 ```
 
 ## Tests And Coverage
@@ -51,9 +51,9 @@ make coverage-clean
 ## Structure
 
 ```text
-apps/          dslrc command-line entrypoint
+apps/          motivoc command-line entrypoint
 docs/          grammar and lexical references
-examples/      sample DSL programs
+examples/      sample Motivo programs
 include/       public compiler API headers
 src/           parser, semantic analysis, lowering, and MIDI writer
 tests/         unit, integration, and golden tests

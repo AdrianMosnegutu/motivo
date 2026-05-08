@@ -5,7 +5,7 @@ import { parseCompilerDiagnostics } from '@/services/compiler/diagnostics';
 describe('parseCompilerDiagnostics', () => {
   it('strips ANSI codes and normalizes parse diagnostics to syntax', () => {
     const result = parseCompilerDiagnostics(
-      '\u001B[31m/tmp/input.dsl: error: parse: 2:4: expected note\u001B[0m',
+      '\u001B[31m/tmp/input.motivo: error: parse: 2:4: expected note\u001B[0m',
     );
 
     expect(result).toEqual({
@@ -25,8 +25,8 @@ describe('parseCompilerDiagnostics', () => {
   it('parses warnings and notes with source locations', () => {
     const result = parseCompilerDiagnostics(
       [
-        '/tmp/input.dsl: warning: semantic: 5:7: unused pattern',
-        '/tmp/input.dsl: note: output: 8:1: generated fallback track',
+        '/tmp/input.motivo: warning: semantic: 5:7: unused pattern',
+        '/tmp/input.motivo: note: output: 8:1: generated fallback track',
       ].join('\n'),
     );
 

@@ -8,10 +8,10 @@
 #include <variant>
 #include <vector>
 
-#include "dsl/common/ast/program.hpp"
-#include "dsl/common/diagnostics/diagnostics_engine.hpp"
-#include "dsl/common/music/pitch.hpp"
-#include "dsl/parsing/parse.hpp"
+#include "motivo/common/ast/program.hpp"
+#include "motivo/common/diagnostics/diagnostics_engine.hpp"
+#include "motivo/common/music/pitch.hpp"
+#include "motivo/parsing/parse.hpp"
 
 // -- Flex interface --------------------------------------------------------
 struct yy_buffer_state;
@@ -22,14 +22,14 @@ void yy_delete_buffer(YY_BUFFER_STATE buf);
 void scanner_reset();
 
 // -- Aliases ---------------------------------------------------------------
-namespace ast = dsl::ast;
+namespace ast = motivo::ast;
 
-using dsl::music::Accidental;
-using dsl::music::DrumNote;
-using dsl::music::Instrument;
-using dsl::music::Pitch;
-using dsl::parsing::detail::Parser;
-using dsl::source::Location;
+using motivo::music::Accidental;
+using motivo::music::DrumNote;
+using motivo::music::Instrument;
+using motivo::music::Pitch;
+using motivo::parsing::detail::Parser;
+using motivo::source::Location;
 
 // -- Test helpers ----------------------------------------------------------
 namespace {
@@ -52,10 +52,10 @@ std::unique_ptr<ast::Program> parse(const std::string& src) {
     ParseGuard guard(src);
     auto program = std::make_unique<ast::Program>();
     Location loc;
-    dsl::DiagnosticsEngine diagnostics;
+    motivo::DiagnosticsEngine diagnostics;
     Parser parser{loc, diagnostics, *program};
     const int rc = parser.parse();
-    if (rc != 0 || diagnostics.has_errors(dsl::DiagnosticStage::Parsing)) {
+    if (rc != 0 || diagnostics.has_errors(motivo::DiagnosticStage::Parsing)) {
         const auto& emitted = diagnostics.diagnostics();
         const std::string message = emitted.empty() ? "syntax error" : emitted.front().message;
         throw std::runtime_error(message);
@@ -177,22 +177,22 @@ TEST(Parser, HeaderAfterTrackRejected) { EXPECT_THROW(parse("track {} tempo 120;
 TEST(Parser, HeaderAfterGlobalLetRejected) { EXPECT_THROW(parse("let x = 1; tempo 120;"), std::runtime_error); }
 
 TEST(ParserDiagnostics, CollectsMultipleRecoverableSyntaxDiagnostics) {
-    dsl::DiagnosticsEngine diagnostics;
-    const auto result = dsl::parsing::parse_source(R"(
+    motivo::DiagnosticsEngine diagnostics;
+    const auto result = motivo::parsing::parse_source(R"(
         track {
             play ;
             let = 1;
             play A4;
         }
     )",
-                                                   "<source>",
-                                                   diagnostics);
+                                                      "<source>",
+                                                      diagnostics);
 
     EXPECT_EQ(result.program(), nullptr);
     ASSERT_GE(diagnostics.diagnostics().size(), 2u);
     for (const auto& diagnostic : diagnostics.diagnostics()) {
-        EXPECT_EQ(diagnostic.stage, dsl::DiagnosticStage::Parsing);
-        EXPECT_EQ(diagnostic.severity, dsl::DiagnosticSeverity::Error);
+        EXPECT_EQ(diagnostic.stage, motivo::DiagnosticStage::Parsing);
+        EXPECT_EQ(diagnostic.severity, motivo::DiagnosticSeverity::Error);
     }
 }
 
@@ -713,7 +713,7 @@ TEST(Parser, UnclosedBraceRejected) { EXPECT_THROW(parse("pattern p() { play A4;
 TEST(Parser, StrayTokenRejected) { EXPECT_THROW(parse(";"), std::runtime_error); }
 
 // ===========================================================================
-// Realistic program — mirrors tests/data/example.dsl
+// Realistic program — mirrors tests/data/example.motivo
 // ===========================================================================
 
 TEST(Parser, RealisticProgram) {

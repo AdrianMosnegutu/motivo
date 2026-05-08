@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  DSL_LANGUAGE_ID,
-  DSL_LANGUAGE_KEYWORDS,
-  registerDslLanguage,
-} from '@/features/editor/monaco/dsl-language';
-import {
-  DSL_DARK_THEME,
-  DSL_LIGHT_THEME,
-  getDslTheme,
-  registerDslThemes,
-} from '@/features/editor/monaco/dsl-themes';
 import { createErrorMarker } from '@/features/editor/monaco/markers';
 import {
-  DEFAULT_DSL_SNIPPET,
+  DEFAULT_MOTIVO_SNIPPET,
   EDITOR_OPTIONS,
   EDITOR_STORAGE_KEY,
 } from '@/features/editor/monaco/monaco-config';
+import {
+  MOTIVO_LANGUAGE_ID,
+  MOTIVO_LANGUAGE_KEYWORDS,
+  registerMotivoLanguage,
+} from '@/features/editor/monaco/motivo-language';
+import {
+  getMotivoTheme,
+  MOTIVO_DARK_THEME,
+  MOTIVO_LIGHT_THEME,
+  registerMotivoThemes,
+} from '@/features/editor/monaco/motivo-themes';
 
 function createMonacoMock() {
   return {
@@ -30,17 +30,17 @@ function createMonacoMock() {
   };
 }
 
-describe('Monaco DSL configuration', () => {
-  it('registers the DSL language and tokenizer', () => {
+describe('Monaco Motivo configuration', () => {
+  it('registers the Motivo language and tokenizer', () => {
     const monaco = createMonacoMock();
 
-    registerDslLanguage(monaco as never);
+    registerMotivoLanguage(monaco as never);
 
-    expect(monaco.languages.register).toHaveBeenCalledWith({ id: DSL_LANGUAGE_ID });
+    expect(monaco.languages.register).toHaveBeenCalledWith({ id: MOTIVO_LANGUAGE_ID });
     expect(monaco.languages.setMonarchTokensProvider).toHaveBeenCalledWith(
-      DSL_LANGUAGE_ID,
+      MOTIVO_LANGUAGE_ID,
       expect.objectContaining({
-        keywords: [...DSL_LANGUAGE_KEYWORDS],
+        keywords: [...MOTIVO_LANGUAGE_KEYWORDS],
         tokenizer: expect.objectContaining({
           root: expect.any(Array),
         }),
@@ -48,30 +48,30 @@ describe('Monaco DSL configuration', () => {
     );
   });
 
-  it('registers light and dark DSL themes', () => {
+  it('registers light and dark Motivo themes', () => {
     const monaco = createMonacoMock();
 
-    registerDslThemes(monaco as never);
+    registerMotivoThemes(monaco as never);
 
     expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
-      DSL_DARK_THEME,
+      MOTIVO_DARK_THEME,
       expect.objectContaining({ base: 'vs-dark' }),
     );
     expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
-      DSL_LIGHT_THEME,
+      MOTIVO_LIGHT_THEME,
       expect.objectContaining({ base: 'vs' }),
     );
   });
 
   it('resolves theme names from the active app theme', () => {
-    expect(getDslTheme('dark')).toBe(DSL_DARK_THEME);
-    expect(getDslTheme('light')).toBe(DSL_LIGHT_THEME);
-    expect(getDslTheme(undefined)).toBe(DSL_LIGHT_THEME);
+    expect(getMotivoTheme('dark')).toBe(MOTIVO_DARK_THEME);
+    expect(getMotivoTheme('light')).toBe(MOTIVO_LIGHT_THEME);
+    expect(getMotivoTheme(undefined)).toBe(MOTIVO_LIGHT_THEME);
   });
 
   it('exports stable editor defaults', () => {
-    expect(EDITOR_STORAGE_KEY).toBe('dsl-editor-content');
-    expect(DEFAULT_DSL_SNIPPET).toContain('tempo 120');
+    expect(EDITOR_STORAGE_KEY).toBe('motivo-studio-editor-content');
+    expect(DEFAULT_MOTIVO_SNIPPET).toContain('tempo 120');
     expect(EDITOR_OPTIONS).toMatchObject({
       fontSize: 14,
       minimap: { enabled: false },

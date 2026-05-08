@@ -2,7 +2,7 @@ SHELL      := /bin/bash
 BUILD_DIR  ?= $(if $(filter ON on 1 true yes,$(COVERAGE)),build-coverage,build)
 BUILD_TYPE ?= Debug
 COVERAGE   ?= OFF
-EXAMPLE    := examples/example.dsl
+EXAMPLE    := examples/example.motivo
 NPROC      := $(shell nproc 2>/dev/null || echo 4)
 
 CTEST      = ctest --test-dir $(BUILD_DIR) --output-on-failure -j$(NPROC)
@@ -13,13 +13,13 @@ CI_CMAKE_GENERATOR ?=
 CI_CMAKE_GENERATOR_ARG = $(if $(CI_CMAKE_GENERATOR),-G "$(CI_CMAKE_GENERATOR)",)
 CI_FETCHCONTENT_BASE_DIR ?=
 CI_FETCHCONTENT_ARG = $(if $(CI_FETCHCONTENT_BASE_DIR),-D FETCHCONTENT_BASE_DIR="$(CI_FETCHCONTENT_BASE_DIR)",)
-CI_PACKAGE_TAG ?= dsl-server-ci:local
+CI_PACKAGE_TAG ?= motivo-studio-server-ci:local
 CI_BISON_EXECUTABLE ?= $(firstword $(wildcard /opt/homebrew/opt/bison/bin/bison /usr/local/opt/bison/bin/bison))
 CI_FLEX_EXECUTABLE ?= $(firstword $(wildcard /opt/homebrew/opt/flex/bin/flex /usr/local/opt/flex/bin/flex))
 CI_BISON_ARG = $(if $(CI_BISON_EXECUTABLE),-D BISON_EXECUTABLE="$(CI_BISON_EXECUTABLE)",)
 CI_FLEX_ARG = $(if $(CI_FLEX_EXECUTABLE),-D FLEX_EXECUTABLE="$(CI_FLEX_EXECUTABLE)",)
 COVERAGE_ON = $(if $(filter ON on 1 true yes,$(COVERAGE)),ON,OFF)
-CMAKE_COVERAGE_FLAG = -DDSL_ENABLE_COVERAGE=$(COVERAGE_ON)
+CMAKE_COVERAGE_FLAG = -DMOTIVO_ENABLE_COVERAGE=$(COVERAGE_ON)
 COVERAGE_RAW = $(BUILD_DIR)/coverage.info
 COVERAGE_FILTERED = $(BUILD_DIR)/coverage.filtered.info
 COVERAGE_HTML = $(BUILD_DIR)/coverage-html
@@ -62,7 +62,7 @@ compile-commands:
 	ln -sf $(BUILD_DIR)/compile_commands.json compile_commands.json
 
 run: build
-	./$(BUILD_DIR)/apps/dslrc $(EXAMPLE)
+	./$(BUILD_DIR)/apps/motivoc $(EXAMPLE)
 
 # Run all compiler tests. Use `make test COVERAGE=ON` to also write an lcov HTML report.
 test: build

@@ -6,25 +6,25 @@
 #include <memory>
 #include <string>
 
-#include "dsl/common/ast/program.hpp"
-#include "dsl/common/diagnostics/diagnostics_engine.hpp"
-#include "dsl/diagnostics/diagnostic.hpp"
-#include "dsl/parsing/parse.hpp"
-#include "dsl/semantic/analysis_result.hpp"
-#include "dsl/semantic/analyze.hpp"
+#include "motivo/common/ast/program.hpp"
+#include "motivo/common/diagnostics/diagnostics_engine.hpp"
+#include "motivo/diagnostics/diagnostic.hpp"
+#include "motivo/parsing/parse.hpp"
+#include "motivo/semantic/analysis_result.hpp"
+#include "motivo/semantic/analyze.hpp"
 
-namespace dsl::testing::semantic {
+namespace motivo::testing::semantic {
 
 // -- Result types --------------------------------------------------------------
 
 struct OkAnalysis {
     std::unique_ptr<ast::Program> program;
-    ::dsl::semantic::AnalysisResult result;
+    ::motivo::semantic::AnalysisResult result;
 };
 
 struct Analysis {
     std::unique_ptr<ast::Program> program;
-    ::dsl::semantic::AnalysisResult result;
+    ::motivo::semantic::AnalysisResult result;
     Diagnostics diagnostics;
 };
 
@@ -34,7 +34,7 @@ inline OkAnalysis analyze_ok(const std::string& src) {
     DiagnosticsEngine engine;
     auto program = parsing::parse_source(src, "<test>", engine).take_program();
     EXPECT_NE(program, nullptr) << "parse failed:\n" << src;
-    auto result = ::dsl::semantic::analyze(*program, engine);
+    auto result = ::motivo::semantic::analyze(*program, engine);
     EXPECT_FALSE(engine.has_errors()) << "expected no errors for:\n" << src;
     return {std::move(program), std::move(result)};
 }
@@ -46,10 +46,10 @@ inline Analysis analyze(const std::string& src) {
         ADD_FAILURE() << "parse returned null program for:\n" << src;
         DiagnosticsEngine dummy;
         auto dummy_prog = std::make_unique<ast::Program>();
-        auto dummy_result = ::dsl::semantic::analyze(*dummy_prog, dummy);
+        auto dummy_result = ::motivo::semantic::analyze(*dummy_prog, dummy);
         return {std::move(dummy_prog), std::move(dummy_result), engine.take_diagnostics()};
     }
-    auto result = ::dsl::semantic::analyze(*program, engine);
+    auto result = ::motivo::semantic::analyze(*program, engine);
     return {std::move(program), std::move(result), engine.take_diagnostics()};
 }
 
@@ -112,4 +112,4 @@ inline std::size_t count_semantic_errors(const Diagnostics& diags) {
     }));
 }
 
-}  // namespace dsl::testing::semantic
+}  // namespace motivo::testing::semantic

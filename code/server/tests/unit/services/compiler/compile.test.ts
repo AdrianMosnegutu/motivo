@@ -9,9 +9,9 @@ import { compile } from '@/services/compiler';
 const tempDirs: string[] = [];
 
 async function createFakeCompiler(source: string, mode = 0o755) {
-  const directory = await mkdtemp(join(tmpdir(), 'dsl-compiler-service-test-'));
+  const directory = await mkdtemp(join(tmpdir(), 'motivo-compiler-service-test-'));
   tempDirs.push(directory);
-  const binary = join(directory, 'dslrc');
+  const binary = join(directory, 'motivoc');
   await writeFile(binary, source, 'utf8');
   await chmod(binary, mode);
   return binary;
@@ -29,7 +29,7 @@ describe('compile', () => {
     process.env.COMPILER_BIN = await createFakeCompiler(`#!/usr/bin/env node
 const { writeFileSync } = require("fs");
 const sourcePath = process.argv[2];
-const outPath = sourcePath.replace(/\\.dsl$/, ".mid");
+const outPath = sourcePath.replace(/\\.motivo$/, ".mid");
 writeFileSync(outPath, Buffer.from([0x4d, 0x54, 0x68, 0x64]));
 `);
 
@@ -65,7 +65,7 @@ process.exit(1);
   });
 
   it('returns an infrastructure error when the compiler binary is missing', async () => {
-    process.env.COMPILER_BIN = join(tmpdir(), 'missing-dslrc');
+    process.env.COMPILER_BIN = join(tmpdir(), 'missing-motivoc');
 
     await expect(compile('track main {}')).resolves.toEqual({
       kind: 'infrastructure_error',

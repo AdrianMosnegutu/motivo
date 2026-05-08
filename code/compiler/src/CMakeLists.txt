@@ -1,10 +1,10 @@
-add_subdirectory(dsl/common)
-add_subdirectory(dsl/parsing)
-add_subdirectory(dsl/semantic)
-add_subdirectory(dsl/lowering)
-add_subdirectory(dsl/midi)
+add_subdirectory(motivo/common)
+add_subdirectory(motivo/parsing)
+add_subdirectory(motivo/semantic)
+add_subdirectory(motivo/lowering)
+add_subdirectory(motivo/midi)
 
-add_library(dsl_compiler STATIC dsl/compiler.cpp)
-dsl_configure_public_library(dsl_compiler)
-target_link_libraries(dsl_compiler
-        PRIVATE dsl_diagnostics dsl_parsing dsl_semantic dsl_lowering dsl_midi)
+add_library(motivo_compiler STATIC motivo/compiler.cpp)
+motivo_configure_public_library(motivo_compiler)
+target_link_libraries(motivo_compiler
+        PRIVATE motivo_diagnostics motivo_parsing motivo_semantic motivo_lowering motivo_midi)

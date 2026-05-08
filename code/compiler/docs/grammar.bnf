@@ -1,4 +1,4 @@
-; DSL — Context-free grammar
+; Motivo — Context-free grammar
 ; Terminals (UPPERCASE) match docs/lexical.bnf. Keywords appear quoted.
 
 <program>        ::= <header> <top-item>*

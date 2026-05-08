@@ -2,7 +2,7 @@
 
 #include "support/semantic_test_utils.hpp"
 
-using namespace dsl::testing::semantic;
+using namespace motivo::testing::semantic;
 
 // -- Valid play targets --------------------------------------------------------
 

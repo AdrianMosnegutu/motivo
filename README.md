@@ -1,12 +1,14 @@
-# Bachelor Thesis
+# Motivo
 
-This repository contains the thesis paper and implementation for **Design and Implementation of a Domain-Specific Language for Music Composition**.
+Motivo is a music composition language with a native compiler and Motivo Studio, a web editor for compiling, visualizing, and playing Motivo programs.
+
+This project is also my bachelor thesis implementation. The accompanying paper remains under its academic title, **Design and Implementation of a Domain-Specific Language for Music Composition**.
 
 The project has three main parts:
 
 - `paper/` - LaTeX source for the written thesis.
-- `code/compiler/` - C++23 compiler for the music DSL.
-- `code/server/` and `code/client/` - web IDE backend and frontend for compiling, visualizing, and playing DSL programs.
+- `code/compiler/` - C++23 compiler for Motivo.
+- `code/server/` and `code/client/` - Motivo Studio backend and frontend.
 
 ## Repository Layout
 
@@ -14,10 +16,10 @@ The project has three main parts:
 .
 |-- paper/             Thesis source, bibliography, style file, and paper scripts
 |-- code/
-|   |-- compiler/      Native DSL compiler and tests
-|   |-- server/        Express API that wraps the compiler
-|   |-- client/        Next.js web IDE
-|   |-- nginx/         Reverse proxy used by Docker Compose
+|   |-- compiler/      Native Motivo compiler and tests
+|   |-- server/        Express API that wraps motivoc
+|   |-- client/        Motivo Studio Next.js app
+|   |-- nginx/         Motivo Studio HTTPS gateway
 |   `-- docker-compose.yml
 `-- .github/           CI workflows and report summarizers
 ```
@@ -31,7 +33,15 @@ cd code
 make up
 ```
 
-The stack builds the compiler into the server image, starts the Next.js client, and exposes the app through nginx on ports `80` and `443`.
+The stack builds the compiler into the server image, starts the Next.js client, and exposes Motivo Studio through the nginx gateway at `https://motivo-studio.local`.
+
+Map the local hostname once before using the HTTPS endpoint:
+
+```sh
+grep -qxF '127.0.0.1 motivo-studio.local' /etc/hosts || echo '127.0.0.1 motivo-studio.local' | sudo tee -a /etc/hosts
+```
+
+The local gateway uses a self-signed certificate, so your browser may ask you to trust it for local development.
 
 Stop the stack with:
 

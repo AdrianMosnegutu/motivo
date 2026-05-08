@@ -12,7 +12,7 @@ const environment: Environment = {
     return process.env.HOSTNAME ?? '0.0.0.0';
   },
   get compiler_binary() {
-    return process.env.COMPILER_BIN ?? '/usr/local/bin/dslrc';
+    return process.env.COMPILER_BIN ?? '/usr/local/bin/motivoc';
   },
 };
 

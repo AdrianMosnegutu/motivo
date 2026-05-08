@@ -2,7 +2,7 @@
 
 #include "support/lowerer_test_support.hpp"
 
-using namespace dsl::testing::lowerer;
+using namespace motivo::testing::lowerer;
 
 TEST(TernaryEval, TrueConditionSelectsThenBranch) {
     const auto ir = lower_ok("track { let x = true ? 2 : 5; play A4 :x; play B4; }");

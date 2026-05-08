@@ -3,21 +3,24 @@
 import type { ComponentType, RefAttributes, RefObject } from 'react';
 import { Panel } from 'react-resizable-panels';
 
-import type { DslEditorHandle, DslEditorProps } from '@/features/editor/components/DslEditor';
+import type {
+  MotivoEditorHandle,
+  MotivoEditorProps,
+} from '@/features/editor/components/MotivoEditor';
 import Spinner from '@/shared/components/Spinner';
 
-type EditorComponent = ComponentType<DslEditorProps & RefAttributes<DslEditorHandle>>;
+type EditorComponent = ComponentType<MotivoEditorProps & RefAttributes<MotivoEditorHandle>>;
 
 interface EditorPaneProps {
-  DslEditor: EditorComponent;
-  editorRef: RefObject<DslEditorHandle | null>;
+  MotivoEditor: EditorComponent;
+  editorRef: RefObject<MotivoEditorHandle | null>;
   compiling: boolean;
   onCompile: () => void;
   onEditorChange: (value: string) => void;
 }
 
 export default function EditorPane({
-  DslEditor,
+  MotivoEditor,
   editorRef,
   compiling,
   onCompile,
@@ -37,7 +40,7 @@ export default function EditorPane({
         <span className="text-zinc-400 text-xs font-mono">Cmd+Enter / Ctrl+Enter</span>
       </div>
       <div className="flex-1 min-h-0">
-        <DslEditor ref={editorRef} onChange={onEditorChange} onCompile={onCompile} />
+        <MotivoEditor ref={editorRef} onChange={onEditorChange} onCompile={onCompile} />
       </div>
     </Panel>
   );

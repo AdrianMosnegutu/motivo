@@ -5,16 +5,16 @@
 #include <string>
 #include <vector>
 
-#include "dsl/common/ir/program.hpp"
-#include "dsl/common/music/instrument.hpp"
-#include "dsl/midi/write_midi.hpp"
+#include "motivo/common/ir/program.hpp"
+#include "motivo/common/music/instrument.hpp"
+#include "motivo/midi/write_midi.hpp"
 
 namespace fs = std::filesystem;
-namespace midi = dsl::midi;
+namespace midi = motivo::midi;
 
-using dsl::ir::Program;
-using dsl::ir::Track;
-using dsl::music::Instrument;
+using motivo::ir::Program;
+using motivo::ir::Track;
+using motivo::music::Instrument;
 
 // -- Helpers -------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ TEST(MidiWriter, WritesMThd) {
     // Format = 1
     EXPECT_EQ(read_u16_be(data, 8), 1u);
 
-    // ntrks = 1 (tempo) + 1 (DSL track)
+    // ntrks = 1 (tempo) + 1 (Motivo track)
     EXPECT_EQ(read_u16_be(data, 10), 2u);
 
     // Division = 480
@@ -95,7 +95,7 @@ TEST(MidiWriter, MultipleTracksProduceCorrectNtrks) {
 
     const auto data = read_file(tmp.path);
     ASSERT_GE(data.size(), 14u);
-    EXPECT_EQ(read_u16_be(data, 10), 4u);  // 1 tempo + 3 DSL
+    EXPECT_EQ(read_u16_be(data, 10), 4u);  // 1 tempo + 3 Motivo
 }
 
 TEST(MidiWriter, WritesSingleNote) {

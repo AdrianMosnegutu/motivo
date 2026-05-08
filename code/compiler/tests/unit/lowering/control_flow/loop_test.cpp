@@ -2,7 +2,7 @@
 
 #include "support/lowerer_test_support.hpp"
 
-using namespace dsl::testing::lowerer;
+using namespace motivo::testing::lowerer;
 
 // -- Loop statement ------------------------------------------------------------
 

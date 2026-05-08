@@ -1,10 +1,10 @@
-#include "dsl/common/music/note.hpp"
+#include "motivo/common/music/note.hpp"
 
 #include <gtest/gtest.h>
 
-using dsl::music::Accidental;
-using dsl::music::Note;
-using dsl::music::Pitch;
+using motivo::music::Accidental;
+using motivo::music::Note;
+using motivo::music::Pitch;
 
 // C4 = MIDI 60 (common convention, other conventions exist but this is the most recognized one)
 
