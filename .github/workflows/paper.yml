@@ -4,16 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
-    paths:
-      - "paper/**"
-      - "!paper/notes/**"
-      - "!paper/scripts/**"
-      - ".github/workflows/paper.yml"
-      - ".github/scripts/paper/**"
-  pull_request:
-    branches:
-      - main
+      - "**"
     paths:
       - "paper/**"
       - "!paper/notes/**"
@@ -146,7 +137,6 @@ jobs:
         uses: xu-cheng/texlive-action@v3
         with:
           texlive_version: ${{ env.TEXLIVE_VERSION }}
-          os: debian
           run: |
             export PAPER_DIR='${{ env.PAPER_DIR }}'
             export PAPER_ROOT_FILE='${{ env.PAPER_ROOT_FILE }}'
