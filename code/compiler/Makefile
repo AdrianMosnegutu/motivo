@@ -31,19 +31,9 @@ define reset_coverage_counters
 	fi
 endef
 
-define maybe_generate_coverage_report
-	@if [ "$(COVERAGE_ON)" = "ON" ]; then \
-		set -e; \
-		lcov --capture --ignore-errors inconsistent --directory "$(BUILD_DIR)" --output-file "$(COVERAGE_RAW)"; \
-		lcov --remove "$(COVERAGE_RAW)" "/usr/*" "$(COVERAGE_BUILD_DIR)/*" "*/tests/*" --output-file "$(COVERAGE_FILTERED)"; \
-		genhtml --ignore-errors range "$(COVERAGE_FILTERED)" --output-directory "$(COVERAGE_HTML)"; \
-		echo "Coverage report: $(COVERAGE_HTML)/index.html"; \
-	fi
-endef
-
 define run_tests_and_maybe_generate_coverage_report
 	@status=0; \
-	$(CTEST) $(1) || status=$$?; \
+	$(CTEST) || status=$$?; \
 	if [ "$(COVERAGE_ON)" = "ON" ]; then \
 		set -e; \
 		lcov --capture --ignore-errors inconsistent --directory "$(BUILD_DIR)" --output-file "$(COVERAGE_RAW)"; \
@@ -54,17 +44,8 @@ define run_tests_and_maybe_generate_coverage_report
 	exit $$status
 endef
 
-COMMON_SUITES 	 := Note
-PARSING_SUITES   := Parser|ParserDiagnostics
-SEMANTIC_SUITES  := ArithmeticTypeCheck|ChordTypeCheck|ComparisonTypeCheck|ControlFlow|LetDeclaration|LogicalTypeCheck|Metadata|PatternDeclaration|PatternScoping|PlayStatement|ScopeAccess|SequenceTypeCheck|Shadowing|TernaryTypeCheck|TrackDeclaration|UnaryTypeCheck|VariableScoping
-LOWERING_SUITES  := ChordCursor|ForLoop|FromOffset|IfStatement|LoopStatement|LowererDiagnostics|LoweringRegression|NoteCursor|PatternCall|RestCursor|RuntimeErrors|SequenceCursor|VoiceParallel
-MIDI_SUITES      := MidiWriter
-INTEGRATION_SUITES := CompilerApi|CompilerApiDiagnostics|Integration|parse_example
-
 .PHONY: configure build run \
-        test test-unit test-integration \
-        test-parsing test-semantic test-lowering test-midi \
-        coverage coverage-clean compile-commands format \
+        test coverage coverage-clean compile-commands format \
         ci ci-static ci-format ci-build ci-test ci-package clean
 
 configure:
@@ -83,46 +64,10 @@ compile-commands:
 run: build
 	./$(BUILD_DIR)/apps/dslrc $(EXAMPLE)
 
-# -- Per-layer test targets ----------------------------------------------------
-
-test-common: configure
-	cmake --build $(BUILD_DIR) --target common_tests -j$(NPROC)
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(COMMON_SUITES))\.")
-
-test-parsing: configure
-	cmake --build $(BUILD_DIR) --target parsing_tests -j$(NPROC)
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(PARSING_SUITES))\.")
-
-test-semantic: configure
-	cmake --build $(BUILD_DIR) --target semantic_tests -j$(NPROC)
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(SEMANTIC_SUITES))\.")
-
-test-lowering: configure
-	cmake --build $(BUILD_DIR) --target ir_tests -j$(NPROC)
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(LOWERING_SUITES))\.")
-
-test-midi: configure
-	cmake --build $(BUILD_DIR) --target midi_tests -j$(NPROC)
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(MIDI_SUITES))\.")
-
-# -- Aggregate test targets ----------------------------------------------------
-
-test-unit: build
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-E "^($(INTEGRATION_SUITES))\.")
-
-test-integration: build
-	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report,-R "^($(INTEGRATION_SUITES))\.")
-
+# Run all compiler tests. Use `make test COVERAGE=ON` to also write an lcov HTML report.
 test: build
 	$(reset_coverage_counters)
-	$(call run_tests_and_maybe_generate_coverage_report)
+	$(run_tests_and_maybe_generate_coverage_report)
 
 coverage: COVERAGE := ON
 coverage: test
