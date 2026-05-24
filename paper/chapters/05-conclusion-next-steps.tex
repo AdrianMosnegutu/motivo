@@ -1,0 +1,134 @@
+\chapter{Conclusions and Future Directions}\label{ch:conclusion}
+
+This thesis presented Motivo, a domain-specific language, native compiler, and web-based studio for offline symbolic
+music composition.
+The project began with a practical observation: repeated musical structures are often easier to describe as rules than
+as copied note events.
+Motivo turns that observation into a compiler pipeline.
+The source program names musical values and procedures, the semantic analyzer validates the structure, the lowerer
+expands it into timestamped events, and the MIDI writer serializes the result into a Standard MIDI File.
+
+The work also demonstrates that the compiler can be embedded into a larger software product.
+Motivo Studio connects the C++ compiler to a browser editor through an Express API, renders generated MIDI in a piano
+roll, supports browser playback, and is packaged through Docker and nginx.
+The project is therefore not only a small programming language experiment.
+It is also a full-stack engineering exercise with component boundaries, automated tests, CI workflows, deployment
+configuration, and a user-facing interface.
+
+\section{Contributions}\label{sec:contributions}
+
+The first contribution is the Motivo language model.
+It provides a compact set of abstractions for notes, rests, chords, sequences, patterns, tracks, voices, and control
+flow.
+These abstractions are deliberately close to symbolic musical structure and deliberately far from raw MIDI byte
+construction.
+The language is small, but it is sufficient to express repeated arrangements and parallel lines in the current
+implementation.
+
+The second contribution is the compiler architecture.
+The implementation uses a conventional staged pipeline: scanner, parser, semantic analyzer, lowerer, and backend.
+The most project-specific part is the cursor-based lowering model.
+That model lets sequential statements advance musical time, explicit offsets place events without changing the main
+cursor, voices run with isolated cursors, and pattern calls return reconstructed musical values.
+This is the core mechanism that connects source-level structure to MIDI note events.
+
+The third contribution is Motivo Studio.
+The application shows how the compiler can be made accessible through a web interface.
+The editor, diagnostics loop, MIDI parsing, piano-roll visualization, playback controls, server wrapper, Docker stack,
+and CI workflows demonstrate the software engineering side of the project.
+For a bachelor's thesis, this part is important because it shows that the work is not only theoretical.
+It is an implemented system with several interacting modules.
+
+The same contribution can also be viewed through the structural abstractions implemented by the compiler. The
+language provides constructs such as \texttt{pattern}, \texttt{track}, and \texttt{voice}, which allow
+polyphonic arrangements to be described without manually calculating absolute timestamps or delta-times. The
+deterministic lowering algorithm connects those abstractions to a static intermediate representation, while
+the semantic analyzer checks type and structural constraints before MIDI generation.
+
+The fourth contribution is the empirical evaluation.
+The local benchmark results show that Motivo can generate large symbolic event streams from compact source programs and
+compile them quickly in the tested Release configuration.
+The results are intentionally bounded by the current implementation and hardware.
+They support the practical claim that Motivo is suitable for interactive local experimentation at the current scale.
+
+\section{Limitations}\label{sec:limitations}
+
+Motivo is not a complete composition environment.
+It does not provide audio synthesis inside the compiler.
+It does not model performer expression beyond the simple event fields currently present in the intermediate
+representation.
+It does not support automation curves, pitch bend, continuous controller data, microtonality, or symbolic harmonic
+analysis.
+It also does not currently support key-signature declarations.
+The language emits MIDI that can be played or imported elsewhere, but further sound design and mixing remain outside
+the compiler.
+
+The compiler also has an explicit 20,000-note-event safety limit.
+This limit is appropriate for preventing accidental runaway programs in the current implementation, but it constrains
+large generated scores.
+The benchmark results should therefore be understood within this cap.
+Future work could replace the fixed cap with configurable resource limits and better reporting, but the current thesis
+documents the implemented behavior as it exists.
+
+The evaluation is technical rather than user-centered.
+It measures compilation time, source-to-event expansion, MIDI size, and test evidence.
+It does not measure whether composers prefer Motivo, whether beginners understand the syntax more easily than other
+systems, or whether pieces written in Motivo are musically better.
+Those would require a different study design and participant data.
+This thesis avoids those claims.
+
+The current pattern system is also intentionally static. Pattern parameters accept concrete evaluated types,
+but the language does not yet support higher-order pattern manipulation, richer harmonic types, or a standard
+library of reusable musical transformations. The system is therefore expressive enough for the demonstrated
+examples, but it remains a compact language rather than a complete compositional platform.
+
+\section{Future Work}\label{sec:future-work}
+
+The most natural language extension is richer musical context.
+Key signatures are a good example because they would let Motivo understand scale degrees, diatonic transposition, and
+harmonic functions instead of treating all notes as independent pitch literals.
+This should be introduced carefully.
+It would require syntax, semantic rules, interactions with accidentals, and clear lowering behavior.
+Because that support is not part of the current implementation, it belongs in future work rather than in the language
+description.
+
+Another useful extension is continuous musical data.
+MIDI control changes, pitch bend, and automation curves would make Motivo more expressive for modern production
+workflows.
+Supporting them would require changes to the AST, type system, intermediate representation, MIDI backend, piano-roll
+visualizer, and playback scheduler.
+The existing separation between IR and backend makes such an extension plausible, but it is not a small addition.
+
+The compiler could also expose more evaluation and debugging data.
+For example, Motivo Studio could show the number of generated events, the longest track duration, compile time, MIDI
+file size, and event-density warnings after each compile.
+This would turn the current thesis measurements into user-facing feedback and would help users understand when a source
+program is becoming too large.
+
+Finally, the application could support project persistence and export workflows.
+Saving Motivo source files, exporting MIDI with metadata, comparing generated versions, and integrating with cloud
+storage would move Motivo Studio closer to a practical composition tool.
+Those features would not change the compiler's core idea, but they would improve the surrounding product.
+
+A standard library is another natural direction. Reusable scales, chord progressions, arpeggiators, Euclidean
+rhythms, and common drum patterns would make the language more practical without changing its core compiler
+model. Such a library should be designed after the core type system is stable, because library functions
+would depend on how Motivo represents harmonic context and pattern parameters.
+
+Alternative backends also remain possible future work. The current backend targets Standard MIDI Files, but
+the same intermediate representation could be used as the basis for JSON event export, MusicXML-oriented
+notation export, or integration with synthesis systems. Those targets would require separate mapping rules
+and should not be treated as implemented behavior in the present thesis.
+
+\section{Closing Remarks}\label{sec:closing}
+
+Motivo demonstrates that compiler design can be applied to a creative symbolic domain in a concrete and measurable way.
+The language gives repeated musical ideas a compact textual form, and the implementation turns that text into MIDI
+events through a staged compiler.
+The Studio application then places the compiler inside a broader engineering system with editing, feedback,
+visualization, playback, deployment, and tests.
+
+The result is not a replacement for existing music tools.
+It is a focused bridge between algorithmic thinking and standard MIDI-based production workflows.
+That focus is the main strength of the project: it keeps the language small enough to implement and evaluate, while
+still showing how software engineering can support structured musical composition.

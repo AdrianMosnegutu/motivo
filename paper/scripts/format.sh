@@ -18,4 +18,4 @@ else
 fi
 
 echo "Formatting bibliography: references.bib"
-bibtex-tidy -m --blank-lines 1 --strip-enclosing-braces --sort --merge "${PAPER_DIR}/references.bib"
+bibtex-tidy "${PAPER_DIR}/references.bib" -m --blank-lines --strip-enclosing-braces --sort --merge=combine

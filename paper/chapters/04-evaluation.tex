@@ -1,0 +1,368 @@
+\chapter{Empirical Evaluation}\label{ch:evaluation}
+
+The evaluation is designed around claims that can be supported by the implementation.
+Motivo is not evaluated as a general measure of musical creativity, and the thesis does not include a user study.
+Instead, this chapter evaluates engineering properties: whether the compiler can expand compact source programs into
+larger MIDI event streams, how quickly it compiles a small benchmark corpus on one local machine, what safety limits the
+current implementation imposes, and how the software project is tested.
+
+\section{Methodology}\label{sec:evaluation-methodology}
+
+The benchmark was run locally with a Release build of \texttt{motivoc}.
+The binary was built outside the repository at \texttt{/tmp/motivo-thesis-bench-build} using CMake 4.3.2 and Apple
+clang 21.0.0.
+Measurements were taken on an Apple M3 Pro machine with 18 GB of RAM\@.
+The timing tool was \texttt{hyperfine} 1.20.0 with shell execution disabled, 5 warmup runs, and 50 measured
+runs~\cite{Hyperfine_2026}.
+Each measured command compiled one \texttt{.motivo} source file and wrote the resulting MIDI file, so the
+results include
+process startup, parsing, semantic analysis, lowering, MIDI serialization, and file output.
+
+The benchmark corpus was synthetic.
+It was built to exercise source-to-event expansion rather than to produce musically refined pieces.
+This distinction matters.
+A loop that generates 20,000 notes is useful for measuring expansion and compilation cost, but it does not prove that
+the generated score is artistically interesting.
+The benchmark therefore supports the engineering claim that Motivo can generate many symbolic events from
+compact source rules within the tested limit.
+
+A defining characteristic of the Motivo compiler is its ``zero-runtime'' architecture, which shifts the
+computational burden entirely to the compilation phase.
+To evaluate the viability of this approach, it is essential to analyze the compiler's execution speed, particularly as
+the complexity of the musical composition scales.
+
+\subsection{Theoretical Complexity}\label{detail-subsec:theoretical-complexity}
+
+The compilation pipeline is composed of several sequential passes, each with a distinct computational complexity:
+
+\noindent \textbf{Frontend and Semantic Analysis.} The complexity of parsing and type-checking is proportional to the
+number of lines of source code, $O(S)$, where $S$ is the size of the abstract syntax tree.
+Because these passes do not unroll loops or instantiate patterns multiple times, they remain extremely fast
+regardless of the composition's length.
+
+\noindent \textbf{Lowering Engine.} The unrolling process has a time complexity of $O(E)$, where $E$ is the total number
+of generated \texttt{NoteEvent}s. A simple \texttt{loop (1000)} statement will execute its body 1,000 times during
+this phase, meaning the lowering time is proportional to the density of the final timeline, not the brevity of the
+source code.
+
+\noindent \textbf{MIDI Backend.} The backend must sort the absolute events by their tick values before computing
+delta-times.
+This stable sort introduces a time complexity of $O(E \log E)$.
+Serializing the events into the binary file requires a final linear pass, $O(E)$.
+
+Therefore, the overall time complexity of the compilation process is bounded by the sorting phase in the backend:
+$O(E \log E)$.
+
+\section{Compilation Time}\label{sec:compile-time}
+
+Table~\ref{tab:benchmark-results} shows the measured results.
+The fastest case and the realistic example are close to 2 ms.
+The largest synthetic cases are around 6 ms.
+Because these times are small, they should be interpreted as local measurements on the stated machine rather than as a
+portable performance result.
+They are still useful for the thesis because they show that the current native compiler is fast enough to support an
+interactive compile loop in this local setup.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    \textbf{Program} & \textbf{LOC} & \textbf{Note events} & \textbf{MIDI size} & \textbf{Mean ms} & \textbf{SD ms} \\
+    \midrule
+    \texttt{single\_loop\_100} & 7 & 100 & 856 B & 2.02 & 0.31 \\
+    \texttt{single\_loop\_1000} & 7 & 1,000 & 8,056 B & 2.14 & 0.31 \\
+    \texttt{single\_loop\_10000} & 7 & 10,000 & 80,056 B & 3.96 & 0.24 \\
+    \texttt{single\_loop\_20000} & 7 & 20,000 & 160,056 B & 6.03 & 0.15 \\
+    \texttt{chord\_loop\_5000} & 7 & 20,000 & 160,056 B & 5.90 & 0.17 \\
+    \texttt{drum\_groove\_500} & 18 & 10,000 & 88,053 B & 6.39 & 0.19 \\
+    \texttt{example\_copy} & 77 & 188 & 1,751 B & 2.04 & 0.18 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Local Release-build compilation benchmark.
+  Times include MIDI file writing and are based on 50 measured runs after 5 warmups.}\label{tab:benchmark-results}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=0.95\textwidth,
+        height=7cm,
+        ymin=0,
+        ylabel={Mean compile time (ms)},
+        symbolic x coords={100,1000,10000,20000,chord,drums,example},
+        xtick=data,
+        x tick label style={rotate=35, anchor=east, font=\scriptsize},
+        nodes near coords,
+        nodes near coords style={font=\scriptsize},
+        bar width=12pt,
+        enlarge x limits=0.08,
+        ymajorgrids=true,
+        grid style={draw=motivoInk!12}
+      ]
+      \addplot[fill=motivoBlue!70, draw=motivoBlue!90] coordinates {
+        (100,2.02)
+        (1000,2.14)
+        (10000,3.96)
+        (20000,6.03)
+        (chord,5.90)
+        (drums,6.39)
+        (example,2.04)
+      };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Mean compile times for the local benchmark corpus.}\label{fig:benchmark-time}
+\end{figure}
+
+The near-linear growth in the single-loop cases is consistent with the implementation.
+Parsing and semantic analysis see a small source program, while lowering and MIDI writing scale with the number of
+generated events.
+The backend also sorts events by tick before computing delta-times.
+The result is still small at the current safety limit, but the implementation should not be described as unbounded.
+
+\subsection{Execution Speed and Real-Time Viability}\label{detail-subsec:execution-speed-and-real-time-viability}
+
+Because the compiler is implemented as a native C++23 program without reliance on garbage collection or dynamic dispatch
+for AST traversal, the constant factors in the time complexity are small in the current measurements.
+In practice, the compiler generates compositions containing event streams up to the current implementation
+limit in a fraction of a second.
+
+These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation
+remaining quick enough for interactive use.
+The interactive playground environment (discussed in previous chapters) relies on the compiler's ability to re-compile
+the entire source file during interactive compile actions.
+Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits
+well below the latency usually noticed during ordinary editor interaction, the composer experiences
+interactive auditory and visual feedback without using an interpreted runtime during playback.
+
+\section{Source-to-Event Expansion}\label{sec:compression}
+
+A major objective of Motivo is to provide a highly expressive interface for music composition,
+reducing the manual effort required to construct complex arrangements.
+We evaluate this expressiveness by analyzing the ``compression ratio''---the difference between the amount of
+code written
+by the composer and the number of low-level MIDI events generated by the compiler.
+
+\subsection{Algorithmic Conciseness}\label{detail-subsec:algorithmic-conciseness}
+
+Traditional MIDI sequencers and digital audio workstations require the composer to manually place every note on a grid.
+In contrast, Motivo allows composers to define structural rules and relationships.
+
+Consider the following drum pattern from the \texttt{example.motivo} file:
+\begin{lstlisting}[language=Motivo, caption={A generative drum pattern using control flow.},label={lst:evaluation-drum-pattern}]
+track percussion using drums {
+    pattern groove() {
+        for (let i = 0; i < 16; i = i + 1) {
+            play hihat from i;
+            if (i % 8 == 0) { play kick from i; }
+            if (i % 8 == 4) { play snare from i; }
+        }
+    }
+    loop (3) { play groove(); }
+}
+\end{lstlisting}
+
+This 10-line block of code encapsulates a complex rhythm.
+The \texttt{for} loop defines the underlying hi-hat grid, while the modulo-based \texttt{if} conditions procedurally
+generate the kick and snare syncopation.
+The \texttt{loop (3)} statement then instantiates this 16-beat pattern three times across the timeline.
+
+\subsection{The Compression Ratio}\label{detail-subsec:the-compression-ratio}
+
+To achieve the same result in a traditional MIDI editor, the composer would have to manually draw 48 hi-hat notes, 6
+kick drum notes, and 6 snare drum notes---a total of 60 individual note events, which translates to 120 low-level MIDI
+messages (\texttt{Note-On} and \texttt{Note-Off}).
+
+Motivo abstracts these 120 MIDI messages into just a handful of declarative rules.
+The resulting ``compression ratio'' is exceedingly high.
+As the composition grows---for example, looping the groove 32 times instead of 3---the size of Motivo source
+code remains
+completely unchanged, while the output scales to hundreds or thousands of events.
+
+This expressiveness validates the core thesis: by shifting from a linear, event-based representation to a structural,
+programming-based representation, the manual overhead of repetitive event placement can be reduced.
+The composer can focus on higher-level musical structure while the lowering engine handles repetitive
+temporal event placement.
+
+The main measured expressiveness result is source-to-event expansion.
+The 20,000-event single-loop program uses 7 lines of source.
+The chord-loop program also uses 7 lines and generates 20,000 note events because each loop iteration emits a
+four-note chord.
+The 18-line drum groove generates 10,000 note events by combining a 16-step bar pattern with a 500-iteration loop.
+These examples demonstrate the intended effect of the language: repeated symbolic structure remains compact in source
+form while the compiler expands it into explicit event data.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=0.95\textwidth,
+        height=7cm,
+        ymin=0,
+        ylabel={Note events generated per source line},
+        symbolic x coords={100,1000,10000,20000,chord,drums,example},
+        xtick=data,
+        x tick label style={rotate=35, anchor=east, font=\scriptsize},
+        nodes near coords,
+        nodes near coords style={font=\scriptsize, rotate=90, anchor=west},
+        bar width=12pt,
+        enlarge x limits=0.08,
+        ymajorgrids=true,
+        grid style={draw=motivoInk!12}
+      ]
+      \addplot[fill=motivoGreen!70, draw=motivoGreen!90] coordinates {
+        (100,14.3)
+        (1000,142.9)
+        (10000,1428.6)
+        (20000,2857.1)
+        (chord,2857.1)
+        (drums,555.6)
+        (example,2.4)
+      };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Source-to-event expansion in the benchmark corpus.}\label{fig:compression-chart}
+\end{figure}
+
+This metric should not be overinterpreted.
+More generated events per source line is useful when the source expresses meaningful repetition, but it can also produce
+uninteresting repetition.
+For a bachelor thesis, the metric is still valuable because it connects the language design to a measurable output.
+The compiler removes repetitive manual event placement from the source program and makes the expansion explicit in the
+MIDI artifact.
+
+\section{Current Limits and Failure Behavior}\label{sec:limits}
+
+The most important current limit is the event cap in the lowerer.
+\texttt{MAX\_EVENTS} is 20,000.
+A program that generates 20,001 note events fails during lowering with the diagnostic
+\texttt{program exceeds 20000 event limit (has 20001)}.
+This is a deliberate safety boundary in the implementation.
+It prevents runaway programs from producing very large event streams, but it also means the thesis should not claim that
+Motivo currently supports arbitrarily large scores.
+
+The benchmark also revealed a language consistency issue in an old example file.
+The current parser does not accept a key-signature header, and key signatures are not part of the current language.
+The temporary benchmark copy of the example removed that unsupported line.
+The thesis therefore treats key-signature and harmonic-context support as future work, not as implemented behavior.
+
+Single-run memory checks with macOS \texttt{/usr/bin/time -l} reported maximum resident set sizes in the range of
+approximately 5.2 MB to 7.8 MB for the largest synthetic cases.
+This is useful as an informal local observation, but the time benchmark is the stronger measurement because it was run
+with repeated trials.
+The memory result should be described cautiously if used outside this chapter.
+
+\subsection{Memory Footprint}\label{detail-subsec:memory-footprint}
+
+The value-oriented design of the AST and IR ensures that the compiler's memory footprint remains minimal.
+The use of \texttt{std::variant} supports spatial locality in the CPU cache during AST traversal.
+The intermediate representation holds only the necessary atomic data (pitch, start beat, duration, velocity) packed
+tightly into \texttt{struct}s. Consequently, even a composition unrolled into large event streams within the
+configured implementation limits will consume only a few
+megabytes of RAM, allowing the compiler to run seamlessly on low-end hardware or within memory-constrained Docker
+containers.
+
+\section{Testing Evidence}\label{sec:test-evidence}
+
+The repository contains a broad test suite across compiler, server, and client components.
+The native compiler build used during earlier local inspection exposed 582 CTest-discovered tests.
+The server Vitest report in the workspace recorded 20 passing tests across 10 suites, and the client Vitest report
+recorded 54 passing tests across 38 suites.
+The same reports showed server line coverage of 97.95\% and client line coverage of 89.46\%.
+These values should be regenerated before final submission, but they provide a useful snapshot of the current testing
+discipline.
+
+Coverage is not a proof of correctness.
+It does not show whether the language is pleasant to use or whether every musical edge case has been modeled.
+It does show that the implementation is treated as a software system with repeatable checks.
+For this thesis, that matters because Motivo is evaluated both as a language design and as a full-stack engineering
+project.
+
+\section{Comparative Interpretation}\label{sec:comparative-interpretation}
+
+To fully evaluate the utility and positioning of Motivo, it must be contextualized within the existing
+ecosystem of music programming tools.
+This section provides a comparative analysis against two distinct paradigms: live-coding environments (exemplified by
+Sonic Pi) and low-level scripting libraries (such as Python's \texttt{mido}).
+
+\subsection{Comparison with Sonic Pi}\label{detail-subsec:comparison-with-sonic-pi}
+
+Sonic Pi is a highly successful live-coding language embedded in Ruby, designed primarily for performance and education.
+While both Sonic Pi and Motivo allow music to be expressed as text, their underlying design philosophies lead
+to different compositional workflows.
+
+\subsubsection{Execution Model}
+Sonic Pi utilizes a real-time, interpreted execution model.
+The musician writes scripts that trigger sounds ``on the fly'' through the SuperCollider synthesis engine.
+Time is managed explicitly by the programmer using the \texttt{sleep} function, which halts the execution thread.
+
+In contrast, Motivo is fully compiled and ``zero-runtime''.
+There is no concept of a thread sleeping; instead, the \texttt{play} and \texttt{rest} commands define a mathematical
+relationship on a static timeline.
+While Sonic Pi excels in improvisational settings where the code is meant to be modified while it runs,
+Motivo is oriented toward \textit{structural composition}, where the composer needs a complex arrangement to
+resolve into a consistently quantized MIDI file every time it is compiled.
+
+\subsubsection{Structural Abstraction in Practice}
+In Sonic Pi, polyphony and parallel execution are achieved by spawning new threads (e.g., using \texttt{in\_thread}).
+This can lead to synchronization issues if the composer does not meticulously manage the timing of each thread.
+Motivo resolves parallelism through the \texttt{voice} construct.
+Because voices are unrolled at compile-time by isolating the internal cursor, the compiler supports that parallel
+musical lines are aligned according to the compiler cursor model at their inception without requiring manual
+thread management or timing arithmetic from the composer.
+
+\subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
+
+For offline composition, many developers use general-purpose programming languages combined with MIDI libraries, such as
+Python's \texttt{mido} or C++'s \texttt{RtMidi}.
+While these tools offer absolute control over the output, they operate at an exceptionally low level of abstraction.
+
+\subsubsection{Event Placement and Musical Intent}
+When using a library like \texttt{mido}, the composer must manually construct \texttt{Note-On} and \texttt{Note-Off}
+messages.
+Crucially, because the MIDI file format relies on delta-times, the composer is forced to manually calculate the tick
+difference between every sequential event across all tracks.
+
+Motivo abstracts this entirely.
+A composer writing \texttt{play (C4, E4, G4):2;} in Motivo communicates their \textit{musical intent}---playing a
+C-Major triad for two beats.
+Motivo's lowering engine and backend automatically handle the translation into absolute beats, the flattening into
+individual notes, the sorting by absolute tick, and the final variable-length delta-time encoding.
+
+\subsubsection{Boilerplate and Expressiveness}
+A simple four-beat loop of a hi-hat playing eighth notes requires a significant amount of boilerplate in Python:
+creating a file, creating a track, appending tempo metadata, and writing a loop that interleaves \texttt{Note-On} and
+\texttt{Note-Off} messages with explicit delta times.
+
+Motivo achieves the same result with minimal syntax:
+\begin{lstlisting}[language=Motivo,label={lst:midi-scripting-comparison}]
+tempo 120;
+track using drums {
+    loop (8) { play hihat :0.5; }
+}
+\end{lstlisting}
+
+This contrast in verbosity illustrates Motivo's intended role as a domain-specific tool.
+By embedding musical semantics (like default durations, rest tracking, and automatic track/channel assignment) directly
+into the language design, the compiler reduces cognitive friction and allows the user to operate strictly within the
+musical domain.
+
+\section{Evaluation Summary}\label{sec:evaluation-summary}
+
+The evaluation supports three bounded conclusions.
+First, Motivo's compiler can expand compact source rules into much larger MIDI event streams, as shown by the synthetic
+source-to-event benchmarks.
+Second, the current Release build compiles the tested programs quickly on the local machine, with the largest benchmark
+cases finishing around 6 ms.
+Third, the implemented system includes testing and CI coverage across compiler, API, client, and paper workflows.
+
+The evaluation also establishes limits.
+The benchmark corpus is synthetic, the hardware is a single Apple M3 Pro machine, the compiler has a 20,000-note-event
+safety cap, and no user study was performed.
+These limits do not weaken the thesis; they make the claims more precise.
+The project demonstrates a working compiler-centered music tool and measures its current behavior without claiming more
+than the implementation can support.

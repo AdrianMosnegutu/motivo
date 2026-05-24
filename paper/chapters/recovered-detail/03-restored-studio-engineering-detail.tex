@@ -1,0 +1,103 @@
+% Restored and adapted detailed content from the previous playground and verification draft.
+
+% Source: paper/chapters/05-implementation/playground.tex
+
+\section{The Demonstration Playground}\label{detail-sec:implementation-playground}
+
+While the core contribution of this thesis is the compiler, a web-based \textit{Playground} was developed to demonstrate
+the language's capabilities and provide an intuitive environment for composition.
+The playground integrates the C++ compiler into a modern full-stack web application.
+
+\subsection{System Architecture}\label{detail-subsec:system-architecture}
+
+The playground follows a distributed architecture:
+
+\noindent \textbf{Frontend (Next.js).} A React-based interface that provides the editor and visualization tools.
+
+\noindent \textbf{Backend (Express).} A Node.js API that acts as a bridge.
+It receives Motivo source code from the client, invokes the C++ \texttt{motivoc} binary via a sub-process, and streams
+the resulting MIDI file back to the browser.
+
+\noindent \textbf{Integration.} The system is containerized using Docker, ensuring that the C++ environment (including
+Bison/Flex runtimes) is identical across development and production.
+
+\subsection{IDE Integration and Diagnostics}\label{detail-subsec:ide-integration-and-diagnostics}
+
+The playground features an IDE-like experience powered by the Monaco Editor.
+A custom ``Monarch'' tokenizer was implemented for Motivo to provide syntax highlighting for musical keywords, pitch
+literals, and control flow.
+
+The most significant integration is the \textit{Diagnostics Feedback Loop}.
+When a compilation fails, the Express server parses the structured error output from the compiler and returns it to the
+client.
+The React application then converts these diagnostics into Monaco ``Markers'', which underline the erroneous code and
+display the compiler's semantic or syntax error messages in a tooltip.
+This real-time feedback is enabled by the fast local compilation times discussed in the evaluation chapter.
+
+\subsection{The Piano Roll and Synthesis}\label{detail-subsec:the-piano-roll-and-synthesis}
+
+To visualize the composition, a custom \textit{Piano Roll} component was built using the HTML5 Canvas API\@.
+Upon a successful compilation, the browser parses the returned MIDI bytes and renders them as colored rectangles on a
+scrolling timeline.
+
+The synthesis engine utilizes the \textit{Tone.js} library.
+Because MIDI files contain only instructions and no sound, the playground loads a set of high-quality
+\textit{Soundfonts} representing General MIDI instruments.
+The playback logic schedules notes in the browser's audio context, allowing the user to hear their ``coded'' composition
+instantly.
+The synchronization between the scrolling piano roll and the audio playback is maintained through a high-precision
+request-animation-frame loop, ensuring a professional and ``alive'' feel to the prototype.
+
+% Source: paper/chapters/05-implementation/verification.tex
+
+\section{Verification and Quality Assurance}\label{detail-sec:implementation-verification}
+
+To ensure the correctness of the compilation pipeline and the validity of the generated MIDI artifacts, a comprehensive
+testing suite was implemented using the \textit{Google Test} framework.
+The testing strategy follows a tiered approach, covering individual units, module boundaries, and end-to-end
+integration.
+
+\subsection{Unit Testing}\label{detail-subsec:unit-testing}
+
+Unit tests focus on the smallest verifiable components of the compiler.
+This is particularly important for the musical domain logic, where small errors in calculation can lead to significant
+musical dissonance.
+Key test cases include:
+
+\noindent \textbf{Pitch Math.} Verifying that pitch literals (e.g., \texttt{A4}) map correctly to MIDI note
+numbers (e.g.,
+69) and that octave offsets are handled according to the standard.
+
+\noindent \textbf{Diagnostic Reporting.} Ensuring that the \texttt{DiagnosticsEngine} correctly captures and formats
+errors across different stages of the pipeline.
+
+\noindent \textbf{Lexer Accuracy.} Stress-testing the Flex regex patterns with edge cases, such as multiple consecutive
+accidentals or varying whitespace.
+
+\subsection{Integration and Regression Testing}\label{detail-subsec:integration-and-regression-testing}
+
+Integration tests verify that the different stages of the compiler work together seamlessly.
+These tests utilize a ``Golden File'' methodology:
+
+\noindent A set of representative Motivo source files (located in \texttt{tests/data/}) is compiled.
+
+\noindent The resulting IR is checked for temporal consistency (e.g., ensuring no notes overlap unless explicitly
+requested).
+
+\noindent The final MIDI binary is compared against a previously validated ``golden'' version to detect
+unexpected changes
+in behavior.
+
+Regression tests were instrumental during the refactoring process (e.g., when decomposing the monolithic lowerer).
+By maintaining a suite of complex compositions---such as the \texttt{fur\_elise.motivo} example---the compiler's
+output could be
+verified for byte-level consistency after every architectural change.
+
+\subsection{Integration in the Development Lifecycle}\label{detail-subsec:integration-in-the-development-lifecycle}
+
+The testing suite is integrated into the build system via CMake's \texttt{CTest} module.
+This allows for one-command verification of the entire system (\texttt{make test}).
+By enforcing a high level of test coverage, particularly in the lowering and backend stages, the implementation provides
+high confidence that the generated compositions are mathematically and musically accurate.
+This rigorous verification process is a cornerstone of the thesis, transforming a creative tool into a reliable software
+system.

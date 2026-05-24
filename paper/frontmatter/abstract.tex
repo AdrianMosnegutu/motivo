@@ -4,27 +4,29 @@ ABSTRACT
 \hrule
 \vspace{0.5cm}
 
-Digital music production is traditionally dominated by visual, grid-based interfaces (Piano Rolls) that provide precise
-control over individual notes but lack mechanisms for high-level structural abstraction.
-Conversely, algorithmic music programming languages often prioritize real-time performance and live-coding, introducing
-complex concurrency and timing management that can hinder offline, deterministic composition.
+Digital music production combines creative work with increasingly technical tooling.
+Digital audio workstations make detailed editing practical, while textual and live-coding systems show that musical
+material can also be described as executable structure.
+However, many production workflows still require a composer to manage repeated note events manually, and many music
+programming environments focus on real-time performance rather than offline generation of an interoperable score.
 
-This thesis presents the design, implementation, and evaluation of a novel Domain-Specific Language (DSL) tailored for
-structured, algorithmic music composition.
-The proposed language treats musical motifs as modular, reusable functions (patterns) and provides imperative control
-flow (loops, conditionals) to procedurally generate complex arrangements.
+This thesis presents Motivo, a domain-specific language and compiler for structured, algorithmic music composition.
+Motivo represents musical ideas through notes, rests, chords, sequences, patterns, tracks, and voices.
+The language uses familiar imperative control flow, but the compiler resolves that control flow before playback by
+lowering the program into an intermediate representation of timestamped musical events.
+The current implementation targets Standard MIDI Files, so the result can be inspected, played back, or imported into
+other music tools that understand MIDI\@.
 
-The core contribution of this work is a ``zero-runtime'' compiler architecture implemented in modern C++23.
-The compiler performs rigorous semantic validation and type-checking before utilizing a stateful ``Lowering Engine'' to
-recursively unroll the hierarchical Abstract Syntax Tree into a flat timeline of discrete musical events.
-This Intermediate Representation is then serialized into a standard MIDI Format 1 binary file.
-By decoupling musical logic from temporal resolution, the compiler guarantees deterministic, phase-aligned polyphony
-without the latency or thread-synchronization issues inherent to interpreted systems.
+The work has two complementary parts.
+The first part is the Motivo compiler, implemented in C++23 with a Flex/Bison frontend, semantic analysis, a lowering
+stage based on a cursor model, and a MIDI writer.
+The second part is Motivo Studio, a full-stack web application that provides a Monaco-based editor, compile diagnostics,
+MIDI parsing, piano-roll visualization, browser playback, Docker-based deployment, and continuous integration workflows.
 
-To validate the language, a full-stack web playground was developed, integrating the C++ compiler via a Node.js backend
-to provide real-time compilation diagnostics, syntax highlighting, and in-browser synthesis.
-The evaluation demonstrates that the DSL significantly reduces the cognitive overhead and boilerplate required to
-construct complex rhythmic and harmonic structures, achieving high compression ratios compared to manual MIDI event
-placement.
-Ultimately, this thesis establishes a robust framework for treating musical composition as a form of structured data,
-empowering composers to leverage the principles of software engineering in their creative workflows.
+The evaluation combines implementation inspection with local empirical measurements.
+On an Apple M3 Pro system, a Release build of \texttt{motivoc} compiled synthetic programs up to the current
+20,000-note-event safety limit in approximately 6 ms, including MIDI file writing.
+The same benchmark corpus shows the intended source-to-event expansion: a 7-line program can generate 20,000 MIDI note
+events, while an 18-line drum groove can generate 10,000 note events.
+These results do not claim artistic quality or general superiority over existing tools; they support the narrower claim
+that Motivo can express repeated symbolic musical structures compactly and compile them quickly in the tested setting.

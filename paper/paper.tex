@@ -4,12 +4,51 @@
 \usepackage{fancyhdr}
 \usepackage{listings}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{pgfplots}
 \usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{xurl}
 
 \geometry{a4paper,top=2.5cm,left=3cm,right=2.5cm,bottom=2.5cm}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\setlength{\emergencystretch}{3em}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc, matrix, backgrounds}
+
+\definecolor{motivoBlue}{RGB}{37,99,235}
+\definecolor{motivoCyan}{RGB}{8,145,178}
+\definecolor{motivoGreen}{RGB}{22,163,74}
+\definecolor{motivoAmber}{RGB}{217,119,6}
+\definecolor{motivoRose}{RGB}{225,29,72}
+\definecolor{motivoViolet}{RGB}{124,58,237}
+\definecolor{motivoInk}{RGB}{30,41,59}
+\definecolor{motivoSoft}{RGB}{241,245,249}
+
+\lstdefinelanguage{Motivo}{
+  morekeywords={
+    tempo,signature,track,using,pattern,play,for,loop,if,else,let,from,voice,rest,true,false,piano,
+    guitar,bass,violin,drums,kick,snare,hihat,crash,ride
+  },
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]{"} % chktex 18
+}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  rulecolor=\color{motivoInk!30},
+  keywordstyle=\color{motivoBlue}\bfseries,
+  commentstyle=\color{motivoGreen!70!black},
+  stringstyle=\color{motivoRose},
+  showstringspaces=false
+}
 
 \pagestyle{fancy}
+\setlength{\headheight}{14.5pt}
 \lhead{}
 \chead{}
 \renewcommand{\headrulewidth}{0.2pt}
@@ -22,6 +61,7 @@
 \author{Moșneguțu Adrian-Ioan}
 \supervisor{Dr.\ Lect.\ Mircea Ioan-Gabriel}
 
+\hypersetup{pageanchor=false}
 \maketitle
 
 \newpage
@@ -29,6 +69,7 @@
 \mbox{}
 \newpage
 \pagenumbering{roman}
+\hypersetup{pageanchor=true}
 
 \input{frontmatter/abstract}
 
@@ -37,13 +78,11 @@
 \newpage
 \pagenumbering{arabic}
 
-\input{chapters/01-introduction}
-\input{chapters/02-background}
-\input{chapters/03-related-work}
-\input{chapters/04-methodology}
-\input{chapters/05-implementation}
-\input{chapters/06-evaluation}
-\input{chapters/07-conclusion}
+\input{chapters/01-context-motivation-related-work}
+\input{chapters/02-language-compiler-design}
+\input{chapters/03-studio-software-engineering}
+\input{chapters/04-evaluation}
+\input{chapters/05-conclusion-next-steps}
 
 \bibliography{references}
 

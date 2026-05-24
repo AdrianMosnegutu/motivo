@@ -1,0 +1,1015 @@
+\chapter{Design of the Motivo Language and Compiler}\label{ch:language-compiler}
+
+Motivo is built around one design decision: the source program describes musical structure, and the compiler
+resolves that structure before playback. The language therefore separates the composer's symbolic intent from
+the MIDI event stream that eventually stores the piece. This chapter follows that separation from the
+source-level model to the implementation details of the compiler. It also states an important boundary of the
+current implementation: key-signature declarations are not part of the language. Motivo currently accepts
+tempo and time-signature metadata, while harmonic context remains a future extension.
+
+\section{Conceptual Model: Structural Composition}\label{sec:conceptual-model}
+
+The fundamental premise of this research is that musical composition is inherently structured and hierarchical.
+In traditional music theory, a piece is not merely a sequence of notes, but a complex organization of motifs, phrases,
+sections, and movements.
+However, many modern digital tools and domain-specific languages treat music as a linear stream of events or a flat
+sequence of commands.
+This research proposes a shift toward a \textit{structural representation}, where musical ideas are treated as modular,
+reusable, and composable units.
+
+\subsection{Linear vs. Structural Representation}\label{detail-subsec:linear-vs.-structural-representation}
+
+In linear representation models, commonly found in live coding environments, the focus is on the \textit{performance}.
+Time is often modeled as a continuous thread where commands such as \texttt{play} and \texttt{sleep} are executed
+sequentially to generate sound.
+While effective for improvisation and real-time interaction, this model often sacrifices the ability to express complex
+temporal relationships and hierarchical dependencies.
+Modifying a single motif in a linear script often requires broad changes to subsequent timing logic, leading to fragile
+and non-modular code.
+
+In contrast, the proposed structural representation models music as a \textit{recursive hierarchy}.
+Under this model, a composition is built by nesting smaller musical units within larger ones.
+A single note is the base case of this hierarchy.
+Notes are grouped into motifs (patterns), motifs are sequenced into phrases, and phrases are assigned to parallel
+execution contexts (tracks).
+This approach allows for a clean separation of concerns: the musical content (the ``what'') is defined independently of
+its temporal placement (the ``when'').
+
+\subsection{Music as a Pure Function}\label{detail-subsec:music-as-a-pure-function}
+
+By treating musical structures as first-class entities, the language allows them to be manipulated using concepts
+derived from functional programming.
+A musical pattern can be viewed as a \textit{pure function}: it encapsulates a specific musical logic that produces a
+deterministic sequence of events.
+Just as a function in programming can be called multiple times with different arguments, a musical pattern in
+Motivo can be instantiated across different tracks, at different times, or with different parameters (such as
+pitch transpositions or rhythmic stretching).
+
+This functional mapping has three consequences for the language design.
+
+It supports modularity because Musical ideas can be defined once and reused throughout a composition.
+
+It supports abstraction because Complex polyphonic structures can be hidden behind simple pattern interfaces.
+
+It supports determinism because Because the language lacks a real-time runtime, every musical relationship is
+resolved at compile-time, producing a deterministic representation in the output artifact.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      level/.style={rounded corners=4pt, draw=motivoInk!60, very thick, minimum width=10.5cm, minimum height=0.95cm,
+      align=center, font=\sffamily},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!70}
+    ]
+    \node[level, fill=motivoBlue!15] (program) {Motivo program: tempo, time signature, global definitions};
+    \node[level, fill=motivoCyan!18, below=0.35cm of program] (track) {Tracks: instrumental identity and MIDI
+    channel allocation};
+    \node[level, fill=motivoGreen!18, below=0.35cm of track] (voice) {Voices: parallel timeline fragments
+    inside a track};
+    \node[level, fill=motivoAmber!20, below=0.35cm of voice] (pattern) {Patterns: reusable parameterized
+    musical procedures};
+    \node[level, fill=motivoRose!14, below=0.35cm of pattern] (values) {Values: notes, rests, chords,
+    sequences, drum notes, scalars, booleans};
+
+    \draw[arrow] (program) -- (track);
+    \draw[arrow] (track) -- (voice);
+    \draw[arrow] (voice) -- (pattern);
+    \draw[arrow] (pattern) -- (values);
+  \end{tikzpicture}
+  \caption{Motivo's source-level hierarchy.
+  The compiler validates this hierarchy before lowering it into timestamped note events.}\label{fig:motivo-hierarchy}
+\end{figure}
+
+\section{Source Syntax and Formal Grammar}\label{sec:source-grammar}
+
+Motivo is defined by a formal grammar that ensures syntactic consistency and enables the generation of an
+Abstract Syntax Tree (AST).
+This grammar is divided into a lexical specification (the scanner) and a context-free grammar (the parser).
+
+\subsection{Lexical Grammar}\label{detail-subsec:lexical-grammar}
+
+The lexical layer tokenizes the raw source text into a stream of symbols.
+A notable feature of the lexical grammar is the inclusion of musical literals as first-class tokens.
+For example, a note literal is defined by the regular expression \verb|[A-G][#b]?[0-8]|, allowing the scanner to
+directly recognize pitches such as \texttt{F\#4} or \texttt{Bb2}.
+Keywords are reserved for musical structural elements (\texttt{track}, \texttt{pattern}, \texttt{voice}), temporal
+modifiers (\texttt{play}, \texttt{from}, \texttt{rest}), and standard programming constructs (\texttt{let},
+\texttt{for}, \texttt{if}).
+
+\subsection{Syntactic Grammar}\label{detail-subsec:syntactic-grammar}
+
+The syntactic grammar follows an EBNF (Extended Backus-Naur Form) structure.
+It is designed to enforce the hierarchical relationship between musical components.
+The root of a program consists of tempo and time-signature metadata followed by top-level declarations.
+Key-signature declarations are not part of the current language and are treated later as future work.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{lstlisting}[basicstyle=\ttfamily\scriptsize,breaklines=true]
+<program>    ::= <header> <top-item>*
+<top-item>   ::= <let-stmt> | <pattern-def> | <track-decl>
+<track-decl> ::= "track" IDENT? ("using" <inst>)? "{" <track-body> "}"
+<track-body> ::= (<stmt> | <pattern-def> | <voice-decl>)*
+<pattern>    ::= "pattern" IDENT "(" <params> ")" "{" <stmt-list> "}"
+<play-stmt>  ::= "play" <play-target> ";"
+<play-target>::= <source> (":" <expr>)? ("from" <expr>)?
+  \end{lstlisting}
+  \caption{Simplified EBNF representation of the core Motivo grammar.}\label{fig:grammar-ebnf}
+\end{figure}
+
+The grammar allows for both braced and unbraced statement bodies in control flow structures, providing a balance between
+clarity and brevity.
+Crucially, the grammar restricts certain constructs based on their context; for instance, while a \texttt{track} can
+contain multiple \texttt{voice} blocks, a \texttt{voice} cannot nest another \texttt{track}, enforcing a one-to-one
+mapping between tracks and instrument identities.
+The expression sub-grammar supports a full range of arithmetic and logical operators, including a ternary conditional
+operator, enabling complex musical logic to be expressed inline.
+
+\section{Musical Primitives and Compositional Constructs}\label{sec:musical-primitives}
+
+To bridge the gap between abstract musical theory and formal computer science, the Motivo language maps
+fundamental musical
+entities to specific programming constructs.
+This mapping ensures that the language remains expressive for musicians while retaining the type safety and structural
+clarity of a compiled language.
+
+\subsection{Musical Entities as Data Types}\label{detail-subsec:musical-entities-as-data-types}
+
+The language defines core primitives that serve as the building blocks of a composition.
+
+\noindent \textbf{Notes.} Represented as pitch-class and octave pairs (e.g., \texttt{C4}, \texttt{F\#2}).
+These are treated as constant literals with unique numeric identifiers in the underlying MIDI protocol.
+
+\noindent \textbf{Chords.} Modeled as collections of simultaneous notes.
+In Motivo, a chord is a single unit of duration, where the temporal span is determined by its constituent notes.
+
+\noindent \textbf{Sequences.} Represented as ordered lists of musical events (notes, chords, or rests).
+This structure maps directly to the concept of a musical ``bar'' or ``cell''.
+
+\noindent \textbf{Rests.} Unlike many languages that use a \texttt{sleep} function to pause execution, this
+domain-specific language treats a
+rest as a durational value.
+A rest is a ``silent note'' that occupies space in the timeline, maintaining the structural alignment of the
+composition.
+
+\subsection{Compositional Abstractions}\label{detail-subsec:compositional-abstractions}
+
+The hierarchical organization of music is reflected in the language's scoping and container constructs:
+
+\subsubsection{Patterns: The Unit of Reusability}
+A \texttt{pattern} is the primary abstraction mechanism in Motivo\@.
+Semantically, it is equivalent to a function definition.
+It allows a composer to encapsulate a motif and assign it a name.
+Patterns can accept parameters, enabling the creation of dynamic musical ideas---such as a drum fill that
+varies based on
+a boolean flag or a melodic line that accepts a sequence as a template.
+
+\subsubsection{Tracks: Instrumental Identity}
+A \texttt{track} serves as the top-level execution context for a specific instrument.
+In the compilation process, each track maps to a unique MIDI channel.
+This means that independent musical lines (e.g., a piano melody and a bassline) are kept separate and assigned to
+distinct sound patches in the final artifact.
+
+\subsubsection{Voices: Horizontal Parallelism}
+Within a single track, the \texttt{voice} construct allows for polyphonic composition.
+While a track represents a single ``performer'', a voice represents a single ``line of counterpoint''.
+Multiple voices can be defined to start at the same time or at different offsets within the same track, allowing for
+complex harmonic structures without the need for manual delta-time calculations.
+Voices enable the composer to think in terms of horizontal layers rather than just vertical chords.
+
+\section{Imperative Syntax for Algorithmic Variation}\label{sec:syntax-design}
+
+The choice of syntax in a domain-specific language is a critical decision that influences both the learning curve and
+the expressiveness of the language.
+For Motivo, a C-style imperative syntax was selected for its familiarity and its ability to clearly represent
+the deterministic progression of a musical program.
+
+\subsection{Familiarity and Cognitive Load}\label{detail-subsec:familiarity-and-cognitive-load}
+
+By adopting standard programming conventions---such as curly braces for blocks, semicolons for statement
+termination, and
+parentheses for parameters---Motivo targets a user base that is already familiar with general-purpose languages like C,
+C++, or Java.
+This choice reduces the cognitive load on the user, allowing them to focus on the musical logic rather than learning a
+completely novel syntactical paradigm.
+This contrasts with languages like \textit{Tidal}, which rely on deeply nested functional structures that can be opaque
+to users without a strong Haskell background.
+
+\subsection{Imperative Flow as a Musical Metaphor}\label{detail-subsec:imperative-flow-as-a-musical-metaphor}
+
+Musical composition is often an imperative process: ``play this, then repeat that, then if a condition is met, change
+this''.
+Motivo's control flow structures map directly to these compositional needs:
+
+\noindent \textbf{Loops (\texttt{loop}, \texttt{for}):} The \texttt{loop} construct provides a simple mechanism for
+repetition (e.g., a constant drum beat).
+The C-style \texttt{for} loop enables more complex \textit{algorithmic composition}, where an index variable can
+drive musical parameters.
+For example, a loop can transpose a motif incrementally by using the iterator value as a pitch offset.
+
+\noindent \textbf{Conditionals (\texttt{if}, \texttt{else}):} These structures allow for \textit{context-aware
+composition}.
+A phrase might have a different ending depending on whether it is the first or second time it is played, or a track
+might include a crash cymbal accent only on the first beat of a section.
+
+\subsection{Algorithmic Variation vs. Static
+Definition}\label{detail-subsec:algorithmic-variation-vs.-static-definition}
+
+Traditional MIDI editing is inherently static; a motif is a series of fixed events.
+The imperative syntax of Motivo allows motifs to be defined \textit{algorithmically}.
+By combining control flow with variables (\texttt{let}), a composer can write code that generates variations of a theme
+without manually copying and pasting events.
+This methodology reinforces the idea that music is not just a sequence of data points, but a series of logical
+instructions that can be computed.
+Since the compiler unrolls these instructions at compile-time, the composer enjoys the power of algorithmic generation
+without the overhead or latency of a real-time interpreter.
+
+The following compact example shows the intended relationship between imperative notation and musical
+structure. The source program contains no MIDI status bytes and no delta-time calculations. It expresses a
+bar-level rule, and the compiler expands that rule into concrete events.
+
+\begin{lstlisting}[language=Motivo, caption={A compact Motivo drum pattern.}, label={lst:motivo-groove}]
+tempo 128;
+signature 4/4;
+
+track percussion using drums {
+    pattern bar() {
+        for (let i = 0; i < 16; i = i + 1) {
+            play hihat from i;
+            if (i % 8 == 0) { play kick from i; }
+            if (i % 8 == 4) { play snare from i; }
+        }
+    }
+
+    loop (500) { play bar(); }
+}
+\end{lstlisting}
+
+\section{Compiler Pipeline and Implementation Foundations}\label{sec:compiler-pipeline}
+
+The architecture of Motivo compiler is organized as a multi-pass pipeline.
+Each stage of the pipeline transforms the representation of the musical program, moving from abstract textual intent to
+a concrete binary artifact.
+By decoupling these stages, the compiler ensures that errors are caught early and that the musical structure is fully
+resolved before generation.
+
+\subsection{Information Flow and Artifacts}\label{detail-subsec:information-flow-and-artifacts}
+
+The flow of data through the compiler is illustrated in Figure~\ref{fig:compiler-pipeline}.
+Each box represents a discrete processing stage, and the annotated arrows describe the intermediate artifacts passed
+between them.
+
+\subsection{Transformation Stages}\label{detail-subsec:transformation-stages}
+
+The transformation process is organized into four stages.
+
+\noindent \textbf{Text to Tree (Frontend).} The raw source text is parsed into an \textit{Abstract Syntax Tree} (AST).
+This artifact captures the logical hierarchy of the composition (e.g., nested patterns and tracks) but contains no
+musical or temporal resolution.
+
+\noindent \textbf{Tree to Annotated Tree (Semantic Analysis).} The compiler performs symbol resolution and
+type inference.
+The resulting \textit{Annotated AST} links every identifier to its definition and ensures that all operations are
+musically valid.
+
+\noindent \textbf{Tree to Timeline (Lowering).} The hierarchical AST is ``unrolled'' into a flat \textit{Intermediate
+Representation} (IR).
+This is the most significant transformation, where recursive pattern calls and loops are replaced by a sorted list
+of concrete \texttt{NoteEvents} with absolute timestamps.
+
+\noindent \textbf{Timeline to Binary (Backend).} Finally, the IR is serialized.
+The backend converts the absolute timestamps into the delta-times required by the MIDI standard and writes the
+structured binary stream to disk.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      stage/.style={rounded corners=4pt, draw=motivoInk!65, very thick, minimum width=3.05cm, minimum height=1.0cm,
+      align=center, font=\small\sffamily},
+      artifact/.style={font=\scriptsize\sffamily, text=motivoInk!75, align=center},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
+    ]
+    \node[stage, fill=motivoSoft] (src) {Motivo source\\\texttt{.motivo}};
+    \node[stage, fill=motivoBlue!14, right=0.55cm of src] (parse) {Scanner and parser\\Flex/Bison};
+    \node[stage, fill=motivoCyan!18, right=0.55cm of parse] (sem) {Semantic analysis\\symbols and types};
+    \node[stage, fill=motivoGreen!18, below=0.85cm of sem] (low) {Lowering\\cursor execution};
+    \node[stage, fill=motivoAmber!22, left=0.55cm of low] (midi) {MIDI writer\\SMF Format 1};
+    \node[stage, fill=motivoSoft, left=0.55cm of midi] (out) {MIDI file\\\texttt{.mid}};
+
+    \draw[arrow] (src) -- node[artifact, above] {characters} (parse);
+    \draw[arrow] (parse) -- node[artifact, above] {AST} (sem);
+    \draw[arrow] (sem) -- node[artifact, right] {annotated AST} (low);
+    \draw[arrow] (low) -- node[artifact, above] {IR tracks and events} (midi);
+    \draw[arrow] (midi) -- node[artifact, above] {binary bytes} (out);
+  \end{tikzpicture}
+  \caption{Motivo compiler data flow from source text to Standard MIDI File.}\label{fig:compiler-pipeline}
+\end{figure}
+
+\subsection{Technical Foundations and Build Structure}\label{subsec:implementation-foundations}
+
+The implementation of Motivo compiler is a critical engineering effort that balances high-level musical expressiveness
+with low-level binary precision.
+The discussion details the selection of the technology stack and the structural organization of the project, providing a
+rationale for the architectural decisions that support the thesis's goals.
+
+\subsection{Language Choice: Modern C++ (C++23)}\label{detail-subsec:language-choice:-modern-c++-(c++23)}
+
+The compiler is written in modern C++, specifically targeting the C++23 standard.
+While higher-level languages such as Python or JavaScript are commonly used for domain-specific language
+development, C++ was selected for
+three primary reasons:
+
+\noindent \textbf{Deterministic Performance.} Musical temporal resolution requires high precision.
+By using C++, the compiler can perform recursive unrolling and temporal math with minimal overhead, achieving the
+fast local compilation times necessary for real-time feedback in the playground.
+
+\noindent \textbf{Robust Type System.} Modern C++ provides a wealth of tools for building type-safe compilers.
+Features such as \texttt{std::variant} and \texttt{std::optional} allow for a functional programming style that is
+ideally suited for processing tree-like structures (ASTs).
+
+\noindent \textbf{Binary Serialization.} Since the final build target is a low-level MIDI binary file, C++'s native
+support for
+bitwise operations and big-endian serialization makes it a practical choice for implementing the backend.
+
+\subsubsection{C++23 Features Used in the Architecture}
+
+The codebase leverages several advanced features to simplify compiler logic:
+
+\noindent \textbf{\texttt{std::variant} as a Sum Type:} Every AST node and IR value is represented as a variant.
+This allows the compiler to treat different musical constructs (e.g., a Note vs a Loop) as a single type while
+enforcing exhaustive handling during traversal via \texttt{std::visit}.
+
+\noindent \textbf{Value-Oriented Memory Management.} By combining \texttt{std::variant} with
+\texttt{std::unique\_ptr}, the
+compiler avoids the ``Object Soup'' anti-pattern.
+Nodes are value-like, and recursion is handled via smart pointers that support explicit ownership and reduced
+leak risk without the
+non-deterministic latency of a garbage collector.
+
+\noindent \textbf{Standard Ranges and Views.} Used extensively in the backend and lowering passes to sort musical events
+and filter diagnostic logs efficiently.
+
+\subsection{Modular Build Infrastructure (CMake)}\label{detail-subsec:modular-build-infrastructure-(cmake)}
+
+To ensure scalability and maintainability, the project is structured as a modular hierarchy managed by
+CMake~\cite{CMake_2026}.
+The source code is partitioned into discrete components, each with its own responsibilities and boundaries.
+
+\subsubsection{Library Decomposition}
+
+The compiler logic is distributed across static libraries with separate responsibilities.
+
+\noindent \textbf{\texttt{motivo\_common}:} The foundational library containing the core musical enums (\texttt{Pitch},
+\texttt{Accidental}), the \texttt{Note} structure, and the \texttt{DiagnosticsEngine}.
+It is linked by every other module.
+
+\noindent \textbf{\texttt{motivo\_frontend}:} Wraps the Flex-generated scanner and Bison-generated parser.
+It depends on \texttt{motivo\_common} for location tracking and note literals.
+
+\noindent \textbf{\texttt{motivo\_semantic}:} Contains the \texttt{Traversal} engine and symbol table logic.
+It takes a raw AST and produces an \texttt{AnalysisResult}.
+
+\noindent \textbf{\texttt{motivo\_lowerer}:} The unrolling engine.
+It transforms an \texttt{AnalysisResult} into a flat list of \texttt{NoteEvent} objects.
+
+\noindent \textbf{\texttt{motivo\_backend}:} The MIDI serialization module.
+It handles the binary translation of the linear event stream.
+
+\subsubsection{Directory Organization and Public API}
+
+The project separates public interfaces from private implementation files.
+
+\noindent \textbf{\texttt{include/motivo/}:} Contains only the public headers (e.g., \texttt{compiler.hpp}).
+This defines the interface for external consumers, such as the CLI wrapper or the playground backend.
+
+\noindent \textbf{\texttt{src/motivo/}:} Contains the private implementation details, including the recursive
+visitors and
+generated Flex/Bison sources.
+
+This separation ensures that the internal complexity of the compiler pipeline is hidden behind a simple, high-level
+API\@.
+The top-level \texttt{motivo::compile} function serves as the entry point, orchestrating the sequential flow
+of characters
+to tree, tree to timeline, and timeline to MIDI\@.
+
+\section{Frontend and Abstract Syntax Tree Construction}\label{sec:implementation-frontend}
+
+The frontend is the gatekeeper of the compiler, responsible for validating the syntactic structure of the user's input
+and building a logical model of the composition.
+This phase is implemented using a classic scanner-parser architecture.
+
+\subsection{Lexical Analysis: Identifying Musical
+Literals}\label{detail-subsec:lexical-analysis:-identifying-musical-literals}
+
+The scanner, implemented in \texttt{scanner.l} using Flex, transforms the source code's character stream into a sequence
+of tokens~\cite{Flex_2026}.
+The most technically significant challenge in the lexical pass was the requirement for first-class musical literals.
+
+\subsubsection{Pitch-Class and Note Recognition}
+
+Unlike conventional languages that treat musical data as strings or numbers, Motivo treats a pitch like
+\texttt{F\#4} as
+a primitive constant.
+The scanner utilizes a specialized regular expression to recognize these patterns:
+\begin{lstlisting}[caption={Flex regular expression for note literal recognition.},label={detail-lst:lstlisting}]
+pitch        [A-G]
+accidental   [#b]
+octave       [0-8]
+note_lit     {pitch}{accidental}?{octave}
+\end{lstlisting}
+
+When this pattern is matched, the scanner does not simply return a token; it invokes
+\texttt{parse\_note\_literal}, which
+decomposes the string into a \texttt{music::Note} structure (containing the pitch enum, accidental enum, and octave
+integer).
+This means that the ``musicality'' of the code is validated at the very first byte of processing.
+
+\subsubsection{Keyword and Symbol Disambiguation}
+
+The scanner also manages a set of reserved keywords that define the structural identity of the language.
+Keywords such as \texttt{track}, \texttt{pattern}, and \texttt{voice} transition the parser into different scoping
+states.
+Additionally, the scanner implements ``Longest-Match'' logic to ensure that identifiers starting with keyword names
+(e.g., a variable named \texttt{loop\_count}) are not incorrectly tokenized as keywords.
+
+\subsection{Syntactic Analysis: Building the Hierarchy}\label{detail-subsec:syntactic-analysis:-building-the-hierarchy}
+
+The parser, implemented in \texttt{parser.y} using Bison, is a LALR parser with one-token
+lookahead~\cite{GNU_Bison_2026}.
+Its primary role is to enforce the context-free grammar and construct the Abstract Syntax Tree (AST).
+
+\subsubsection{AST Node Architecture and Sum-Types}
+
+The AST is designed as a set of recursive structures defined in the \texttt{motivo::ast} namespace.
+To achieve type safety, the implementation utilizes the ``Sum-Type'' pattern via
+\texttt{std::variant}.
+
+\paragraph{Declaration and Definition Nodes}
+The top-level structure of the AST is represented by definitions that manage scoping and vertical layering:
+
+\noindent \textbf{\texttt{TrackDefinition}:} Holds an optional name, an optional instrument, and a body of
+\texttt{TrackItem} nodes.
+A \texttt{TrackItem} is a variant that can hold a statement, a local pattern, or a voice.
+
+\noindent \textbf{\texttt{PatternDefinition}:} A node that captures the signature of a musical function, including its
+name, parameter list, and a block of statements.
+
+\noindent \textbf{\texttt{VoiceDefinition}:} Represents horizontal parallelism.
+It stores an optional \texttt{from} expression and a body of statements and local patterns.
+
+\paragraph{Statement and Expression Polymorphism}
+The leaf nodes of the tree are divided into statements (actions) and expressions (values):
+
+\noindent \textbf{\texttt{StatementKind}:} Contains nodes like \texttt{AssignStatement}, \texttt{ForStatement},
+\texttt{IfStatement}, \texttt{LetStatement}, \texttt{LoopStatement}, and \texttt{PlayStatement}.
+
+\noindent \textbf{\texttt{ExpressionKind}:} A variant containing literals (\texttt{Int}, \texttt{Float}, \texttt{Bool},
+\texttt{Note}, \texttt{Rest}), identifiers for variable lookup, unary/binary operations, and complex musical
+structures like \texttt{SequenceExpression} and \texttt{ChordExpression}.
+
+\subsubsection{Recursive Node Ownership}
+
+To maintain the tree hierarchy, recursive nodes (e.g., the condition of an \texttt{if} statement) are wrapped in
+\texttt{std::unique\_ptr}.
+This design choice was made to ensure that the AST is a true tree structure in memory, while the use of
+\texttt{std::variant} at every level ensures that the compiler can traverse the tree using ``Pattern Matching'' in the
+subsequent semantic and lowering passes.
+This combination of value-oriented variants and pointer-based recursion provides a robust foundation for the multi-pass
+architecture.
+
+\section{Semantic Analysis and Validation}\label{sec:semantic-rules}
+
+After the frontend produces a syntactically correct Abstract Syntax Tree, the compiler enters the \textit{Semantic
+Analysis} phase.
+This stage is responsible for ensuring that the program is logically and musically sound.
+It performs three primary tasks: identifier resolution (scoping), type inference, and musical constraint validation.
+
+\subsection{Architectural Pattern: The Recursive
+Visitor}\label{detail-subsec:architectural-pattern:-the-recursive-visitor}
+
+The semantic analyzer is implemented in the compiler's semantic traversal class.
+Because the AST uses \texttt{std::variant} for statement and expression polymorphism, the analyzer relies on a visitor
+pattern implemented with \texttt{std::visit} and a small overloaded-helper template.
+This allows the compiler to dispatch logic cleanly based on the concrete type of the AST node without relying on dynamic
+casting or virtual method tables.
+
+The traversal process follows a precise lifecycle designed to support the hierarchical nature of Motivo\@:
+
+\noindent \textbf{Global Collection.} The analyzer first iterates over all top-level global items.
+It extracts all \texttt{PatternDefinition} nodes and registers them in the global scope.
+This ``pre-pass'' enables forward referencing, allowing a track at the beginning of a file to call a pattern defined
+at the end.
+
+\noindent \textbf{Track and Voice Entry.} For each \texttt{TrackDefinition}, the analyzer enters a new lexical scope.
+It performs a similar pre-pass to collect track-local patterns before traversing the body statements.
+The same logic applies when visiting a \texttt{VoiceDefinition}.
+
+\noindent \textbf{Recursive Resolution.} Expressions are evaluated bottom-up.
+A binary expression node, for instance, will recursively visit its left and right children, infer their types,
+validate their compatibility, and then determine its own resulting type.
+
+\subsection{Symbol Table and Scope Management}\label{detail-subsec:symbol-table-and-scope-management}
+
+Scoping is managed by the \texttt{SymbolTable} and \texttt{ScopeStack} classes.
+The \texttt{SymbolTable} maintains the actual symbol data, while the \texttt{ScopeStack} manages the hierarchical
+environment during the AST traversal.
+
+\subsubsection{Hierarchical Scoping Rules}
+
+The \texttt{ScopeStack} maintains a stack of \texttt{ScopeId} references pointing to the \texttt{SymbolTable}.
+Scopes are pushed and popped as the visitor enters and exits structural nodes (Global, Track, Voice, Pattern, and
+Control Flow Blocks).
+The implementation enforces strict visibility rules:
+
+\noindent \textbf{Lookup.} When an \texttt{IdentifierExpression} is encountered, the \texttt{ScopeStack} performs a
+reverse search from the current scope up to the global scope.
+If the identifier is found, its unique \texttt{SymbolId} and inferred \texttt{Type} are retrieved.
+
+\noindent \textbf{Symbol Metadata.} Every registered symbol stores its \texttt{SymbolKind} (Variable,
+  Parameter, Pattern,
+Track, or Voice), its declared \texttt{Location} in the source file, and a raw pointer back to its declaration node
+in the AST\@.
+
+\subsubsection{AST Annotation}
+
+To separate analysis from execution, the semantic pass does not mutate the original AST structure.
+Instead, it populates an \texttt{Annotations} object.
+Upon successful resolution of an identifier, the \texttt{Annotations} object maps the memory address of the
+\texttt{IdentifierExpression} to its resolved \texttt{SymbolId}.
+Similarly, every evaluated expression is mapped to its inferred \texttt{Type}.
+This metadata ensures that the subsequent ``Lowering'' pass does not need to perform expensive string lookups or type
+checks; it simply retrieves the cached resolution data.
+
+\subsection{Formal Type Rules and Constraints}\label{detail-subsec:formal-type-rules-and-constraints}
+
+The type system acts as the ``Musical Guardrail'' of the compiler, implemented in the \texttt{type\_rules.cpp} module.
+
+\subsubsection{Type Categories}
+The analyzer categorizes types into the \texttt{TypeKind} enumeration:
+
+\noindent \textbf{Scalars.} \texttt{Int}, \texttt{Double}, \texttt{Bool}.
+These are utilized for mathematical operations, loop counts, and conditional logic.
+
+\noindent \textbf{Musical Primitives.} \texttt{Note}, \texttt{Rest}, \texttt{Chord}, \texttt{Sequence}, \texttt{Drum}.
+These represent the playable entities that occupy space on the timeline.
+
+\noindent \textbf{Utility Types.} \texttt{Unknown} (used during error recovery) and \texttt{Void} (for statements that
+produce no value).
+
+\subsubsection{Constraint Validation Logic}
+The analyzer enforces critical invariants through specific validator methods within the \texttt{Traversal} class:
+
+\noindent \textbf{\texttt{validate\_binary\_operands}:} Ensures that arithmetic operators (\texttt{+}, \texttt{-},
+\texttt{*}, \texttt{/}, \texttt{\%}) are strictly applied to numeric scalars (\texttt{Int} or \texttt{Double}).
+For example, attempting to add two sequences (\texttt{[C4] + [D4]}) will trigger a semantic error, as musical
+concatenation is handled differently than arithmetic addition.
+
+\noindent \textbf{\texttt{validate\_play\_target}:} This method verifies that the target of a \texttt{play}
+statement resolves to a valid musical primitive.
+If a composer mistakenly writes \texttt{play (i < 5);}, the analyzer intercepts the error because the target
+evaluates to a \texttt{Bool}.
+
+\noindent \textbf{\texttt{validate\_pattern\_instantiation}:} When a \texttt{PatternCallExpression} is visited,
+the analyzer
+performs a virtual instantiation.
+It creates a temporary scope, binds the parameter names to the types of the arguments provided at the call site, and
+recursively visits the pattern's body block.
+This allows the compiler to catch type errors \textit{inside} a pattern that only manifest when it is invoked with
+specific argument types, ensuring deep semantic validation.
+
+\section{Timeline Semantics and Cursor-Based Time}\label{sec:temporal-model}
+
+A central challenge in music programming is the representation of time.
+While physical time is continuous, musical time is often perceived as a series of discrete units (beats, bars,
+subdivisions).
+Motivo uses a deterministic \textit{cursor model} to manage temporal placement, providing a balance
+between sequential flow and absolute positioning.
+
+\subsection{The Virtual Playhead}\label{detail-subsec:the-virtual-playhead}
+
+The core of the temporal logic is a virtual ``playhead'' or \textit{cursor}.
+As the compiler traverses the musical statements within a track or voice, it maintains an internal state representing
+the current absolute beat position.
+Every musical command interacts with this cursor in one of two ways:
+
+\noindent \textbf{Relative Advancement.} Standard \texttt{play} and \texttt{rest} statements are relative to the current
+cursor position.
+When a note is played, it is placed at the current cursor value, and the cursor is subsequently advanced by the
+duration of that note.
+This model allows for natural, sequential composition that mimics the act of writing on a staff.
+
+\noindent \textbf{Absolute Offsets.} The \texttt{from} keyword allows for non-destructive positioning.
+A statement such as \texttt{play A4 from 16;} places a note at the 16th beat regardless of the current cursor
+position.
+Crucially, this operation does not advance the main cursor, allowing the composer to ``jump'' back and forth across
+the timeline to layer multiple events without losing the primary sequential flow.
+
+\subsection{Parallelism and Temporal Isolation}\label{detail-subsec:parallelism-and-temporal-isolation}
+
+The cursor model is also applied to parallel structures.
+When a \texttt{voice} is defined within a \texttt{track}, it inherits a copy of the parent track's current cursor
+position.
+However, advancements within the voice are isolated; they do not affect the cursor of the parent track or of sibling
+voices.
+This allows for the creation of independent rhythmic layers that are synchronized at their start point but proceed at
+their own pace.
+
+\subsection{Deterministic Time Resolution}\label{detail-subsec:deterministic-time-resolution}
+
+By using floating-point arithmetic for the internal cursor, the language supports arbitrary rhythmic subdivisions
+(e.g., triplets, dotted notes, or complex swing rhythms).
+Unlike interpreted systems that may suffer from timing drift or ``jitter'' due to CPU scheduling, the compiled nature of
+Motivo calculates every event before writing the output file, so event placement is resolved before playback.
+Time is resolved entirely during the ``Lowering'' phase of the compiler, transforming the hierarchical code into a flat,
+sorted timeline of events.
+This methodology keeps musical placement deterministic within the current mapping.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      beat/.style={font=\scriptsize\sffamily, text=motivoInk},
+      note/.style={rounded corners=2pt, minimum height=0.42cm, draw=white, very thick},
+      arrow/.style={-Stealth, thick, draw=motivoInk!70}
+    ]
+    \draw[thick, draw=motivoInk!70] (0,0) -- (12,0);
+    \foreach \x/\b in {0/0,2/1,4/2,6/3,8/4,10/5,12/6} {
+      \draw[draw=motivoInk!45] (\x,0.12) -- (\x,-0.12);
+      \node[beat, below=0.18cm] at (\x,0) {\b};
+    }
+
+    \node[note, fill=motivoBlue!70, minimum width=1.9cm] at (1,0.65) {\textcolor{white}{play C4}};
+    \node[note, fill=motivoGreen!70, minimum width=1.9cm] at (3,0.65) {\textcolor{white}{play D4}};
+    \node[note, fill=motivoAmber!85, minimum width=1.9cm] at (5,0.65) {\textcolor{white}{play E4}};
+    \node[note, fill=motivoRose!80, minimum width=1.9cm] at (9,1.45) {\textcolor{white}{play G4 from 4}};
+
+    \draw[arrow] (0,1.1) -- node[beat, above] {relative cursor advances} (6,1.1);
+    \draw[arrow] (9,1.15) -- node[beat, right, align=left] {\texttt{from}\\explicit placement\\cursor
+    unchanged} (8.1,0.88);
+  \end{tikzpicture}
+  \caption{Cursor-based temporal placement.
+    Sequential statements advance the cursor, while \texttt{from} positions an event on the timeline
+  explicitly.}\label{fig:cursor-model}
+\end{figure}
+
+\section{Compilation Strategy: Deterministic Unrolling}\label{sec:compilation-strategy}
+
+Motivo is designed as a fully compiled language, distinguishing it from interpreted musical environments.
+This design choice is driven by the mandate for a \textit{zero-runtime architecture}, where all musical and logical
+structures are resolved before any sound is produced or any output file is written.
+
+\subsection{The Zero-Runtime Mandate}\label{detail-subsec:the-zero-runtime-mandate}
+
+In a zero-runtime system, the complexity of the composition is handled entirely by the compiler.
+This means that features such as nested loops, conditional branching, and recursive pattern calls do not exist in the
+output artifact.
+Instead, the compiler performs a process of \textit{deterministic unrolling}.
+Every loop is expanded into its constituent iterations, every conditional branch is evaluated and resolved, and every
+pattern call is inlined.
+
+The result of this process is an Intermediate Representation (IR) that consists of a flat, linear list of atomic musical
+events.
+This architecture provides several benefits:
+
+\noindent \textbf{High Performance.} The output artifact is extremely lightweight, as all logical overhead has been
+removed.
+
+\noindent \textbf{Offline Validation.} Semantic errors---such as variable shadowing, type mismatches, or
+invalid rhythmic
+math---are caught during the compilation phase, providing immediate feedback to the composer.
+
+\noindent \textbf{Portability.} The resulting IR can be easily serialized into formats beyond MIDI in future extensions
+without requiring a specialized interpreter to read it.
+
+\subsection{Temporal Reconstruction of Patterns}\label{detail-subsec:temporal-reconstruction-of-patterns}
+
+A unique aspect of the compilation strategy is how the temporal span of a pattern is reconstructed.
+When a pattern is called, the compiler does not just emit the notes within it; it calculates the total duration occupied
+by the pattern, including internal gaps and trailing rests.
+This is achieved by capturing the state of the internal cursor before and after the pattern's body is unrolled.
+The difference between these two points defines the pattern's ``footprint'' on the timeline, allowing the pattern to be
+treated as a single, opaque musical unit by the caller.
+
+\subsection{Static Verification of Compositional Logic}\label{detail-subsec:static-verification-of-compositional-logic}
+
+Because the language is compiled, it can enforce constraints that would be difficult to manage in an interpreted system.
+The semantic analysis pass verifies that the composition adheres to the physical limits of the target protocol (e.g.,
+ensuring notes are within the MIDI pitch range of 0--127) and that the structural hierarchy is valid (e.g., preventing a
+\texttt{track} from being defined inside a \texttt{pattern}).
+This validation is intended to ensure that the final MIDI artifact is not only syntactically correct but also musically
+meaningful and interoperable with MIDI-aware tools.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={rounded corners=4pt, draw=motivoInk!60, very thick, minimum width=2.75cm, minimum height=0.95cm,
+      align=center, font=\footnotesize\sffamily},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
+    ]
+    \node[box, fill=motivoBlue!14] (ast) {AST statement\\\texttt{loop (500)}};
+    \node[box, fill=motivoCyan!18, right=0.55cm of ast] (exec) {Lowering pass\\evaluate loop body};
+    \node[box, fill=motivoGreen!18, right=0.55cm of exec] (ir) {IR events\\absolute beats};
+    \node[box, fill=motivoAmber!20, right=0.55cm of ir] (smf) {SMF events\\delta-times};
+
+    \draw[arrow] (ast) -- node[above, font=\scriptsize\sffamily] {control flow} (exec);
+    \draw[arrow] (exec) -- node[above, font=\scriptsize\sffamily] {note events} (ir);
+    \draw[arrow] (ir) -- node[above, font=\scriptsize\sffamily] {serialization} (smf);
+
+    \node[below=0.55cm of exec, align=center, font=\small\sffamily, text=motivoInk] {
+      The output no longer contains \texttt{loop}, \texttt{for}, or \texttt{if}.\\
+      It contains timestamped note events that the MIDI writer can sort and encode.
+    };
+  \end{tikzpicture}
+  \caption{Lowering removes source-level control flow by expanding it into concrete musical
+  events.}\label{fig:ast-to-ir}
+\end{figure}
+
+\section{Lowering Engine and Intermediate Representation}\label{sec:lowering-ir}
+
+The \textit{Lowering Engine} is the most sophisticated component of the compiler.
+It performs the transformation from the hierarchical, logically structured Annotated AST into a flat, chronologically
+sorted list of events known as the Intermediate Representation (IR).
+This process ``unrolls'' the recursive structure of the music and resolves all temporal logic into absolute beat
+offsets, effectively stripping away all programming control flow.
+
+\subsection{The Intermediate Representation (IR)}\label{detail-subsec:the-intermediate-representation-(ir)}
+
+The output of the lowering engine is an \texttt{ir::Program} object.
+This artifact represents the physical timeline of the composition.
+Its primary building block is the \texttt{NoteEvent} structure:
+
+\begin{lstlisting}[language=C++, caption={Structure of an atomic IR event.},label={detail-lst:lstlisting2}]
+struct NoteEvent {
+    int midi_note;          // Numeric pitch (0-127)
+    double start_beat;      // Absolute position from track start
+    double duration_beats;  // Temporal span in beats
+    int velocity;           // MIDI intensity (default 100)
+};
+\end{lstlisting}
+
+An important architectural detail is that the IR is entirely agnostic of the language's original control flow.
+Whether a note was generated by a static \texttt{play} command, a \texttt{for} loop iteration, or a recursive
+\texttt{pattern} call, it is represented in the IR as a simple, independent data point.
+
+\subsection{Stateful Unrolling and Cursor Management}\label{detail-subsec:stateful-unrolling-and-cursor-management}
+
+The unrolling engine is managed by the \texttt{LowererContext} class.
+Unlike the semantic analyzer, which checks static types, the lowerer acts almost as an interpreter, executing the logic
+and managing actual runtime values.
+It maintains a ``cursor'' (a \texttt{double} passed by reference) tracking the current playhead position in beats.
+
+The \texttt{lower\_statement} function utilizes \texttt{std::visit} to dispatch logic based on the statement kind:
+
+\noindent \textbf{\texttt{PlayStatement}:} The lowerer evaluates the play target.
+It determines the note duration (using the default, or overriding it if the \texttt{:} operator is present).
+The start beat is set to the current cursor value, and the event is emitted.
+Finally, the cursor is advanced by the duration.
+If the \texttt{from} keyword is used, the start beat is overridden by the evaluated offset, and the cursor is
+\textit{not} advanced.
+
+\noindent \textbf{\texttt{LoopStatement} and \texttt{ForStatement}:} The engine evaluates the iteration count or
+condition, then enters a loop in C++, recursively calling \texttt{lower\_block} for the body.
+Because the \texttt{cursor} reference is passed down, the temporal state is naturally preserved across iterations,
+placing notes end-to-end.
+
+\noindent \textbf{\texttt{IfStatement}:} The lowerer evaluates the boolean condition into a concrete \texttt{true} or
+\texttt{false}.
+Only the matching branch is traversed, effectively performing ``compile-time pruning''.
+
+\subsection{Dynamic Expression Evaluation}\label{detail-subsec:dynamic-expression-evaluation}
+
+During the lowering phase, expressions are resolved into concrete values represented by the \texttt{ir::Value} variant.
+These values can be scalars (\texttt{int}, \texttt{double}, \texttt{bool}) or musical structures (\texttt{NoteValue},
+\texttt{RestValue}, \texttt{SequenceValue}, \texttt{ChordValue}).
+
+The \texttt{LowererContext} maintains a \textit{Dynamic Scope Stack}: a vector of hash maps from identifier names to
+\texttt{ir::Value} entries.
+When a \texttt{let} or assignment statement is encountered, the evaluated \texttt{ir::Value} is bound to the identifier.
+This allows for dynamic algorithmic generation, where loop indices or accumulator variables can be used as multipliers
+for note durations or offsets.
+
+\subsection{Value Flattening and Complex Structures}\label{detail-subsec:value-flattening-and-complex-structures}
+
+A significant challenge in the lowering engine is the conversion of complex musical types into atomic
+\texttt{NoteEvent}s.
+This is handled by the \texttt{ValueFlattener} module.
+
+\subsubsection{Flattening Chords}
+When a \texttt{ChordValue} is encountered, the flattener iterates over all its constituent notes and emits them using
+the \textit{same} \texttt{start\_beat}.
+The main lowering routine then advances the track's cursor by the \textit{maximum} duration found among the chord's
+members, ensuring the next musical statement begins only after the entire chord has finished sounding.
+
+\subsubsection{Pattern Temporal Reconstruction}
+The most technically complex feature of the lowerer is how it preserves the ``temporal integrity'' of patterns.
+When a \texttt{PatternCallExpression} is evaluated:
+
+\noindent The lowerer snapshots the current cursor position: \texttt{start\_time = cursor}.
+
+\noindent It pushes a new variable scope, binds the arguments to the parameter names, and unrolls the pattern's body.
+
+\noindent It captures the final cursor state: \texttt{end\_time = cursor}.
+
+\noindent It calculates the total temporal span as the difference between \texttt{end\_time} and \texttt{start\_time}.
+
+To ensure that internal gaps and trailing rests within the pattern are respected, the lowerer rebuilds a
+\texttt{SequenceValue} that intersperses the emitted notes with \texttt{RestValue} items matching the exact temporal
+gaps.
+This reconstructed value is then returned to the caller, allowing the pattern to be treated as a single, opaque rhythmic
+block.
+
+\subsection{Voice Parallelism and Cursor Isolation}\label{detail-subsec:voice-parallelism-and-cursor-isolation}
+
+Parallel melodic lines are managed through the \texttt{voice} construct.
+To implement parallelism without shared state conflicts or manual timing math, the lowerer uses
+\textit{Cursor Isolation}:
+
+\noindent Upon entering a \texttt{VoiceDefinition}, the lowerer captures the current outer cursor value.
+
+\noindent It creates a local \textit{copy} called \texttt{voice\_cursor}.
+If the voice specifies a \texttt{from} expression, the \texttt{voice\_cursor} is initialized to that value instead.
+
+\noindent All statements unrolled within the voice modify only the \texttt{voice\_cursor}.
+
+\noindent The generated \texttt{NoteEvent}s are appended to the track's master list, but upon exiting the
+voice block, the
+\texttt{outer\_cursor} is completely unmodified.
+
+This isolation keeps the parent track and sibling voices aligned according to the compiler cursor model at
+their starting beats, without requiring the author to calculate the intervening offsets manually.
+
+\section{MIDI Domain Logic and Backend Serialization}\label{sec:midi-backend-design}
+
+A primary objective of the implementation is to bridge the gap between high-level musical notation and the low-level
+binary encoding required by the MIDI standard.
+This section details the mathematical formulas and mapping strategies implemented in the
+\texttt{motivo\_music} module to
+ensure that the compiler's output is musically accurate.
+
+\subsection{Note to MIDI Pitch Mapping}\label{detail-subsec:note-to-midi-pitch-mapping}
+
+Motivo allows composers to specify pitches using traditional letter names from A to G, accidentals (\#, b), and
+octave numbers
+(0--8).
+The compiler converts these literals into a single numeric byte (0--127) using a deterministic formula.
+
+The implementation defines the \texttt{music::Note} structure as a combination of three fields:
+
+\noindent \textbf{\texttt{Pitch} enum:} Stores the semitone offset within an octave (\texttt{C=0}, \texttt{D=2},
+\texttt{E=4}, \texttt{F=5}, \texttt{G=7}, \texttt{A=9}, \texttt{B=11}).
+
+\noindent \textbf{\texttt{Accidental} enum:} Stores a numeric signed offset (\texttt{Flat=-1}, \texttt{Natural=0},
+\texttt{Sharp=1}).
+
+\noindent \textbf{\texttt{Octave} integer:} Stores the numeric octave.
+
+The mapping formula used in the \texttt{Note::midi\_number} function is:
+\begin{equation}
+  P = 12 \times (O + 1) + V_p + V_a\label{eq:midi-pitch-detail}
+\end{equation}
+Where $P$ is the final MIDI pitch, $O$ is the octave, $V_p$ is the pitch-class value, and $V_a$ is the accidental value.
+The constant offset of \textbf{+1} follows the convention used by the compiler and its tests, where \texttt{C4} maps to
+MIDI note 60 and \texttt{A4} maps to 69.
+By centralizing this calculation at the library level, the compiler ensures that all musical logic throughout the
+pipeline is consistent.
+
+\subsection{Instrument and Drum Mapping}\label{detail-subsec:instrument-and-drum-mapping}
+
+The language's \texttt{using} keyword allows the composer to specify the instrumental identity of a track.
+This intent is mapped directly to the General MIDI (GM) Level 1 specification.
+
+The implementation utilizes two primary mapping strategies:
+
+\noindent \textbf{Melodic Instruments.} Standard instruments are mapped to their GM program numbers.
+For example, \texttt{Piano} maps to 1, \texttt{Guitar} to 24, \texttt{Bass} to 32, and \texttt{Violin} to 40.
+These mappings are stored in the \texttt{music::Instrument} enum.
+During backend serialization, they are emitted as \textit{Program Change} events on standard MIDI channels (0--8,
+11--15).
+
+\noindent \textbf{Percussion Logic.} Unlike melodic tracks, the MIDI standard rigidly reserves \textbf{Channel 10}
+specifically for unpitched percussion.
+If a track is defined as \texttt{using drums}, the backend automatically routes all its events to Channel 10 and
+skips emitting a Program Change event.
+Furthermore, individual drum literals in Motivo are mapped to specific GM ``Note-On'' pitches as defined by the
+standard drum map:
+
+\noindent \texttt{Kick} $\rightarrow$ 36
+
+\noindent \texttt{Snare} $\rightarrow$ 38
+
+\noindent \texttt{Hihat} $\rightarrow$ 42
+
+\noindent \texttt{Crash} $\rightarrow$ 49
+
+\noindent \texttt{Ride} $\rightarrow$ 51
+
+This explicit mapping aligns drum output with the General MIDI percussion convention in tools that follow that standard.
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm}X}
+    \toprule
+    \textbf{Motivo concept} & \textbf{Backend representation} \\
+    \midrule
+    Tempo declaration & MIDI tempo meta event in track 0. \\
+    Time signature declaration & MIDI time-signature meta event in track 0. \\
+    Track using piano, guitar, bass, or violin & Separate MIDI track with a Program Change event. \\
+    Track using drums & Separate MIDI track routed to the percussion channel. \\
+    Note event & Note-On and Note-Off messages with tick positions derived from beats. \\
+    Rest & Cursor advancement without emitted note messages. \\
+    Chord & Several note events with the same start beat. \\
+    Sequence & Sequential flattening of notes, chords, and rests. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Mapping from Motivo source concepts to MIDI backend artifacts.}\label{tab:motivo-midi-mapping}
+\end{table}
+
+\subsection{Binary Serialization of Standard MIDI Files}\label{subsec:midi-binary-serialization}
+
+The final stage of the compilation pipeline translates the flat list of linear \texttt{NoteEvent}s (the IR) into a
+Standard MIDI File (SMF) Format 1 binary artifact.
+This process requires careful management of binary structures, delta-time calculations, and variable-length encodings.
+
+\subsection{SMF Format 1 Structure}\label{detail-subsec:smf-format-1-structure}
+
+The backend generates a multi-track MIDI file structured into binary chunks.
+Each chunk begins with a 4-byte ASCII identifier followed by a 32-bit big-endian integer denoting the chunk's data
+length.
+The compiler enforces strict big-endian serialization via custom bit-shifting utility functions (\texttt{write\_u16\_be}
+and \texttt{write\_u32\_be}).
+
+\noindent \textbf{\texttt{MThd} (Header Chunk):} The file begins with a header specifying \texttt{Format=1}
+(multiple simultaneous tracks).
+The compiler calculates the total number of tracks as $1 + N$ (where $N$ is the number of instrumental tracks in the
+Motivo source) to account for the mandatory tempo track.
+The temporal resolution is hardcoded to \textbf{480 PPQ} (Pulses Per Quarter-note), providing a high degree of
+precision for complex rhythmic subdivisions.
+
+\noindent \textbf{\texttt{MTrk} (Track Chunks):} The first track (Track 0) is initialized as the ``Tempo Track''.
+It contains a \texttt{0xFF 51 03} meta-event.
+The backend calculates the \textit{Microseconds Per Quarter-note} ($uspb$) using the formula $uspb =
+\frac{60,000,000}{\mathrm{BPM}}$ and writes this as a 24-bit value.
+Following the tempo track, each Motivo track is serialized into its own \texttt{MTrk} chunk.
+
+\subsection{The Delta-Time Sorting Algorithm}\label{detail-subsec:the-delta-time-sorting-algorithm}
+
+A fundamental constraint of the MIDI protocol is that it does not utilize absolute timestamps.
+Instead, every event within a track must be preceded by a \textit{delta-time}, representing the number of ticks to wait
+\textit{after} the immediately preceding event.
+
+Because the IR unrolling process can place events into the track out-of-order (for example, when a \texttt{voice} block
+places notes concurrently with the main track via the \texttt{from} keyword), the backend must perform a
+re-serialization pass:
+
+\noindent \textbf{Tick Conversion.} Every absolute beat position and duration in the IR is multiplied by the
+PPQ constant
+to convert it into absolute ticks (\texttt{ticks = beat * 480}).
+This creates two tick points for every note: an ``on-tick'' and an ``off-tick''.
+
+\noindent \textbf{Event Separation.} The backend transforms each \texttt{NoteEvent} into two separate
+low-level events: a
+\texttt{Note-On} event at the start tick, and a \texttt{Note-Off} event at the end tick.
+
+\noindent \textbf{Stable Sorting.} All separated events within a track are collected into a vector and sorted using
+\texttt{std::ranges::stable\_sort} by their absolute tick value.
+The stable sort preserves the relative order when a \texttt{Note-Off} and a \texttt{Note-On} for the same
+pitch occur at the exact
+same tick, their relative ordering is preserved, preventing overlapping silence issues.
+
+\noindent \textbf{Delta Computation.} The backend iterates sequentially through the sorted list.
+For each event, the delta is computed as the difference between \texttt{current\_tick} and
+\texttt{previous\_tick}.
+
+\subsection{Variable-Length Quantities (VLQ)}\label{detail-subsec:variable-length-quantities-(vlq)}
+
+Delta-times in MIDI are compressed using \textit{Variable-Length Quantities}.
+This 7-bit encoding scheme allows small delta-times (e.g., zero ticks for simultaneous chord notes) to occupy only one
+byte, while larger delays can expand up to four bytes.
+The compiler implements a custom \texttt{write\_vlq} function that continuously shifts the 32-bit tick delta by 7 bits,
+storing the chunks in a buffer, and applying the high-bit continuation flag (hexadecimal \texttt{80}) to all but the
+final byte.
+
+\subsection{Event Emission}\label{detail-subsec:event-emission}
+
+Finally, the backend emits the actual status and data bytes for every event:
+
+\noindent \textbf{Program Change (\texttt{0xC0 | channel}):} Emitted at tick 0 for every melodic track to assign the
+chosen instrument.
+
+\noindent \textbf{Note-On (hexadecimal \texttt{90} with the channel encoded in the low nibble):} Contains the pitch and
+the defined velocity.
+
+\noindent \textbf{Note-Off (hexadecimal \texttt{80} with the channel encoded in the low nibble):} Explicitly
+emitted with
+a velocity of 0 to terminate the sound.
+
+\noindent \textbf{End of Track (\texttt{0xFF 2F 00}):} A mandatory meta-event appended to the end of every \texttt{MTrk}
+chunk to signal the end of the data stream.
+
+By strictly separating the absolute temporal logic of the IR from the relative delta-time mechanics of the MIDI backend,
+the compiler ensures that the musical timeline is consistent with the compiler's beat-to-tick conversion and
+that the resulting binary file targets the Standard MIDI File structure.
+
+The chapter has described Motivo as a compiler. That is only half of the project. The next chapter describes
+Motivo Studio, the application that turns the compiler into an interactive tool and makes the software
+engineering work visible.

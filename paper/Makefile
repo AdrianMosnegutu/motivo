@@ -10,4 +10,4 @@ lint:
 	bash scripts/lint.sh
 
 clean:
-	rm -rf build/
+	rm -rf build/ out/
