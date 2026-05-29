@@ -8,9 +8,8 @@ import {
   registerMotivoLanguage,
 } from '@/features/editor/monaco/motivo-language';
 import {
-  getMotivoTheme,
   MOTIVO_DARK_THEME,
-  MOTIVO_LIGHT_THEME,
+  MOTIVO_SYNTAX_COLORS,
   registerMotivoThemes,
 } from '@/features/editor/monaco/motivo-themes';
 
@@ -44,31 +43,42 @@ describe('Monaco Motivo configuration', () => {
     );
   });
 
-  it('registers light and dark Motivo themes', () => {
+  it('registers the dark Motivo theme with distinct syntax colors', () => {
     const monaco = createMonacoMock();
 
     registerMotivoThemes(monaco as never);
 
     expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
       MOTIVO_DARK_THEME,
-      expect.objectContaining({ base: 'vs-dark' }),
+      expect.objectContaining({
+        base: 'vs-dark',
+        rules: expect.arrayContaining([
+          expect.objectContaining({
+            token: 'note-literal',
+            foreground: MOTIVO_SYNTAX_COLORS.noteLiteral,
+          }),
+          expect.objectContaining({ token: 'number', foreground: MOTIVO_SYNTAX_COLORS.number }),
+          expect.objectContaining({
+            token: 'voice-keyword',
+            foreground: MOTIVO_SYNTAX_COLORS.voiceKeyword,
+          }),
+          expect.objectContaining({
+            token: 'rest-keyword',
+            foreground: MOTIVO_SYNTAX_COLORS.restKeyword,
+          }),
+          expect.objectContaining({
+            token: 'identifier',
+            foreground: MOTIVO_SYNTAX_COLORS.identifier,
+          }),
+        ]),
+      }),
     );
-    expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
-      MOTIVO_LIGHT_THEME,
-      expect.objectContaining({ base: 'vs' }),
-    );
-  });
-
-  it('resolves theme names from the active app theme', () => {
-    expect(getMotivoTheme('dark')).toBe(MOTIVO_DARK_THEME);
-    expect(getMotivoTheme('light')).toBe(MOTIVO_LIGHT_THEME);
-    expect(getMotivoTheme(undefined)).toBe(MOTIVO_LIGHT_THEME);
   });
 
   it('exports stable editor defaults', () => {
     expect(DEFAULT_MOTIVO_SNIPPET).toContain('tempo 120');
     expect(EDITOR_OPTIONS).toMatchObject({
-      fontSize: 14,
+      fontSize: 13,
       minimap: { enabled: false },
     });
   });

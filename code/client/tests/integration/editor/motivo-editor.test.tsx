@@ -6,8 +6,6 @@ import MotivoEditor, {
   type MotivoEditorProps,
 } from '@/features/editor/components/MotivoEditor';
 
-let currentTheme = 'dark';
-const setTheme = vi.fn();
 const setModelMarkers = vi.fn();
 const setMonacoTheme = vi.fn();
 const addAction = vi.fn();
@@ -32,10 +30,6 @@ const monacoMock = {
   MarkerSeverity: { Error: 8 },
 };
 
-vi.mock('next-themes', () => ({
-  useTheme: () => ({ theme: currentTheme, setTheme }),
-}));
-
 vi.mock('@monaco-editor/react', () => ({
   default: ({
     beforeMount,
@@ -47,7 +41,7 @@ vi.mock('@monaco-editor/react', () => ({
   }: {
     beforeMount: (monaco: typeof monacoMock) => void;
     onMount: (editor: unknown, monaco: typeof monacoMock) => void;
-    onChange: NonNullable<MotivoEditorProps['onChange']>;
+    onChange?: (value: string | undefined) => void;
     options: { readOnly?: boolean };
     theme: string;
     value: string;
@@ -64,7 +58,7 @@ vi.mock('@monaco-editor/react', () => ({
       },
       monacoMock,
     );
-    onChange('new source');
+    onChange?.('new source');
     return (
       <div data-readonly={String(Boolean(options.readOnly))} data-theme={theme}>
         {value}
@@ -75,7 +69,6 @@ vi.mock('@monaco-editor/react', () => ({
 
 describe('MotivoEditor', () => {
   beforeEach(() => {
-    currentTheme = 'dark';
     vi.clearAllMocks();
   });
 
@@ -90,7 +83,7 @@ describe('MotivoEditor', () => {
     expect(monacoMock.languages.register).toHaveBeenCalled();
     expect(monacoMock.editor.defineTheme).toHaveBeenCalled();
     expect(addAction).toHaveBeenCalledWith(expect.objectContaining({ id: 'motivo.compile' }));
-    expect(onChange).toHaveBeenCalledWith('new source');
+    expect(onChange).toHaveBeenCalledWith('scratch:scratch', 'new source');
     expect(localStorage.setItem).not.toHaveBeenCalled();
 
     ref.current?.jumpTo(2, 3);
@@ -105,10 +98,9 @@ describe('MotivoEditor', () => {
     expect(setModelMarkers).toHaveBeenCalledWith({ id: 'model' }, 'motivo', []);
   });
 
-  it('applies the light editor theme', () => {
-    currentTheme = 'light';
+  it('applies the dark editor theme', () => {
     render(<MotivoEditor />);
-    expect(screen.getByText(/tempo 120/)).toHaveAttribute('data-theme', 'motivo-light');
+    expect(screen.getByText(/tempo 120/)).toHaveAttribute('data-theme', 'motivo-dark');
   });
 
   it('uses the active document source and blocks edits in read-only mode', () => {

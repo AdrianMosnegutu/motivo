@@ -1,16 +1,21 @@
 import type { Metadata } from 'next';
-import { Geist_Mono } from 'next/font/google';
+import { Fira_Code, Inter } from 'next/font/google';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { APP_DESCRIPTION, APP_TITLE } from '@/config/app';
-import AuthShell from '@/features/auth/components/AuthShell';
-import ThemeToggle from '@/shared/components/ThemeToggle';
+import AppHeader from '@/features/ide/components/AppHeader';
 
 import Providers from './providers';
 
 import './globals.css';
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+});
+
+const firaCode = Fira_Code({
+  variable: '--font-fira-code',
   subsets: ['latin'],
 });
 
@@ -25,19 +30,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistMono.variable} h-full`} suppressHydrationWarning>
-      <body className="h-full flex flex-col bg-background text-foreground antialiased">
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${inter.variable} ${firaCode.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <body className="flex h-full flex-col bg-background text-foreground antialiased">
         <Providers>
-          <header className="shrink-0 flex items-center justify-between px-4 h-12 border-b border-border bg-toolbar">
-            <span className="font-mono text-sm font-semibold tracking-widest uppercase">
-              {APP_TITLE}
-            </span>
-            <div className="flex items-center gap-2 min-w-0">
-              <AuthShell />
-              <ThemeToggle />
-            </div>
-          </header>
-          <main className="flex flex-1 min-h-0">{children}</main>
+          <TooltipProvider delayDuration={200}>
+            <AppHeader />
+            <main className="flex min-h-0 flex-1 gap-2 p-2">{children}</main>
+          </TooltipProvider>
         </Providers>
       </body>
     </html>

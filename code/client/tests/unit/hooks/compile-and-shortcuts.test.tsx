@@ -44,13 +44,13 @@ describe('compile and shortcut hooks', () => {
       current: {
         blur: vi.fn(),
         clearError: vi.fn(),
+        getValue: vi.fn(() => 'tempo 120;'),
         jumpTo: vi.fn(),
         setError: vi.fn(),
       },
     };
     const { result } = renderHook(() => useIdeCompile(editorRef));
 
-    act(() => result.current.handleEditorChange('tempo 120;'));
     await act(async () => result.current.handleCompile());
 
     expect(setMidiBytes).toHaveBeenCalledWith(null);
@@ -76,6 +76,7 @@ describe('compile and shortcut hooks', () => {
       current: {
         blur: vi.fn(),
         clearError: vi.fn(),
+        getValue: vi.fn(() => 'source'),
         jumpTo: vi.fn(),
         setError: vi.fn(),
       },
@@ -84,6 +85,7 @@ describe('compile and shortcut hooks', () => {
 
     await act(async () => result.current.handleCompile());
 
+    expect(compileSource).toHaveBeenCalledWith('source');
     expect(editorRef.current.setError).toHaveBeenCalledWith(3, 4, 'bad');
     expect(editorRef.current.jumpTo).toHaveBeenCalledWith(3, 4);
     expect(result.current.log?.kind).toBe('error');

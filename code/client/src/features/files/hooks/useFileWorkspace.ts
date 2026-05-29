@@ -16,20 +16,46 @@ import {
 import {
   createScratchDocument,
   ensureMotivoFileName,
+  getDocumentKey,
   toExampleDocument,
   toUserDocument,
   upsertUserFileSummary,
 } from '../lib/documents';
-import { downloadBlob } from '../lib/download-source';
-import type { ActiveDocument, UserFileSummary } from '../types';
+import { downloadBlob, downloadSource } from '../lib/download-source';
+import type { ActiveDocument, OpenDocumentTab, UserFileSummary } from '../types';
 
 import { useDebouncedAutosave } from './useDebouncedAutosave';
 
-function replaceActiveUserMetadata(document: ActiveDocument, fileId: string, fileName: string) {
+const SCRATCH_KEY = 'scratch:scratch';
+
+function replaceUserMetadata(document: ActiveDocument, fileId: string, fileName: string) {
   if (document.kind !== 'user' || document.id !== fileId) return document;
+  return { ...document, name: fileName };
+}
+
+function upsertOpenTab(tabs: ActiveDocument[], document: ActiveDocument): ActiveDocument[] {
+  const key = getDocumentKey(document);
+  const withoutCurrent = tabs.filter((tab) => getDocumentKey(tab) !== key);
+  return [...withoutCurrent, document];
+}
+
+function closeTabWithFallback(tabs: ActiveDocument[], keyToClose: string, scratchSource: string) {
+  const closeIndex = tabs.findIndex((tab) => getDocumentKey(tab) === keyToClose);
+  const remaining = tabs.filter((tab) => getDocumentKey(tab) !== keyToClose);
+
+  if (remaining.length > 0) {
+    const nextIndex = closeIndex > 0 ? closeIndex - 1 : 0;
+    const nextTab = remaining[Math.min(nextIndex, remaining.length - 1)];
+    return {
+      nextActiveKey: getDocumentKey(nextTab),
+      nextTabs: remaining,
+    };
+  }
+
+  const scratch = createScratchDocument(scratchSource);
   return {
-    ...document,
-    name: fileName,
+    nextActiveKey: SCRATCH_KEY,
+    nextTabs: [scratch],
   };
 }
 
@@ -40,11 +66,24 @@ export function useFileWorkspace() {
   const [userFiles, setUserFiles] = useState<UserFileSummary[]>([]);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [scratchSource, setScratchSource] = useState(DEFAULT_MOTIVO_SNIPPET);
-  const [activeDocument, setActiveDocument] = useState<ActiveDocument>(() =>
-    createScratchDocument(),
-  );
+  const [openTabs, setOpenTabs] = useState<ActiveDocument[]>([]);
+  const [activeTabKey, setActiveTabKey] = useState('');
+  const [dirtyUserFileIds, setDirtyUserFileIds] = useState<Record<string, true>>({});
+  const dirtyUserFileIdsRef = useRef(dirtyUserFileIds);
+  const activeDocument = useMemo(() => {
+    if (!activeTabKey) return null;
+    return openTabs.find((tab) => getDocumentKey(tab) === activeTabKey) ?? null;
+  }, [activeTabKey, openTabs]);
   const activeDocumentRef = useRef(activeDocument);
+  const activeTabKeyRef = useRef(activeTabKey);
+  const openTabsRef = useRef(openTabs);
   const scratchSourceRef = useRef(scratchSource);
+  const filesListedForUserIdRef = useRef<string | null>(null);
+  const authUserRef = useRef(user);
+
+  useEffect(() => {
+    authUserRef.current = user;
+  }, [user]);
 
   const authenticated = isAuthenticated;
   const authLoading = authStatus === 'loading';
@@ -54,8 +93,124 @@ export function useFileWorkspace() {
   }, [activeDocument]);
 
   useEffect(() => {
+    activeTabKeyRef.current = activeTabKey;
+  }, [activeTabKey]);
+
+  useEffect(() => {
+    openTabsRef.current = openTabs;
+  }, [openTabs]);
+
+  useEffect(() => {
     scratchSourceRef.current = scratchSource;
   }, [scratchSource]);
+
+  useEffect(() => {
+    dirtyUserFileIdsRef.current = dirtyUserFileIds;
+  }, [dirtyUserFileIds]);
+
+  const markUserFileDirty = useCallback((fileId: string) => {
+    setDirtyUserFileIds((current) => (current[fileId] ? current : { ...current, [fileId]: true }));
+  }, []);
+
+  const clearUserFileDirty = useCallback((fileId: string) => {
+    setDirtyUserFileIds((current) => {
+      if (!current[fileId]) return current;
+      const next = { ...current };
+      delete next[fileId];
+      return next;
+    });
+  }, []);
+
+  const removeUserTabs = useCallback(() => {
+    setOpenTabs((current) => current.filter((tab) => tab.kind !== 'user'));
+    setActiveTabKey((current) => {
+      if (!current.startsWith('user:')) return current;
+      const remaining = openTabsRef.current.filter((tab) => tab.kind !== 'user');
+      if (remaining.length === 0) return '';
+      return getDocumentKey(remaining[remaining.length - 1]);
+    });
+  }, []);
+
+  const saveSource = useCallback(
+    async (fileId: string, source: string) => {
+      const file = await updateFile(fileId, { source });
+      setUserFiles((current) => upsertUserFileSummary(current, file));
+      setOpenTabs((current) =>
+        current.map((document) => {
+          if (document.kind !== 'user' || document.id !== file.id) return document;
+          return {
+            ...document,
+            createdAt: file.createdAt,
+            updatedAt: file.updatedAt,
+            lastOpenedAt: file.lastOpenedAt,
+            name: file.name,
+            source,
+          };
+        }),
+      );
+      clearUserFileDirty(fileId);
+    },
+    [clearUserFileDirty],
+  );
+
+  const {
+    scheduleSave,
+    flushPendingSave,
+    status: autosaveStatus,
+  } = useDebouncedAutosave({
+    authenticated,
+    fileId: activeDocument?.kind === 'user' ? activeDocument.id : null,
+    readOnly: activeDocument?.readOnly ?? true,
+    save: saveSource,
+    onError: (error) => setOperationError(getFileErrorMessage(error)),
+  });
+
+  const activateTab = useCallback(
+    async (key: string) => {
+      if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
+
+      const current = activeDocumentRef.current;
+      if (current?.kind === 'user' && getDocumentKey(current) !== key) {
+        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
+        if (isDirty) {
+          await flushPendingSave();
+        }
+      }
+
+      setActiveTabKey(key);
+      return true;
+    },
+    [flushPendingSave],
+  );
+
+  const focusExistingTab = useCallback((key: string) => activateTab(key), [activateTab]);
+
+  const openDocumentInTab = useCallback(
+    async (document: ActiveDocument) => {
+      const current = activeDocumentRef.current;
+      if (current?.kind === 'user') {
+        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
+        if (isDirty) {
+          await flushPendingSave();
+        }
+      }
+
+      const key = getDocumentKey(document);
+      setOpenTabs((tabs) => {
+        const base =
+          document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
+        return upsertOpenTab(base, document);
+      });
+      setActiveTabKey(key);
+    },
+    [flushPendingSave],
+  );
+
+  const openDocumentInTabRef = useRef(openDocumentInTab);
+
+  useEffect(() => {
+    openDocumentInTabRef.current = openDocumentInTab;
+  }, [openDocumentInTab]);
 
   const loadUserFiles = useCallback(async (preferredFileId?: string | null) => {
     setFilesLoading(true);
@@ -67,7 +222,7 @@ export function useFileWorkspace() {
 
       if (preferredFileId && files.some((file) => file.id === preferredFileId)) {
         const file = await readFile(preferredFileId);
-        setActiveDocument(toUserDocument(file));
+        await openDocumentInTabRef.current(toUserDocument(file));
       }
     } catch (error) {
       setOperationError(getFileErrorMessage(error));
@@ -82,14 +237,17 @@ export function useFileWorkspace() {
     const nextUser = await refreshAuth();
 
     if (nextUser) {
+      filesListedForUserIdRef.current = null;
       await loadUserFiles(nextUser.lastOpenedFileId);
+      filesListedForUserIdRef.current = nextUser.id;
     } else {
+      filesListedForUserIdRef.current = null;
       setUserFiles([]);
-      if (activeDocumentRef.current.kind === 'user') {
-        setActiveDocument(createScratchDocument(scratchSourceRef.current));
-      }
+      removeUserTabs();
     }
-  }, [loadUserFiles, refreshAuth]);
+  }, [loadUserFiles, refreshAuth, removeUserTabs]);
+
+  const userId = user?.id ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -99,14 +257,20 @@ export function useFileWorkspace() {
       if (cancelled) return;
 
       if (authStatus === 'loading') {
+        setFilesLoading(false);
         return;
       }
 
-      if (!user) {
+      if (!userId) {
+        filesListedForUserIdRef.current = null;
         setUserFiles([]);
-        if (activeDocumentRef.current.kind === 'user') {
-          setActiveDocument(createScratchDocument(scratchSourceRef.current));
-        }
+        setFilesLoading(false);
+        removeUserTabs();
+        return;
+      }
+
+      if (filesListedForUserIdRef.current === userId) {
+        setFilesLoading(false);
         return;
       }
 
@@ -117,18 +281,18 @@ export function useFileWorkspace() {
         const files = await listFiles();
         if (cancelled) return;
         setUserFiles(files);
+        filesListedForUserIdRef.current = userId;
 
-        if (user.lastOpenedFileId && files.some((file) => file.id === user.lastOpenedFileId)) {
-          const file = await readFile(user.lastOpenedFileId);
+        const lastOpenedFileId = authUserRef.current?.lastOpenedFileId;
+        if (lastOpenedFileId && files.some((file) => file.id === lastOpenedFileId)) {
+          const file = await readFile(lastOpenedFileId);
           if (cancelled) return;
-          setActiveDocument(toUserDocument(file));
+          await openDocumentInTabRef.current(toUserDocument(file));
         }
       } catch (error) {
         if (!cancelled) setOperationError(getFileErrorMessage(error));
       } finally {
-        if (!cancelled) {
-          setFilesLoading(false);
-        }
+        setFilesLoading(false);
       }
     }
 
@@ -136,45 +300,29 @@ export function useFileWorkspace() {
 
     return () => {
       cancelled = true;
+      setFilesLoading(false);
     };
-  }, [authStatus, user]);
+  }, [authStatus, removeUserTabs, userId]);
 
-  const saveSource = useCallback(async (fileId: string, source: string) => {
-    const file = await updateFile(fileId, { source });
-    setUserFiles((current) => upsertUserFileSummary(current, file));
-    setActiveDocument((current) => {
-      if (current.kind !== 'user' || current.id !== file.id) return current;
-      return {
-        ...current,
-        createdAt: file.createdAt,
-        updatedAt: file.updatedAt,
-        lastOpenedAt: file.lastOpenedAt,
-        name: file.name,
-      };
-    });
-  }, []);
-
-  const { scheduleSave, status: autosaveStatus } = useDebouncedAutosave({
-    authenticated,
-    fileId: activeDocument.kind === 'user' ? activeDocument.id : null,
-    readOnly: activeDocument.readOnly,
-    save: saveSource,
-    onError: (error) => setOperationError(getFileErrorMessage(error)),
-  });
-
-  const openScratch = useCallback(() => {
+  const openScratch = useCallback(async () => {
     setOperationError(null);
-    setActiveDocument(createScratchDocument(scratchSource));
-  }, [scratchSource]);
+    if (await focusExistingTab(SCRATCH_KEY)) return;
+    await openDocumentInTab(createScratchDocument(scratchSource));
+  }, [focusExistingTab, openDocumentInTab, scratchSource]);
 
-  const openExample = useCallback((id: string) => {
-    try {
-      setOperationError(null);
-      setActiveDocument(toExampleDocument(readExampleFile(id)));
-    } catch (error) {
-      setOperationError(error instanceof Error ? error.message : 'Example could not be opened.');
-    }
-  }, []);
+  const openExample = useCallback(
+    async (id: string) => {
+      try {
+        setOperationError(null);
+        const key = `example:${id}`;
+        if (await focusExistingTab(key)) return;
+        await openDocumentInTab(toExampleDocument(readExampleFile(id)));
+      } catch (error) {
+        setOperationError(error instanceof Error ? error.message : 'Example could not be opened.');
+      }
+    },
+    [focusExistingTab, openDocumentInTab],
+  );
 
   const openUserFile = useCallback(
     async (id: string) => {
@@ -186,8 +334,9 @@ export function useFileWorkspace() {
       setOperationError(null);
 
       try {
+        if (await focusExistingTab(`user:${id}`)) return true;
         const file = await readFile(id);
-        setActiveDocument(toUserDocument(file));
+        await openDocumentInTab(toUserDocument(file));
         setUserFiles((current) => upsertUserFileSummary(current, file));
         return true;
       } catch (error) {
@@ -195,7 +344,7 @@ export function useFileWorkspace() {
         return false;
       }
     },
-    [authenticated],
+    [authenticated, focusExistingTab, openDocumentInTab],
   );
 
   const createUserFile = useCallback(
@@ -213,14 +362,14 @@ export function useFileWorkspace() {
           source: DEFAULT_MOTIVO_SNIPPET,
         });
         setUserFiles((current) => upsertUserFileSummary(current, file));
-        setActiveDocument(toUserDocument(file));
+        await openDocumentInTab(toUserDocument(file));
         return true;
       } catch (error) {
         setOperationError(getFileErrorMessage(error));
         return false;
       }
     },
-    [authenticated],
+    [authenticated, openDocumentInTab],
   );
 
   const renameUserFile = useCallback(
@@ -235,7 +384,9 @@ export function useFileWorkspace() {
       try {
         const file = await updateFile(id, { name: ensureMotivoFileName(name) });
         setUserFiles((current) => upsertUserFileSummary(current, file));
-        setActiveDocument((current) => replaceActiveUserMetadata(current, file.id, file.name));
+        setOpenTabs((current) =>
+          current.map((document) => replaceUserMetadata(document, file.id, file.name)),
+        );
         return true;
       } catch (error) {
         setOperationError(getFileErrorMessage(error));
@@ -257,8 +408,17 @@ export function useFileWorkspace() {
       try {
         await deleteRemoteFile(id);
         setUserFiles((current) => current.filter((file) => file.id !== id));
-        if (activeDocumentRef.current.kind === 'user' && activeDocumentRef.current.id === id) {
-          setActiveDocument(createScratchDocument(scratchSourceRef.current));
+        clearUserFileDirty(id);
+
+        const keyToClose = `user:${id}`;
+        if (openTabsRef.current.some((tab) => getDocumentKey(tab) === keyToClose)) {
+          const { nextActiveKey, nextTabs } = closeTabWithFallback(
+            openTabsRef.current,
+            keyToClose,
+            scratchSourceRef.current,
+          );
+          setOpenTabs(nextTabs);
+          setActiveTabKey(nextActiveKey);
         }
         return true;
       } catch (error) {
@@ -266,7 +426,7 @@ export function useFileWorkspace() {
         return false;
       }
     },
-    [authenticated],
+    [authenticated, clearUserFileDirty],
   );
 
   const downloadUserFile = useCallback(
@@ -291,36 +451,209 @@ export function useFileWorkspace() {
     [authenticated, userFiles],
   );
 
+  const downloadExampleFile = useCallback((id: string) => {
+    try {
+      const file = readExampleFile(id);
+      downloadSource(file.name, file.source);
+      setOperationError(null);
+      return true;
+    } catch (error) {
+      setOperationError(
+        error instanceof Error ? error.message : 'Example could not be downloaded.',
+      );
+      return false;
+    }
+  }, []);
+
+  const downloadActiveDocument = useCallback(async () => {
+    const document = activeDocumentRef.current;
+    if (!document) return false;
+
+    if (document.kind === 'user') {
+      return downloadUserFile(document.id);
+    }
+
+    if (document.kind === 'example') {
+      return downloadExampleFile(document.id);
+    }
+
+    downloadSource('unsaved.motivo', document.source);
+    return true;
+  }, [downloadExampleFile, downloadUserFile]);
+
+  const forceCloseTab = useCallback((key: string) => {
+    if (!openTabsRef.current.some((item) => getDocumentKey(item) === key)) return;
+    const { nextActiveKey, nextTabs } = closeTabWithFallback(
+      openTabsRef.current,
+      key,
+      scratchSourceRef.current,
+    );
+    setOpenTabs(nextTabs);
+    setActiveTabKey(nextActiveKey);
+  }, []);
+
+  const saveAndCloseTab = useCallback(
+    async (key: string) => {
+      const tab = openTabsRef.current.find((item) => getDocumentKey(item) === key);
+      if (!tab) return true;
+
+      if (tab.kind === 'user') {
+        try {
+          await saveSource(tab.id, tab.source);
+        } catch (error) {
+          setOperationError(getFileErrorMessage(error));
+          return false;
+        }
+      }
+
+      forceCloseTab(key);
+      return true;
+    },
+    [forceCloseTab, saveSource],
+  );
+
+  const saveScratchAs = useCallback(
+    async (name: string) => {
+      if (!authenticated) {
+        setOperationError('Sign in to save files.');
+        return false;
+      }
+
+      const scratch = openTabsRef.current.find((tab) => tab.kind === 'scratch');
+      const source = scratch?.source ?? scratchSourceRef.current;
+      setOperationError(null);
+
+      try {
+        const file = await createFile({ name: ensureMotivoFileName(name), source });
+        setUserFiles((current) => upsertUserFileSummary(current, file));
+        const userDocument = toUserDocument(file);
+        setOpenTabs((current) =>
+          upsertOpenTab(
+            current.filter((tab) => tab.kind !== 'scratch'),
+            userDocument,
+          ),
+        );
+        setActiveTabKey(getDocumentKey(userDocument));
+        return true;
+      } catch (error) {
+        setOperationError(getFileErrorMessage(error));
+        return false;
+      }
+    },
+    [authenticated],
+  );
+
+  const saveActiveDocument = useCallback(async () => {
+    const document = activeDocumentRef.current;
+    if (!document || document.kind !== 'user') return false;
+
+    try {
+      await saveSource(document.id, document.source);
+      return true;
+    } catch (error) {
+      setOperationError(getFileErrorMessage(error));
+      return false;
+    }
+  }, [saveSource]);
+
+  const focusTab = useCallback((key: string) => focusExistingTab(key), [focusExistingTab]);
+
   const handleSourceChange = useCallback(
-    (source: string) => {
-      const current = activeDocumentRef.current;
+    (documentId: string, source: string) => {
+      const tab = openTabsRef.current.find(
+        (document) => `${document.kind}:${document.id}` === documentId,
+      );
+      if (!tab || tab.kind === 'example' || tab.source === source) return;
+      const key = getDocumentKey(tab);
+      if (key !== activeTabKeyRef.current) return;
 
-      if (current.kind === 'example') return;
-
-      if (current.kind === 'scratch') {
+      if (tab.kind === 'scratch') {
         setScratchSource(source);
-        setActiveDocument((document) =>
-          document.kind === 'scratch' ? { ...document, source } : document,
+        setOpenTabs((tabs) =>
+          tabs.map((document) =>
+            getDocumentKey(document) === key ? { ...document, source } : document,
+          ),
         );
         return;
       }
 
-      setActiveDocument((document) =>
-        document.kind === 'user' && document.id === current.id ? { ...document, source } : document,
+      markUserFileDirty(tab.id);
+      setOpenTabs((tabs) =>
+        tabs.map((document) =>
+          getDocumentKey(document) === key ? { ...document, source } : document,
+        ),
       );
       scheduleSave(source);
     },
-    [scheduleSave],
+    [markUserFileDirty, scheduleSave],
   );
+
+  const openDocumentTabs = useMemo<OpenDocumentTab[]>(() => {
+    return openTabs.map((document) => {
+      const key = getDocumentKey(document);
+
+      if (document.kind === 'example') {
+        return {
+          key,
+          kind: document.kind,
+          id: document.id,
+          name: document.name,
+          readOnly: true,
+          closable: true,
+          syncState: 'readonly',
+        };
+      }
+
+      if (document.kind === 'scratch') {
+        return {
+          key,
+          kind: document.kind,
+          id: document.id,
+          name: document.name,
+          readOnly: false,
+          closable: true,
+          syncState: 'out-of-sync',
+        };
+      }
+
+      const isDirty = Boolean(dirtyUserFileIds[document.id]);
+      const isActive = key === activeTabKey;
+      const syncState =
+        isActive && autosaveStatus === 'saving'
+          ? 'saving'
+          : isDirty || (isActive && (autosaveStatus === 'pending' || autosaveStatus === 'error'))
+            ? 'out-of-sync'
+            : 'synced';
+
+      return {
+        key,
+        kind: document.kind,
+        id: document.id,
+        name: document.name,
+        readOnly: false,
+        closable: true,
+        syncState,
+      };
+    });
+  }, [activeTabKey, autosaveStatus, dirtyUserFileIds, openTabs]);
 
   return {
     activeDocument,
+    activeTabKey,
     authLoading,
     authenticated,
     autosaveStatus,
+    forceCloseTab,
+    saveAndCloseTab,
+    saveActiveDocument,
+    saveScratchAs,
+    downloadActiveDocument,
+    downloadExampleFile,
     examples,
     filesLoading,
+    focusTab,
     handleSourceChange,
+    openTabs: openDocumentTabs,
     openExample,
     openScratch,
     openUserFile,

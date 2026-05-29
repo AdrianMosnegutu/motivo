@@ -9,6 +9,9 @@ export default defineConfig({
     },
   },
   test: {
+    setupFiles: ['./tests/setup.ts'],
+    // Integration tests share one Postgres database; parallel files race on resetDatabase().
+    fileParallelism: false,
     coverage: {
       all: true,
       exclude: ['dist/**', 'tests/**', 'vitest.config.ts', 'eslint.config.mjs'],

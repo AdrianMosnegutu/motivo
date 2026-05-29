@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
+import { ChevronDown, Trash2 } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { groupDiagnosticsByType } from '@/features/compile/diagnostics';
 import type { Diagnostic, LogEntry } from '@/features/compile/types';
 
@@ -28,6 +30,7 @@ interface LogsPaneProps {
   log: LogEntry | null;
   onClear: () => void;
   onJump?: (line: number, column: number) => void;
+  onToggleCollapse?: () => void;
 }
 
 function DiagnosticItem({
@@ -84,7 +87,7 @@ function DiagnosticItem({
   );
 }
 
-export default function LogsPane({ log, onClear, onJump }: LogsPaneProps) {
+export default function LogsPane({ log, onClear, onJump, onToggleCollapse }: LogsPaneProps) {
   const groupedDiagnostics = useMemo(() => {
     if (!log || log.kind !== 'error') return null;
 
@@ -92,23 +95,36 @@ export default function LogsPane({ log, onClear, onJump }: LogsPaneProps) {
   }, [log]);
 
   return (
-    <div className="flex flex-col h-full bg-panel">
-      <div className="shrink-0 flex items-center justify-between px-3 py-1 border-b border-border bg-toolbar">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-600 dark:text-zinc-400 font-mono uppercase tracking-wider">
-            logs
-          </span>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-            Cmd+J / Ctrl+J
-          </span>
+    <div className="flex h-full flex-col overflow-hidden border border-[#2a303c] bg-[#0b0e14]">
+      <div className="flex h-8 shrink-0 items-center justify-between border-b border-[#2a303c] bg-[#151921] px-4">
+        <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.6px] text-[#94a3b8]">
+          Logs
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={onClear}
+            disabled={!log}
+            variant="ghost"
+            size="icon-xs"
+            aria-label="Clear"
+            title="Clear logs"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Trash2 aria-hidden />
+          </Button>
+          {onToggleCollapse ? (
+            <Button
+              onClick={onToggleCollapse}
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Collapse logs"
+              title="Collapse logs"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ChevronDown aria-hidden />
+            </Button>
+          ) : null}
         </div>
-        <button
-          onClick={onClear}
-          disabled={!log}
-          className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium"
-        >
-          Clear
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-2 font-mono">

@@ -1,8 +1,11 @@
 'use client';
 
 import { type FormEvent, useId, useState } from 'react';
-import { LogIn, LogOut, UserRound, X } from 'lucide-react';
+import { UserRound, X } from 'lucide-react';
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import Spinner from '@/shared/components/Spinner';
 
 import { getAuthErrorMessage } from '../auth-api';
@@ -70,43 +73,56 @@ export default function AuthShell() {
   };
 
   const visibleError = formError ?? lastError;
-
-  if (user) {
-    return (
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="hidden sm:flex items-center gap-2 min-w-0 h-8 px-2 rounded-md border border-border bg-background text-xs">
-          <UserRound className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden="true" />
-          <span className="max-w-48 truncate" title={user.email}>
-            {user.email}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={signingOut}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-zinc-800"
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          {signingOut ? <Spinner /> : <LogOut className="h-4 w-4" aria-hidden="true" />}
-        </button>
-      </div>
-    );
-  }
+  const displayEmail = user?.email ?? 'guest@motivo.studio';
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        aria-expanded={open}
-      >
-        {status === 'loading' ? <Spinner /> : <LogIn className="h-4 w-4" aria-hidden="true" />}
-        <span>Sign in</span>
-      </button>
+    <div className="relative flex items-center gap-4">
+      {user ? (
+        <>
+          <div className="flex items-center gap-2.5">
+            <Avatar size="sm" className="border-[#334155] after:border-[#334155]">
+              <AvatarFallback className="bg-transparent text-muted-foreground">
+                <UserRound className="size-3.5" aria-hidden="true" />
+              </AvatarFallback>
+            </Avatar>
+            <span
+              className="max-w-44 truncate text-[13px] font-medium text-[#94a3b8]"
+              title={displayEmail}
+            >
+              {displayEmail}
+            </span>
+          </div>
 
-      {open ? (
+          <Separator orientation="vertical" className="h-4 bg-[#334155]" />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            disabled={signingOut}
+            aria-label="Sign out"
+            className="px-2 text-[13px] font-medium text-[#94a3b8] hover:text-foreground"
+          >
+            {signingOut ? <Spinner /> : null}
+            Logout
+          </Button>
+        </>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen((current) => !current)}
+          aria-expanded={open}
+          className="px-2 text-[13px] font-medium text-[#94a3b8] hover:text-foreground"
+        >
+          {status === 'loading' ? <Spinner /> : null}
+          Sign in
+        </Button>
+      )}
+
+      {open && !user ? (
         <div
           role="dialog"
           aria-label="Authentication"

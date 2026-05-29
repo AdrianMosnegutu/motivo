@@ -15,12 +15,20 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   const [playState, setPlayState] = useState<PlayState>('stopped');
   const [midiLoadState, setMidiLoadState] = useState<LoadState>('idle');
   const [position, setPosition] = useState('0.0s / 0.0s');
+  const [loop, setLoop] = useState(false);
   const loadState = parsedMidi ? midiLoadState : 'idle';
 
   const playersRef = useRef<SfPlayer[]>([]);
   const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
   const pauseOffsetRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const loopRef = useRef(loop);
+
+  useEffect(() => {
+    loopRef.current = loop;
+  }, [loop]);
+
+  const toggleLoop = useCallback(() => setLoop((value) => !value), []);
 
   const stopScheduledAudio = useCallback(() => {
     stopAudioNodes(scheduledNodesRef.current);
@@ -85,6 +93,14 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     Tone.getTransport().start();
     setPlayState('playing');
   }, [loadState, parsedMidi, playState, scheduleNotes]);
+
+  const restartFromStart = useCallback(() => {
+    const audioContext = Tone.getContext().rawContext as AudioContext;
+    stopScheduledAudio();
+    Tone.getTransport().seconds = 0;
+    pauseOffsetRef.current = 0;
+    scheduleNotes(audioContext, 0);
+  }, [scheduleNotes, stopScheduledAudio]);
 
   const handlePause = useCallback(() => {
     const offset = Tone.getTransport().seconds;
@@ -182,7 +198,11 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
       setPosition(`${current.toFixed(1)}s / ${total.toFixed(1)}s`);
 
       if (playState === 'playing' && parsedMidi && current >= parsedMidi.duration) {
-        stopAll();
+        if (loopRef.current) {
+          restartFromStart();
+        } else {
+          stopAll();
+        }
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -192,7 +212,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [parsedMidi, playState, stopAll]);
+  }, [parsedMidi, playState, restartFromStart, stopAll]);
 
   useEffect(() => () => stopAll(), [stopAll]);
 
@@ -204,8 +224,10 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     handleRewind,
     handleSeek,
     loadState,
+    loop,
     playState,
     position,
     stopAll,
+    toggleLoop,
   };
 }

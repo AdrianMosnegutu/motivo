@@ -1,19 +1,25 @@
+export const ROW_HEIGHT = 24;
+export const PIXELS_PER_SECOND = 90;
+
+export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+const BLACK_KEY_OFFSETS = new Set([1, 3, 6, 8, 10]);
+const OCTAVE_ANCHOR_OFFSETS = new Set([0, 4, 7]);
+
 export const TRACK_COLORS = [
-  '#6366f1',
-  '#22d3ee',
-  '#f59e0b',
-  '#10b981',
-  '#f43f5e',
+  '#38bdf8',
   '#a855f7',
-  '#84cc16',
-  '#f97316',
+  '#f59e0b',
+  '#22c55e',
+  '#f43f5e',
+  '#14b8a6',
+  '#eab308',
+  '#ec4899',
 ];
 
-export const PIXELS_PER_SEC = 150;
-export const NOTE_GAP = 1;
-export const KEY_STRIP_HEIGHT = 80;
-
-export const BLACK_KEY_OFFSETS = new Set([1, 3, 6, 8, 10]);
+export function trackColor(index: number) {
+  return TRACK_COLORS[((index % TRACK_COLORS.length) + TRACK_COLORS.length) % TRACK_COLORS.length];
+}
 
 export type NoteLike = {
   midi: number;
@@ -23,8 +29,21 @@ export type TrackLike = {
   notes: NoteLike[];
 };
 
+function pitchClass(midi: number) {
+  return ((midi % 12) + 12) % 12;
+}
+
 export function isBlackKey(midi: number) {
-  return BLACK_KEY_OFFSETS.has(midi % 12);
+  return BLACK_KEY_OFFSETS.has(pitchClass(midi));
+}
+
+export function isOctaveAnchor(midi: number) {
+  return OCTAVE_ANCHOR_OFFSETS.has(pitchClass(midi));
+}
+
+export function midiToLabel(midi: number) {
+  const octave = Math.floor(midi / 12) - 1;
+  return `${NOTE_NAMES[pitchClass(midi)]}${octave}`;
 }
 
 export function calculateNoteRange(tracks: TrackLike[] | null) {

@@ -56,6 +56,32 @@ export function useDebouncedAutosave({
     versionRef.current += 1;
   }, [activeKey, clearPendingSave]);
 
+  const runSave = useCallback(
+    async (source: string, saveKey: string, saveFileId: string, saveVersion: number) => {
+      setState((current) =>
+        current.key === saveKey ? { error: null, key: saveKey, status: 'saving' } : current,
+      );
+
+      try {
+        await save(saveFileId, source);
+        if (!mountedRef.current || saveVersion !== versionRef.current) return false;
+        setState((current) =>
+          current.key === saveKey ? { error: null, key: saveKey, status: 'saved' } : current,
+        );
+        onSaved?.();
+        return true;
+      } catch (saveError) {
+        if (!mountedRef.current || saveVersion !== versionRef.current) return false;
+        setState((current) =>
+          current.key === saveKey ? { error: saveError, key: saveKey, status: 'error' } : current,
+        );
+        onError?.(saveError);
+        return false;
+      }
+    },
+    [onError, onSaved, save],
+  );
+
   const scheduleSave = useCallback(
     (source: string) => {
       if (!authenticated || readOnly || !fileId) return;
@@ -64,42 +90,40 @@ export function useDebouncedAutosave({
       latestSourceRef.current = source;
       const saveVersion = versionRef.current + 1;
       versionRef.current = saveVersion;
+      const saveKey = activeKey;
+      const saveFileId = fileId;
       setState({ error: null, key: activeKey, status: 'pending' });
 
       timeoutRef.current = setTimeout(async () => {
         timeoutRef.current = null;
         if (!mountedRef.current || saveVersion !== versionRef.current) return;
-
-        setState((current) =>
-          current.key === activeKey ? { error: null, key: activeKey, status: 'saving' } : current,
-        );
-
-        try {
-          await save(fileId, latestSourceRef.current);
-          if (!mountedRef.current || saveVersion !== versionRef.current) return;
-          setState((current) =>
-            current.key === activeKey ? { error: null, key: activeKey, status: 'saved' } : current,
-          );
-          onSaved?.();
-        } catch (saveError) {
-          if (!mountedRef.current || saveVersion !== versionRef.current) return;
-          setState((current) =>
-            current.key === activeKey
-              ? { error: saveError, key: activeKey, status: 'error' }
-              : current,
-          );
-          onError?.(saveError);
-        }
+        await runSave(latestSourceRef.current, saveKey, saveFileId, saveVersion);
       }, delay);
     },
-    [activeKey, authenticated, clearPendingSave, delay, fileId, onError, onSaved, readOnly, save],
+    [activeKey, authenticated, clearPendingSave, delay, fileId, readOnly, runSave],
   );
+
+  const flushPendingSave = useCallback(async () => {
+    if (!authenticated || readOnly || !fileId) return true;
+
+    const source = latestSourceRef.current;
+    if (!source) return true;
+
+    const hadScheduledSave = timeoutRef.current !== null;
+    clearPendingSave();
+    if (!hadScheduledSave) return true;
+
+    const saveVersion = versionRef.current + 1;
+    versionRef.current = saveVersion;
+    return runSave(source, activeKey, fileId, saveVersion);
+  }, [activeKey, authenticated, clearPendingSave, fileId, readOnly, runSave]);
 
   const currentState =
     state.key === activeKey ? state : { error: null, key: activeKey, status: 'idle' as const };
 
   return {
     error: currentState.error,
+    flushPendingSave,
     scheduleSave,
     status: currentState.status,
   };

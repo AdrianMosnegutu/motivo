@@ -1,36 +1,102 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --border: #e4e4e7;
-  --panel: #f4f4f5;
-  --toolbar: #f4f4f5;
-}
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+:root,
 [data-theme='dark'] {
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --border: #27272a;
-  --panel: #0d0d0f;
-  --toolbar: #18181b;
+  --background: #0b0e14;
+  --foreground: #e2e8f0;
+  --card: #151921;
+  --card-foreground: #e2e8f0;
+  --popover: #151921;
+  --popover-foreground: #e2e8f0;
+  --primary: #38bdf8;
+  --primary-foreground: #0b0e14;
+  --secondary: #1a1f29;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1a1f29;
+  --muted-foreground: #94a3b8;
+  --accent: #38bdf8;
+  --accent-foreground: #0b0e14;
+  --destructive: #f87171;
+  --destructive-foreground: #1f0a0a;
+  --success: #22c55e;
+  --success-foreground: #052e16;
+  --border: #2a303c;
+  --input: #2a303c;
+  --ring: #38bdf8;
+  --panel: #151921;
+  --toolbar: #0f172a;
+  --ide-surface: #0b0e14;
+  --ide-surface-muted: #1a1f29;
+  --ide-active: #1e2532;
+  --ide-active-border: #3b82f6;
+  --ide-tab: #151921;
+  --ide-tab-active: #0b0e14;
+  --ide-log-info: #38bdf8;
+  --ide-log-success: #86efac;
+  --ide-log-warning: #facc15;
+  --ide-log-error: #f87171;
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-panel: var(--panel);
   --color-toolbar: var(--toolbar);
-  --font-mono: var(--font-geist-mono);
+  --color-ide-surface: var(--ide-surface);
+  --color-ide-surface-muted: var(--ide-surface-muted);
+  --color-ide-active: var(--ide-active);
+  --color-ide-active-border: var(--ide-active-border);
+  --color-ide-tab: var(--ide-tab);
+  --color-ide-tab-active: var(--ide-tab-active);
+  --color-ide-log-info: var(--ide-log-info);
+  --color-ide-log-success: var(--ide-log-success);
+  --color-ide-log-warning: var(--ide-log-warning);
+  --color-ide-log-error: var(--ide-log-error);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-fira-code);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
   box-sizing: border-box;
+}
+
+button:not(:disabled),
+a[href] {
+  cursor: pointer;
 }

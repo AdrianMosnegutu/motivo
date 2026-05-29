@@ -40,7 +40,7 @@ async function ensureDefaultTestDatabase() {
 export function useTestDatabase() {
   beforeAll(async () => {
     await ensureDefaultTestDatabase();
-    process.env.SESSION_SECRET ??= 'test-session-secret';
+    await closeDatabase();
     await migrateDatabase();
   });
 

@@ -1,15 +1,15 @@
 'use client';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import Editor, { type BeforeMount, type Monaco, type OnMount } from '@monaco-editor/react';
-import { useTheme } from 'next-themes';
 
 import { createErrorMarker } from '../monaco/markers';
 import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '../monaco/monaco-config';
 import { MOTIVO_LANGUAGE_ID, registerMotivoLanguage } from '../monaco/motivo-language';
-import { getMotivoTheme, registerMotivoThemes } from '../monaco/motivo-themes';
+import { MOTIVO_DARK_THEME, registerMotivoThemes } from '../monaco/motivo-themes';
 
 export interface MotivoEditorHandle {
+  getValue: () => string;
   jumpTo: (line: number, column: number) => void;
   blur: () => void;
   setError: (line: number, column: number, message: string) => void;
@@ -18,30 +18,35 @@ export interface MotivoEditorHandle {
 
 export interface MotivoEditorProps {
   documentId?: string;
-  onChange?: (value: string) => void;
+  onChange?: (documentId: string, value: string) => void;
   onCompile?: () => void;
   readOnly?: boolean;
   value?: string;
 }
 
 const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function MotivoEditor(
-  { documentId = 'scratch', onChange, onCompile, readOnly = false, value },
+  { documentId = 'scratch:scratch', onChange, onCompile, readOnly = false, value },
   ref,
 ) {
-  const { theme } = useTheme();
   const onCompileRef = useRef(onCompile);
   onCompileRef.current = onCompile;
 
   const editorInstanceRef = useRef<Parameters<OnMount>[0] | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+  const documentEpochRef = useRef(0);
+  const lastHandledChangeEpochRef = useRef(0);
+  const previousDocumentIdRef = useRef(documentId);
 
-  useEffect(() => {
-    if (editorInstanceRef.current && monacoRef.current) {
-      monacoRef.current.editor.setTheme(getMotivoTheme(theme));
-    }
-  }, [theme]);
+  useLayoutEffect(() => {
+    if (previousDocumentIdRef.current === documentId) return;
+    previousDocumentIdRef.current = documentId;
+    documentEpochRef.current += 1;
+  }, [documentId]);
 
   useImperativeHandle(ref, () => ({
+    getValue() {
+      return editorInstanceRef.current?.getValue() ?? '';
+    },
     jumpTo(line: number, column: number) {
       const editor = editorInstanceRef.current;
       if (!editor) return;
@@ -87,12 +92,15 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
   }, []);
 
   const handleChange = useCallback(
-    (value: string | undefined) => {
+    (nextValue: string | undefined) => {
       if (readOnly) return;
-      const v = value ?? '';
-      onChange?.(v);
+      if (lastHandledChangeEpochRef.current < documentEpochRef.current) {
+        lastHandledChangeEpochRef.current = documentEpochRef.current;
+        return;
+      }
+      onChange?.(documentId, nextValue ?? '');
     },
-    [onChange, readOnly],
+    [documentId, onChange, readOnly],
   );
 
   const handleMount: OnMount = useCallback((editor, m) => {
@@ -113,7 +121,7 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
       defaultLanguage={MOTIVO_LANGUAGE_ID}
       path={documentId}
       value={value ?? DEFAULT_MOTIVO_SNIPPET}
-      theme={getMotivoTheme(theme)}
+      theme={MOTIVO_DARK_THEME}
       beforeMount={handleBeforeMount}
       onChange={handleChange}
       onMount={handleMount}

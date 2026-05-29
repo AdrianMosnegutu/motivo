@@ -10,7 +10,11 @@ import type {
 } from '../types';
 
 export const SCRATCH_DOCUMENT_ID = 'scratch';
-export const SCRATCH_DOCUMENT_NAME = 'Scratch.motivo';
+export const SCRATCH_DOCUMENT_NAME = 'unsaved';
+
+export function getDocumentKey(input: Pick<ActiveDocument, 'id' | 'kind'>): string {
+  return `${input.kind}:${input.id}`;
+}
 
 export function createScratchDocument(source = DEFAULT_MOTIVO_SNIPPET): ScratchDocument {
   return {
@@ -53,7 +57,7 @@ export function toExampleDocument(file: ExampleFile): ActiveDocument {
 
 export function ensureMotivoFileName(name: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return SCRATCH_DOCUMENT_NAME;
+  if (!trimmed) return 'unsaved.motivo';
   return trimmed.toLowerCase().endsWith('.motivo') ? trimmed : `${trimmed}.motivo`;
 }
 

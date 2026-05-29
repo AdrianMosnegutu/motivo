@@ -1,60 +1,51 @@
 import type { Monaco } from '@monaco-editor/react';
 
 export const MOTIVO_DARK_THEME = 'motivo-dark';
-export const MOTIVO_LIGHT_THEME = 'motivo-light';
 
-export function getMotivoTheme(theme: string | undefined) {
-  return theme === 'dark' ? MOTIVO_DARK_THEME : MOTIVO_LIGHT_THEME;
-}
+/** Syntax colors aligned with the Motivo Studio dark IDE palette. */
+export const MOTIVO_SYNTAX_COLORS = {
+  keyword: '#c084fc',
+  voiceKeyword: '#c084fc',
+  restKeyword: '#38bdf8',
+  noteLiteral: '#a6e3a1',
+  number: '#fb923c',
+  instrument: '#38bdf8',
+  drumNote: '#38bdf8',
+  boolean: '#4ade80',
+  string: '#86efac',
+  comment: '#64748b',
+  operator: '#38bdf8',
+  identifier: '#ffffff',
+  delimiter: '#94a3b8',
+} as const;
 
 export function registerMotivoThemes(monaco: Monaco) {
   monaco.editor.defineTheme(MOTIVO_DARK_THEME, {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'keyword', foreground: 'c792ea', fontStyle: 'bold' },
-      { token: 'note-literal', foreground: 'f78c6c' },
-      { token: 'instrument', foreground: '89ddff' },
-      { token: 'drum-note', foreground: '89ddff' },
-      { token: 'boolean-literal', foreground: 'ff5370' },
-      { token: 'string', foreground: 'c3e88d' },
-      { token: 'number', foreground: 'f78c6c' },
-      { token: 'comment', foreground: '94a2a8', fontStyle: 'italic' },
-      { token: 'operator', foreground: '89ddff' },
-      { token: 'identifier', foreground: 'eeffff' },
+      { token: 'keyword', foreground: MOTIVO_SYNTAX_COLORS.keyword, fontStyle: 'bold' },
+      { token: 'voice-keyword', foreground: MOTIVO_SYNTAX_COLORS.voiceKeyword, fontStyle: 'bold' },
+      { token: 'rest-keyword', foreground: MOTIVO_SYNTAX_COLORS.restKeyword },
+      { token: 'note-literal', foreground: MOTIVO_SYNTAX_COLORS.noteLiteral },
+      { token: 'number', foreground: MOTIVO_SYNTAX_COLORS.number },
+      { token: 'instrument', foreground: MOTIVO_SYNTAX_COLORS.instrument },
+      { token: 'drum-note', foreground: MOTIVO_SYNTAX_COLORS.drumNote },
+      { token: 'boolean-literal', foreground: MOTIVO_SYNTAX_COLORS.boolean },
+      { token: 'string', foreground: MOTIVO_SYNTAX_COLORS.string },
+      { token: 'comment', foreground: MOTIVO_SYNTAX_COLORS.comment, fontStyle: 'italic' },
+      { token: 'operator', foreground: MOTIVO_SYNTAX_COLORS.operator },
+      { token: 'identifier', foreground: MOTIVO_SYNTAX_COLORS.identifier },
+      { token: 'delimiter', foreground: MOTIVO_SYNTAX_COLORS.delimiter },
     ],
     colors: {
-      'editor.background': '#0d0d0f',
-      'editor.foreground': '#eeffff',
-      'editorLineNumber.foreground': '#8a8a8a',
+      'editor.background': '#0b0e14',
+      'editor.foreground': '#e2e8f0',
+      'editorLineNumber.foreground': '#94a3b8',
       'editorLineNumber.activeForeground': '#ffffff',
-      'editor.selectionBackground': '#1a2a3a',
-      'editor.lineHighlightBackground': '#12121a',
-    },
-  });
-
-  monaco.editor.defineTheme(MOTIVO_LIGHT_THEME, {
-    base: 'vs',
-    inherit: true,
-    rules: [
-      { token: 'keyword', foreground: '7c3aed', fontStyle: 'bold' },
-      { token: 'note-literal', foreground: 'ea580c' },
-      { token: 'instrument', foreground: '0891b2' },
-      { token: 'drum-note', foreground: '0891b2' },
-      { token: 'boolean-literal', foreground: 'dc2626' },
-      { token: 'string', foreground: '16a34a' },
-      { token: 'number', foreground: 'ea580c' },
-      { token: 'comment', foreground: '52525b', fontStyle: 'italic' },
-      { token: 'operator', foreground: '0891b2' },
-      { token: 'identifier', foreground: '#09090b' },
-    ],
-    colors: {
-      'editor.background': '#ffffff',
-      'editor.foreground': '#09090b',
-      'editorLineNumber.foreground': '#71717a',
-      'editorLineNumber.activeForeground': '#18181b',
-      'editor.selectionBackground': '#e4e4e7',
-      'editor.lineHighlightBackground': '#f4f4f5',
+      'editor.selectionBackground': '#1e2532',
+      'editor.lineHighlightBackground': '#1e2532',
+      'editorGutter.background': '#151921',
     },
   });
 }

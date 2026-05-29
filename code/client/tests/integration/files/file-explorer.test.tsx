@@ -8,7 +8,7 @@ import type { ActiveDocument, ExampleFileSummary, UserFileSummary } from '@/feat
 const scratchDocument: ActiveDocument = {
   kind: 'scratch',
   id: 'scratch',
-  name: 'Scratch.motivo',
+  name: 'unsaved',
   source: 'tempo 120;',
   readOnly: false,
   persisted: false,
@@ -47,9 +47,9 @@ function renderExplorer(overrides: Partial<ComponentProps<typeof FileExplorer>> 
     userFiles: [],
     onCreateFile: vi.fn(async () => true),
     onDeleteFile: vi.fn(async () => true),
+    onDownloadExampleFile: vi.fn(async () => true),
     onDownloadFile: vi.fn(async () => true),
     onOpenExample: vi.fn(),
-    onOpenScratch: vi.fn(),
     onOpenUserFile: vi.fn(async () => true),
     onRefresh: vi.fn(),
     onRenameFile: vi.fn(async () => true),
@@ -69,14 +69,15 @@ describe('FileExplorer', () => {
     );
   });
 
-  it('shows scratch and read-only examples for unauthenticated users', () => {
+  it('shows read-only examples for unauthenticated users', () => {
     const props = renderExplorer();
 
-    expect(screen.getByText('Scratch.motivo')).toBeInTheDocument();
     expect(screen.getByText('Sign in to save files.')).toBeInTheDocument();
-    expect(screen.getByText('Example.motivo')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New file' })).toBeDisabled();
 
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Examples' }));
+
+    expect(screen.getByText('Example.motivo')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Example.motivo read-only' }));
     expect(props.onOpenExample).toHaveBeenCalledWith('example');
   });
@@ -94,7 +95,8 @@ describe('FileExplorer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Song.motivo' }));
     expect(props.onOpenUserFile).toHaveBeenCalledWith('file-1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Song.motivo' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Song.motivo' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
     fireEvent.change(screen.getByDisplayValue('Song.motivo'), {
       target: { value: 'Renamed Song' },
     });
@@ -102,13 +104,19 @@ describe('FileExplorer', () => {
     expect(props.onRenameFile).toHaveBeenCalledWith('file-1', 'Renamed Song');
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Download Song.motivo' })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Song.motivo' })).toBeInTheDocument(),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Download Song.motivo' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Song.motivo' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Download' }));
     expect(props.onDownloadFile).toHaveBeenCalledWith('file-1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Song.motivo' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Song.motivo' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: /Delete Song.motivo/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(props.onDeleteFile).toHaveBeenCalledWith('file-1');
   });
 

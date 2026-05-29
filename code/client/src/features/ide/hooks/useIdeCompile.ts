@@ -23,7 +23,8 @@ export function useIdeCompile(editorRef: RefObject<MotivoEditorHandle | null>, s
   }, []);
 
   const handleCompile = useCallback(async () => {
-    const result = await compile(sourceRef.current);
+    const currentSource = editorRef.current?.getValue() ?? sourceRef.current;
+    const result = await compile(currentSource);
     if (!result) return;
 
     setLog(null);

@@ -9,8 +9,9 @@ track hello_world {
 `;
 
 export const EDITOR_OPTIONS: EditorProps['options'] = {
-  fontSize: 14,
-  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+  fontSize: 13,
+  fontFamily: 'var(--font-fira-code), ui-monospace, monospace',
+  lineHeight: 22,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   lineNumbers: 'on',
