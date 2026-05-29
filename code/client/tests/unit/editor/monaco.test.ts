@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createErrorMarker } from '@/features/editor/monaco/markers';
-import {
-  DEFAULT_MOTIVO_SNIPPET,
-  EDITOR_OPTIONS,
-  EDITOR_STORAGE_KEY,
-} from '@/features/editor/monaco/monaco-config';
+import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '@/features/editor/monaco/monaco-config';
 import {
   MOTIVO_LANGUAGE_ID,
   MOTIVO_LANGUAGE_KEYWORDS,
@@ -70,7 +66,6 @@ describe('Monaco Motivo configuration', () => {
   });
 
   it('exports stable editor defaults', () => {
-    expect(EDITOR_STORAGE_KEY).toBe('motivo-studio-editor-content');
     expect(DEFAULT_MOTIVO_SNIPPET).toContain('tempo 120');
     expect(EDITOR_OPTIONS).toMatchObject({
       fontSize: 14,

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist_Mono } from 'next/font/google';
 
 import { APP_DESCRIPTION, APP_TITLE } from '@/config/app';
+import AuthShell from '@/features/auth/components/AuthShell';
 import ThemeToggle from '@/shared/components/ThemeToggle';
 
 import Providers from './providers';
@@ -31,7 +32,10 @@ export default function RootLayout({
             <span className="font-mono text-sm font-semibold tracking-widest uppercase">
               {APP_TITLE}
             </span>
-            <ThemeToggle />
+            <div className="flex items-center gap-2 min-w-0">
+              <AuthShell />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex flex-1 min-h-0">{children}</main>
         </Providers>

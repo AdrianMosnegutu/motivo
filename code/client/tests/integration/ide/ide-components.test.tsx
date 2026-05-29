@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MotivoEditorProps } from '@/features/editor/components/MotivoEditor';
+import type { ActiveDocument } from '@/features/files/types';
 import EditorPane from '@/features/ide/components/EditorPane';
 import LoadingPane from '@/features/ide/components/LoadingPane';
 import LogsPanel from '@/features/ide/components/LogsPanel';
@@ -13,6 +14,15 @@ type MockPanelRef = MutableRefObject<{
   expand: ReturnType<typeof vi.fn>;
 } | null>;
 type EditorComponent = ComponentProps<typeof EditorPane>['MotivoEditor'];
+
+const scratchDocument: ActiveDocument = {
+  kind: 'scratch',
+  id: 'scratch',
+  name: 'Scratch.motivo',
+  source: 'tempo 120;',
+  readOnly: false,
+  persisted: false,
+};
 
 vi.mock('react-resizable-panels', () => ({
   Panel: ({
@@ -46,29 +56,39 @@ describe('IDE shell components', () => {
   it('renders editor controls and forwards editor callbacks', () => {
     const onCompile = vi.fn();
     const onEditorChange = vi.fn();
-    const MotivoEditor: EditorComponent = ({ onChange, onCompile: compile }: MotivoEditorProps) => (
+    const MotivoEditor: EditorComponent = ({
+      onChange,
+      onCompile: compile,
+      value,
+    }: MotivoEditorProps) => (
       <button
         onClick={() => {
           onChange?.('tempo 120;');
           compile?.();
         }}
       >
-        Mock editor
+        Mock editor {value}
       </button>
     );
 
     render(
       <EditorPane
+        activeDocument={scratchDocument}
+        autosaveStatus="idle"
         MotivoEditor={MotivoEditor}
         editorRef={{ current: null }}
         compiling={false}
+        onDownloadActiveFile={vi.fn()}
         onCompile={onCompile}
         onEditorChange={onEditorChange}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Compile' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Mock editor' }));
+    expect(screen.getByText('Scratch.motivo')).toBeInTheDocument();
+    expect(screen.getByText('Not saved')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Mock editor/ }));
 
     expect(onCompile).toHaveBeenCalledTimes(2);
     expect(onEditorChange).toHaveBeenCalledWith('tempo 120;');
@@ -77,9 +97,12 @@ describe('IDE shell components', () => {
   it('renders compiling state', () => {
     render(
       <EditorPane
+        activeDocument={scratchDocument}
+        autosaveStatus="idle"
         MotivoEditor={() => null}
         editorRef={{ current: null }}
         compiling
+        onDownloadActiveFile={vi.fn()}
         onCompile={vi.fn()}
         onEditorChange={vi.fn()}
       />,

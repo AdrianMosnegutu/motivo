@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MotivoEditor, {
   type MotivoEditorHandle,
@@ -42,13 +42,15 @@ vi.mock('@monaco-editor/react', () => ({
     onMount,
     onChange,
     theme,
-    defaultValue,
+    options,
+    value,
   }: {
     beforeMount: (monaco: typeof monacoMock) => void;
     onMount: (editor: unknown, monaco: typeof monacoMock) => void;
     onChange: NonNullable<MotivoEditorProps['onChange']>;
+    options: { readOnly?: boolean };
     theme: string;
-    defaultValue: string;
+    value: string;
   }) => {
     beforeMount(monacoMock);
     onMount(
@@ -63,11 +65,20 @@ vi.mock('@monaco-editor/react', () => ({
       monacoMock,
     );
     onChange('new source');
-    return <div data-theme={theme}>{defaultValue}</div>;
+    return (
+      <div data-readonly={String(Boolean(options.readOnly))} data-theme={theme}>
+        {value}
+      </div>
+    );
   },
 }));
 
 describe('MotivoEditor', () => {
+  beforeEach(() => {
+    currentTheme = 'dark';
+    vi.clearAllMocks();
+  });
+
   it('configures Monaco and exposes editor actions', () => {
     const onChange = vi.fn();
     const onCompile = vi.fn();
@@ -80,6 +91,7 @@ describe('MotivoEditor', () => {
     expect(monacoMock.editor.defineTheme).toHaveBeenCalled();
     expect(addAction).toHaveBeenCalledWith(expect.objectContaining({ id: 'motivo.compile' }));
     expect(onChange).toHaveBeenCalledWith('new source');
+    expect(localStorage.setItem).not.toHaveBeenCalled();
 
     ref.current?.jumpTo(2, 3);
     expect(setPosition).toHaveBeenCalledWith({ lineNumber: 2, column: 3 });
@@ -97,5 +109,14 @@ describe('MotivoEditor', () => {
     currentTheme = 'light';
     render(<MotivoEditor />);
     expect(screen.getByText(/tempo 120/)).toHaveAttribute('data-theme', 'motivo-light');
+  });
+
+  it('uses the active document source and blocks edits in read-only mode', () => {
+    const onChange = vi.fn();
+
+    render(<MotivoEditor value="tempo 144;" readOnly onChange={onChange} />);
+
+    expect(screen.getByText('tempo 144;')).toHaveAttribute('data-readonly', 'true');
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

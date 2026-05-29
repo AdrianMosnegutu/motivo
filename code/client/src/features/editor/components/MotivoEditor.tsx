@@ -5,12 +5,7 @@ import Editor, { type BeforeMount, type Monaco, type OnMount } from '@monaco-edi
 import { useTheme } from 'next-themes';
 
 import { createErrorMarker } from '../monaco/markers';
-import {
-  DEFAULT_MOTIVO_SNIPPET,
-  EDITOR_OPTIONS,
-  EDITOR_PERSISTENCE_DELAY_MS,
-  EDITOR_STORAGE_KEY,
-} from '../monaco/monaco-config';
+import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '../monaco/monaco-config';
 import { MOTIVO_LANGUAGE_ID, registerMotivoLanguage } from '../monaco/motivo-language';
 import { getMotivoTheme, registerMotivoThemes } from '../monaco/motivo-themes';
 
@@ -22,16 +17,18 @@ export interface MotivoEditorHandle {
 }
 
 export interface MotivoEditorProps {
+  documentId?: string;
   onChange?: (value: string) => void;
   onCompile?: () => void;
+  readOnly?: boolean;
+  value?: string;
 }
 
 const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function MotivoEditor(
-  { onChange, onCompile },
+  { documentId = 'scratch', onChange, onCompile, readOnly = false, value },
   ref,
 ) {
   const { theme } = useTheme();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCompileRef = useRef(onCompile);
   onCompileRef.current = onCompile;
 
@@ -43,12 +40,6 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
       monacoRef.current.editor.setTheme(getMotivoTheme(theme));
     }
   }, [theme]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
 
   useImperativeHandle(ref, () => ({
     jumpTo(line: number, column: number) {
@@ -95,29 +86,18 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
     registerMotivoThemes(m);
   }, []);
 
-  const initialValue =
-    (typeof window !== 'undefined' && localStorage.getItem(EDITOR_STORAGE_KEY)) ||
-    DEFAULT_MOTIVO_SNIPPET;
-
   const handleChange = useCallback(
     (value: string | undefined) => {
+      if (readOnly) return;
       const v = value ?? '';
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        localStorage.setItem(EDITOR_STORAGE_KEY, v);
-      }, EDITOR_PERSISTENCE_DELAY_MS);
       onChange?.(v);
     },
-    [onChange],
+    [onChange, readOnly],
   );
-
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
 
   const handleMount: OnMount = useCallback((editor, m) => {
     editorInstanceRef.current = editor;
     monacoRef.current = m;
-    onChangeRef.current?.(editor.getValue());
 
     editor.addAction({
       id: 'motivo.compile',
@@ -131,12 +111,13 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
     <Editor
       height="100%"
       defaultLanguage={MOTIVO_LANGUAGE_ID}
-      defaultValue={initialValue}
+      path={documentId}
+      value={value ?? DEFAULT_MOTIVO_SNIPPET}
       theme={getMotivoTheme(theme)}
       beforeMount={handleBeforeMount}
       onChange={handleChange}
       onMount={handleMount}
-      options={EDITOR_OPTIONS}
+      options={{ ...EDITOR_OPTIONS, readOnly }}
     />
   );
 });

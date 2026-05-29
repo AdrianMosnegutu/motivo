@@ -1,6 +1,7 @@
 # Motivo Studio Client
 
 Next.js editor for writing Motivo programs, compiling them through the server, visualizing generated MIDI, and controlling playback.
+Authenticated users can also manage multiple saved Motivo files through the file explorer.
 
 ## Requirements
 
@@ -47,6 +48,9 @@ src/
 |-- features/
 |   |-- compile/        API client and diagnostic mapping
 |   |-- editor/         Monaco Motivo editor integration
+|   |-- auth/           Account state and login/register UI
+|   |-- examples/       Bundled read-only Motivo examples
+|   |-- files/          File explorer, API client, downloads, autosave
 |   |-- ide/            Main workspace layout and workflow hooks
 |   |-- midi/           MIDI parsing and context
 |   |-- piano-roll/     Piano-roll visualization
@@ -60,3 +64,7 @@ tests/
 ## API Proxy
 
 `next.config.ts` rewrites `/api/:path*` to `API_PROXY_URL`, falling back to `NEXT_PUBLIC_API_URL` and then `http://localhost:3001`. Docker Compose sets this to the internal server URL automatically.
+
+## Persistence Model
+
+Motivo source is not stored in `localStorage`. Authenticated user files are saved through `/api/files` with debounced autosave; unauthenticated editor content is scratch-only. Bundled examples are available to every user as read-only documents, and dark/light theme preference remains browser-local.

@@ -39,7 +39,7 @@ export default function PianoRoll() {
   }, [currentTime, height, maxMidi, minMidi, parsedMidi, resolvedTheme, width]);
 
   return (
-    <div ref={containerRef} className="w-full h-full bg-panel overflow-hidden">
+    <div ref={containerRef} className="h-full min-h-0 w-full min-w-0 overflow-hidden bg-panel">
       {!parsedMidi ? (
         <div className="flex items-center justify-center h-full text-zinc-400 font-mono text-xs text-center px-4">
           Compile your code to see the visualizer
@@ -47,7 +47,7 @@ export default function PianoRoll() {
       ) : (
         width > 0 &&
         height > 0 && (
-          <canvas ref={canvasRef} width={width} height={height} style={{ display: 'block' }} />
+          <canvas ref={canvasRef} width={width} height={height} className="block h-full w-full" />
         )
       )}
     </div>

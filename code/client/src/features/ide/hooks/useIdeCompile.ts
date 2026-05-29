@@ -1,6 +1,6 @@
 'use client';
 
-import { type RefObject, useCallback, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 import { findFirstErrorDiagnostic } from '@/features/compile/diagnostics';
 import type { LogEntry } from '@/features/compile/types';
@@ -8,11 +8,15 @@ import { useCompileMutation } from '@/features/compile/useCompileMutation';
 import type { MotivoEditorHandle } from '@/features/editor/components/MotivoEditor';
 import { useMidi } from '@/features/midi/MidiContext';
 
-export function useIdeCompile(editorRef: RefObject<MotivoEditorHandle | null>) {
+export function useIdeCompile(editorRef: RefObject<MotivoEditorHandle | null>, source = '') {
   const { setMidiBytes } = useMidi();
   const { compile, compiling } = useCompileMutation();
   const [log, setLog] = useState<LogEntry | null>(null);
-  const sourceRef = useRef('');
+  const sourceRef = useRef(source);
+
+  useEffect(() => {
+    sourceRef.current = source;
+  }, [source]);
 
   const handleEditorChange = useCallback((value: string) => {
     sourceRef.current = value;

@@ -1,7 +1,5 @@
 import type { EditorProps } from '@monaco-editor/react';
 
-export const EDITOR_STORAGE_KEY = 'motivo-studio-editor-content';
-
 export const DEFAULT_MOTIVO_SNIPPET = `tempo 120;
 signature 4/4;
 
@@ -20,5 +18,3 @@ export const EDITOR_OPTIONS: EditorProps['options'] = {
   padding: { top: 16, bottom: 16 },
   overviewRulerLanes: 0,
 };
-
-export const EDITOR_PERSISTENCE_DELAY_MS = 300;

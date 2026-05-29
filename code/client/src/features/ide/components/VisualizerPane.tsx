@@ -11,11 +11,16 @@ interface VisualizerPaneProps {
 
 export default function VisualizerPane({ PianoRoll }: VisualizerPaneProps) {
   return (
-    <Panel defaultSize={40} minSize={20} className="flex flex-col min-h-0 border-l border-border">
+    <Panel
+      defaultSize="32%"
+      minSize="20%"
+      maxSize="45%"
+      className="flex min-h-0 min-w-0 flex-col overflow-hidden border-l border-border"
+    >
       <div className="h-10 shrink-0 border-b border-border">
         <PlaybackBar />
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         <PianoRoll />
       </div>
     </Panel>

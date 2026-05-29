@@ -1,0 +1,36 @@
+{
+  "examples": [
+    {
+      "id": "come-as-you-are",
+      "displayName": "Come As You Are",
+      "fileName": "come_as_you_are.motivo",
+      "path": "/examples/come_as_you_are.motivo",
+      "order": 0,
+      "readOnly": true
+    },
+    {
+      "id": "example",
+      "displayName": "Example",
+      "fileName": "example.motivo",
+      "path": "/examples/example.motivo",
+      "order": 1,
+      "readOnly": true
+    },
+    {
+      "id": "fur-elise",
+      "displayName": "Fur Elise",
+      "fileName": "fur_elise.motivo",
+      "path": "/examples/fur_elise.motivo",
+      "order": 2,
+      "readOnly": true
+    },
+    {
+      "id": "pirates",
+      "displayName": "Pirates",
+      "fileName": "pirates.motivo",
+      "path": "/examples/pirates.motivo",
+      "order": 3,
+      "readOnly": true
+    }
+  ]
+}

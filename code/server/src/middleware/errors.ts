@@ -2,6 +2,11 @@ import { type ErrorRequestHandler } from 'express';
 
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
+  | 'UNAUTHENTICATED'
+  | 'INVALID_CREDENTIALS'
+  | 'EMAIL_ALREADY_REGISTERED'
+  | 'FILE_NOT_FOUND'
+  | 'FILE_NAME_CONFLICT'
   | 'COMPILER_BINARY_NOT_FOUND'
   | 'COMPILER_EXECUTION_FAILED'
   | 'COMPILER_OUTPUT_MISSING'

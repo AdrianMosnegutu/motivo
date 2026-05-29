@@ -18,8 +18,8 @@ export default function LogsPanel({ log, panelRef, setLog, onJump }: LogsPanelPr
   return (
     <Panel
       panelRef={panelRef}
-      defaultSize={30}
-      minSize={0}
+      defaultSize="30%"
+      minSize="0%"
       collapsible
       className="flex flex-col min-h-0"
     >
