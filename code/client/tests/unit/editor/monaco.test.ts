@@ -18,6 +18,15 @@ function createMonacoMock() {
     languages: {
       register: vi.fn(),
       setMonarchTokensProvider: vi.fn(),
+      registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      CompletionItemKind: {
+        Keyword: 17,
+        Snippet: 27,
+        EnumMember: 13,
+        Value: 12,
+        Constant: 21,
+      },
+      CompletionItemInsertTextRule: { InsertAsSnippet: 4 },
     },
     editor: {
       defineTheme: vi.fn(),
@@ -39,6 +48,13 @@ describe('Monaco Motivo configuration', () => {
         tokenizer: expect.objectContaining({
           root: expect.any(Array),
         }),
+      }),
+    );
+    expect(monaco.languages.registerCompletionItemProvider).toHaveBeenCalledWith(
+      MOTIVO_LANGUAGE_ID,
+      expect.objectContaining({
+        triggerCharacters: expect.arrayContaining([' ']),
+        provideCompletionItems: expect.any(Function),
       }),
     );
   });
@@ -80,6 +96,8 @@ describe('Monaco Motivo configuration', () => {
     expect(EDITOR_OPTIONS).toMatchObject({
       fontSize: 13,
       minimap: { enabled: false },
+      quickSuggestions: { other: true, comments: false, strings: false },
+      suggestOnTriggerCharacters: true,
     });
   });
 

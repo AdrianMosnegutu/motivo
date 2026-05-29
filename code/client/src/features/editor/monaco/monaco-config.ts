@@ -18,4 +18,8 @@ export const EDITOR_OPTIONS: EditorProps['options'] = {
   renderLineHighlight: 'line',
   padding: { top: 16, bottom: 16 },
   overviewRulerLanes: 0,
+  quickSuggestions: { other: true, comments: false, strings: false },
+  suggestOnTriggerCharacters: true,
+  tabCompletion: 'on',
+  wordBasedSuggestions: 'off',
 };

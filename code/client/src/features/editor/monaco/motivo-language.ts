@@ -1,5 +1,7 @@
 import type { Monaco } from '@monaco-editor/react';
 
+import { registerMotivoCompletion } from './motivo-completion';
+
 export const MOTIVO_LANGUAGE_ID = 'motivo';
 
 export const MOTIVO_LANGUAGE_KEYWORDS = [
@@ -64,4 +66,6 @@ export function registerMotivoLanguage(monaco: Monaco) {
       ],
     },
   });
+
+  registerMotivoCompletion(monaco);
 }

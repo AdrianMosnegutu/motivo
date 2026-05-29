@@ -19,6 +19,15 @@ const monacoMock = {
   languages: {
     register: vi.fn(),
     setMonarchTokensProvider: vi.fn(),
+    registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+    CompletionItemKind: {
+      Keyword: 17,
+      Snippet: 27,
+      EnumMember: 13,
+      Value: 12,
+      Constant: 21,
+    },
+    CompletionItemInsertTextRule: { InsertAsSnippet: 4 },
   },
   editor: {
     defineTheme: vi.fn(),
