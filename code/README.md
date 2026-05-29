@@ -43,7 +43,7 @@ The gateway image creates a self-signed certificate for `motivo-studio.local`, s
 
 ## Accounts and Files
 
-Motivo Studio now supports optional email/password accounts. Authenticated users can create, rename, delete, download, and autosave multiple Motivo files backed by PostgreSQL. The editor no longer persists Motivo source in `localStorage`; unauthenticated users can still use the editor as scratch space and open the bundled read-only examples.
+Motivo Studio now supports optional email/password accounts. Authenticated users can create, rename, delete, download, and autosave multiple Motivo files backed by PostgreSQL. The editor no longer persists Motivo source in `localStorage`; unauthenticated users can still use the editor as scratch space and open the frontend-owned bundled read-only examples.
 
 The only browser-local persistence is UI preference state such as dark/light theme.
 

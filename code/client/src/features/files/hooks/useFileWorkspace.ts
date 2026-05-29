@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '@/features/auth/AuthContext';
 import { DEFAULT_MOTIVO_SNIPPET } from '@/features/editor/monaco/monaco-config';
+import { listExampleFiles, readExampleFile } from '@/features/examples/example-files';
 
 import { getFileErrorMessage } from '../api/errors';
 import {
@@ -12,7 +13,6 @@ import {
   readFile,
   updateFile,
 } from '../api/file-client';
-import { listExampleFiles, readExampleFile } from '../examples/example-files';
 import {
   createScratchDocument,
   ensureMotivoFileName,

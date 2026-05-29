@@ -49,7 +49,7 @@ src/
 |   |-- compile/        API client and diagnostic mapping
 |   |-- editor/         Monaco Motivo editor integration
 |   |-- auth/           Account state and login/register UI
-|   |-- examples/       Bundled read-only Motivo examples
+|   |-- examples/       Bundled read-only Motivo examples and source files
 |   |-- files/          File explorer, API client, downloads, autosave
 |   |-- ide/            Main workspace layout and workflow hooks
 |   |-- midi/           MIDI parsing and context

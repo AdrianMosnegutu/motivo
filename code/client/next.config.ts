@@ -5,6 +5,14 @@ const apiProxyUrl =
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@minagishl/react-piano-roll', '@magenta/music'],
+  webpack(config) {
+    config.module.rules.push({
+      resourceQuery: /raw/,
+      type: 'asset/source',
+    });
+
+    return config;
+  },
   async rewrites() {
     return [
       {

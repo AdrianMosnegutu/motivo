@@ -1,10 +1,12 @@
-import exampleBundle from './example-bundle.json';
+import comeAsYouAreSource from './sources/come_as_you_are.motivo?raw';
+import exampleSource from './sources/example.motivo?raw';
+import furEliseSource from './sources/fur_elise.motivo?raw';
+import piratesSource from './sources/pirates.motivo?raw';
 
 interface ExampleBundleEntry {
   id: string;
   displayName: string;
   fileName: string;
-  path: string;
   order: number;
   readOnly: boolean;
   source: string;
@@ -16,7 +18,6 @@ export interface ExampleFileSummary {
   name: string;
   displayName: string;
   fileName: string;
-  path: string;
   order: number;
   readOnly: true;
 }
@@ -25,7 +26,44 @@ export interface ExampleFile extends ExampleFileSummary {
   source: string;
 }
 
-const bundledExamples = (exampleBundle as { examples: ExampleBundleEntry[] }).examples
+const exampleBundle: { examples: ExampleBundleEntry[] } = {
+  examples: [
+    {
+      id: 'come-as-you-are',
+      displayName: 'Come As You Are',
+      fileName: 'come_as_you_are.motivo',
+      order: 0,
+      readOnly: true,
+      source: comeAsYouAreSource,
+    },
+    {
+      id: 'example',
+      displayName: 'Example',
+      fileName: 'example.motivo',
+      order: 1,
+      readOnly: true,
+      source: exampleSource,
+    },
+    {
+      id: 'fur-elise',
+      displayName: 'Fur Elise',
+      fileName: 'fur_elise.motivo',
+      order: 2,
+      readOnly: true,
+      source: furEliseSource,
+    },
+    {
+      id: 'pirates',
+      displayName: 'Pirates',
+      fileName: 'pirates.motivo',
+      order: 3,
+      readOnly: true,
+      source: piratesSource,
+    },
+  ],
+};
+
+const bundledExamples = exampleBundle.examples
   .slice()
   .sort((left, right) => left.order - right.order)
   .map(
@@ -35,7 +73,6 @@ const bundledExamples = (exampleBundle as { examples: ExampleBundleEntry[] }).ex
       name: `${example.displayName}.motivo`,
       displayName: example.displayName,
       fileName: example.fileName,
-      path: example.path,
       order: example.order,
       readOnly: true,
       source: example.source,
