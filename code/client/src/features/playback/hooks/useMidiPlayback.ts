@@ -5,14 +5,18 @@ import * as Tone from 'tone';
 
 import type { useMidi } from '@/features/midi/MidiContext';
 
-import { stopAudioNodes, stopPlayers } from '../lib/audio-nodes';
+import { stopPlayers, stopScheduledVoices as haltScheduledVoices } from '../lib/audio-nodes';
 import {
   findFirstNoteAtOrAfter,
   flattenMidiNotes,
   type FlatMidiNote,
 } from '../lib/flatten-midi-notes';
-import { resolveInstrument } from '../lib/instruments';
-import type { LoadState, PlayState, SfPlayer } from '../types';
+import {
+  createSharedSampleLoader,
+  loadPlaybackInstrument,
+  resolveInstrument,
+} from '../lib/instruments';
+import type { LoadState, PlaybackPlayer, PlayState, ScheduledVoice } from '../types';
 
 type ParsedMidi = NonNullable<ReturnType<typeof useMidi>['parsedMidi']>;
 
@@ -28,8 +32,8 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   const [loop, setLoop] = useState(false);
   const loadState = parsedMidi ? midiLoadState : 'idle';
 
-  const playersRef = useRef<SfPlayer[]>([]);
-  const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
+  const playersRef = useRef<PlaybackPlayer[]>([]);
+  const scheduledVoicesRef = useRef<ScheduledVoice[]>([]);
   const notesRef = useRef<FlatMidiNote[]>([]);
   const nextNoteIndexRef = useRef(0);
   const playbackAnchorRef = useRef({ audioTime: 0, transportTime: 0 });
@@ -50,9 +54,9 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
 
   const toggleLoop = useCallback(() => setLoop((value) => !value), []);
 
-  const stopScheduledNodes = useCallback(() => {
-    stopAudioNodes(scheduledNodesRef.current);
-    scheduledNodesRef.current = [];
+  const clearScheduledVoices = useCallback(() => {
+    haltScheduledVoices(scheduledVoicesRef.current);
+    scheduledVoicesRef.current = [];
   }, []);
 
   const clearScheduleTimer = useCallback(() => {
@@ -64,7 +68,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
 
   const stopAll = useCallback(() => {
     clearScheduleTimer();
-    stopScheduledNodes();
+    clearScheduledVoices();
     stopPlayers(playersRef.current);
     Tone.getTransport().stop();
     Tone.getTransport().seconds = 0;
@@ -72,7 +76,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     nextNoteIndexRef.current = 0;
     setPlayState('stopped');
     setDisplaySeconds(0);
-  }, [clearScheduleTimer, stopScheduledNodes]);
+  }, [clearScheduleTimer, clearScheduledVoices]);
 
   const scheduleUpcomingNotes = useCallback(() => {
     if (!parsedMidi || playStateRef.current !== 'playing') return;
@@ -105,12 +109,13 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
         continue;
       }
 
-      const noteName = Tone.Frequency(note.midi, 'midi').toNote();
-      const node = player.play(noteName, scheduleAt, {
+      const voice = player.playNote({
+        midi: note.midi,
+        when: scheduleAt,
         duration: note.duration,
-        gain: note.velocity,
+        velocity: note.velocity,
       });
-      scheduledNodesRef.current.push(node);
+      scheduledVoicesRef.current.push(voice);
       index += 1;
       scheduled += 1;
     }
@@ -161,26 +166,26 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   }, [beginPlayback, loadState, parsedMidi, playState, startScheduler]);
 
   const restartFromStart = useCallback(() => {
-    stopScheduledNodes();
+    clearScheduledVoices();
     Tone.getTransport().seconds = 0;
     pauseOffsetRef.current = 0;
     beginPlayback(0);
-  }, [beginPlayback, stopScheduledNodes]);
+  }, [beginPlayback, clearScheduledVoices]);
 
   const handlePause = useCallback(() => {
     clearScheduleTimer();
     const offset = Tone.getTransport().seconds;
-    stopScheduledNodes();
+    clearScheduledVoices();
     Tone.getTransport().pause();
     pauseOffsetRef.current = offset;
     setDisplaySeconds(offset);
     setPlayState('paused');
-  }, [clearScheduleTimer, stopScheduledNodes]);
+  }, [clearScheduleTimer, clearScheduledVoices]);
 
   const handleRewind = useCallback(() => {
     const isPlaying = playState === 'playing';
     clearScheduleTimer();
-    stopScheduledNodes();
+    clearScheduledVoices();
     Tone.getTransport().seconds = 0;
     pauseOffsetRef.current = 0;
     nextNoteIndexRef.current = 0;
@@ -194,14 +199,14 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
       playStateRef.current = 'stopped';
       setPlayState('stopped');
     }
-  }, [beginPlayback, clearScheduleTimer, playState, startScheduler, stopScheduledNodes]);
+  }, [beginPlayback, clearScheduleTimer, playState, startScheduler, clearScheduledVoices]);
 
   const handleSeek = useCallback(
     (seekTime: number) => {
       if (!parsedMidi) return;
 
       clearScheduleTimer();
-      stopScheduledNodes();
+      clearScheduledVoices();
       Tone.getTransport().seconds = seekTime;
       pauseOffsetRef.current = seekTime;
       setDisplaySeconds(seekTime);
@@ -213,7 +218,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
         startScheduler();
       }
     },
-    [beginPlayback, clearScheduleTimer, parsedMidi, playState, startScheduler, stopScheduledNodes],
+    [beginPlayback, clearScheduleTimer, parsedMidi, playState, startScheduler, clearScheduledVoices],
   );
 
   useEffect(() => {
@@ -227,7 +232,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
 
     let cancelled = false;
     clearScheduleTimer();
-    stopScheduledNodes();
+    clearScheduledVoices();
     stopPlayers(playersRef.current);
     Tone.getTransport().stop();
     Tone.getTransport().seconds = 0;
@@ -242,22 +247,22 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
         setPlayState('stopped');
         setDisplaySeconds(0);
         setMidiLoadState('loading');
-        const { default: Soundfont } = await import('soundfont-player');
         const audioContext = Tone.getContext().rawContext as AudioContext;
         const trackNames = parsedMidi.tracks.map((track) =>
-          resolveInstrument(track.instrument.number, track.channel),
+          resolveInstrument(
+            track.instrument.number,
+            track.channel,
+            track.instrument.percussion,
+          ),
         );
         const uniqueNames = [...new Set(trackNames)];
+        const loader = createSharedSampleLoader(audioContext);
         const loaded = await Promise.all(
-          uniqueNames.map((name) =>
-            Soundfont.instrument(audioContext, name as Parameters<typeof Soundfont.instrument>[1]),
-          ),
+          uniqueNames.map((name) => loadPlaybackInstrument(audioContext, name, loader)),
         );
         if (cancelled) return;
 
-        const nameToPlayer = new Map(
-          uniqueNames.map((name, index) => [name, loaded[index] as unknown as SfPlayer]),
-        );
+        const nameToPlayer = new Map(uniqueNames.map((name, index) => [name, loaded[index]]));
         playersRef.current = trackNames.map((name) => nameToPlayer.get(name)!);
         setMidiLoadState('ready');
       } catch {
@@ -268,7 +273,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     return () => {
       cancelled = true;
     };
-  }, [clearScheduleTimer, parsedMidi, stopScheduledNodes]);
+  }, [clearScheduleTimer, parsedMidi, clearScheduledVoices]);
 
   useEffect(() => {
     const tick = (timestamp: number) => {

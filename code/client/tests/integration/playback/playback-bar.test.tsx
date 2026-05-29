@@ -26,9 +26,13 @@ vi.mock('@/features/playback/hooks/usePlaybackShortcut', () => ({
   usePlaybackShortcut: vi.fn(),
 }));
 
-vi.mock('@/features/playback/lib/download-midi', () => ({
-  downloadMidi: (...args: unknown[]) => downloadMidi(...args),
-}));
+vi.mock('@/features/playback/lib/download-midi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/playback/lib/download-midi')>();
+  return {
+    ...actual,
+    downloadMidi: (...args: unknown[]) => downloadMidi(...args),
+  };
+});
 
 describe('PlaybackBar', () => {
   beforeEach(() => {
@@ -80,7 +84,7 @@ describe('PlaybackBar', () => {
     renderBar(<PlaybackBar />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Export MIDI' }));
-    expect(downloadMidi).toHaveBeenCalledWith(new Uint8Array([1, 2]));
+    expect(downloadMidi).toHaveBeenCalledWith(new Uint8Array([1, 2]), 'output.mid');
   });
 
   it('stops playback and resets position', () => {

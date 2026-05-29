@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DEFAULT_DRUM_MACHINE,
   DEFAULT_INSTRUMENT,
   PERCUSSION_INSTRUMENT,
   resolveInstrument,
@@ -16,6 +17,14 @@ describe('resolveInstrument', () => {
   it('uses percussion for drum channels', () => {
     expect(resolveInstrument(0, 9)).toBe(PERCUSSION_INSTRUMENT);
     expect(resolveInstrument(0, 10)).toBe(PERCUSSION_INSTRUMENT);
+  });
+
+  it('uses percussion when explicitly marked as percussion', () => {
+    expect(resolveInstrument(0, 0, true)).toBe(PERCUSSION_INSTRUMENT);
+  });
+
+  it('defaults percussion to a smplr drum machine kit', () => {
+    expect(DEFAULT_DRUM_MACHINE).toBeTruthy();
   });
 
   it('falls back for unmapped programs', () => {

@@ -11,7 +11,7 @@ import Spinner from '@/shared/components/Spinner';
 
 import { useMidiPlayback } from '../hooks/useMidiPlayback';
 import { usePlaybackShortcut } from '../hooks/usePlaybackShortcut';
-import { downloadMidi } from '../lib/download-midi';
+import { downloadMidi, midiFilenameFromDocumentName } from '../lib/download-midi';
 import { usePlaybackController } from '../PlaybackControllerContext';
 
 function formatTime(seconds: number) {
@@ -24,7 +24,11 @@ function formatTime(seconds: number) {
 const HEADER_CLASS =
   'flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[#2a303c] bg-[rgba(11,14,20,0.3)] px-4';
 
-export default function PlaybackBar() {
+type PlaybackBarProps = {
+  exportFilename?: string;
+};
+
+export default function PlaybackBar({ exportFilename }: PlaybackBarProps) {
   const { midiBytes, parsedMidi } = useMidi();
   const playback = useMidiPlayback(parsedMidi);
   const { registerSeek } = usePlaybackController();
@@ -144,7 +148,11 @@ export default function PlaybackBar() {
       <Button
         type="button"
         variant="outline"
-        onClick={() => midiBytes && downloadMidi(midiBytes)}
+        disabled={!midiBytes}
+        onClick={() => {
+          if (!midiBytes) return;
+          downloadMidi(midiBytes, midiFilenameFromDocumentName(exportFilename));
+        }}
         aria-label="Export MIDI"
         className="h-auto gap-2 rounded-lg border-[#2a303c] bg-[#0b0e14] px-3 py-2 text-[12px] font-medium text-[#e2e8f0] hover:bg-muted"
       >

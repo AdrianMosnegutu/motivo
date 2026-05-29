@@ -260,6 +260,7 @@ export default function IdeWorkspace() {
           panelRef={visualizerPanelRef}
           onResize={syncVisibility(setVisualizerVisible)}
           PianoRoll={PianoRoll}
+          exportFilename={activeDocument?.name}
         />
       </Group>
 

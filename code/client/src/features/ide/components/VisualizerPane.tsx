@@ -9,9 +9,15 @@ interface VisualizerPaneProps {
   panelRef?: RefObject<PanelImperativeHandle | null>;
   onResize?: PanelProps['onResize'];
   PianoRoll: ComponentType;
+  exportFilename?: string;
 }
 
-export default function VisualizerPane({ panelRef, onResize, PianoRoll }: VisualizerPaneProps) {
+export default function VisualizerPane({
+  panelRef,
+  onResize,
+  PianoRoll,
+  exportFilename,
+}: VisualizerPaneProps) {
   return (
     <Panel
       panelRef={panelRef}
@@ -23,7 +29,7 @@ export default function VisualizerPane({ panelRef, onResize, PianoRoll }: Visual
       collapsedSize="0%"
       className="flex min-h-0 min-w-0 flex-col overflow-hidden border border-[#2a303c] bg-[#151921]"
     >
-      <PlaybackBar />
+      <PlaybackBar exportFilename={exportFilename} />
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         <PianoRoll />
       </div>

@@ -1,26 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { stopAudioNodes, stopPlayers } from '@/features/playback/lib/audio-nodes';
+import { stopPlayers, stopScheduledVoices } from '@/features/playback/lib/audio-nodes';
 
 describe('audio node helpers', () => {
-  it('stops scheduled audio nodes and ignores already-stopped nodes', () => {
+  it('stops scheduled voices and ignores already-stopped voices', () => {
     const stop = vi.fn();
     const throwingStop = vi.fn(() => {
       throw new Error('already stopped');
     });
 
-    expect(() =>
-      stopAudioNodes([
-        { stop } as unknown as AudioBufferSourceNode,
-        { stop: throwingStop } as unknown as AudioBufferSourceNode,
-      ]),
-    ).not.toThrow();
+    expect(() => stopScheduledVoices([{ stop }, { stop: throwingStop }])).not.toThrow();
 
     expect(stop).toHaveBeenCalledWith(0);
     expect(throwingStop).toHaveBeenCalledWith(0);
   });
 
-  it('stops soundfont players and ignores failures', () => {
+  it('stops playback players and ignores failures', () => {
     const stop = vi.fn();
     const throwingStop = vi.fn(() => {
       throw new Error('already stopped');
@@ -28,8 +23,8 @@ describe('audio node helpers', () => {
 
     expect(() =>
       stopPlayers([
-        { play: vi.fn(), stop },
-        { play: vi.fn(), stop: throwingStop },
+        { playNote: vi.fn(), stop },
+        { playNote: vi.fn(), stop: throwingStop },
       ]),
     ).not.toThrow();
 
