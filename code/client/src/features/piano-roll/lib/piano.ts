@@ -1,6 +1,13 @@
 export const ROW_HEIGHT = 24;
 export const PIXELS_PER_SECOND = 90;
 
+/** Extra timeline rendered behind the scroll position (seconds). */
+export const NOTE_BUFFER_BEHIND_SEC = 1.5;
+/** Extra timeline rendered ahead of the scroll position and playhead (seconds). */
+export const NOTE_BUFFER_AHEAD_SEC = 8;
+/** After manual scroll, resume following the playhead once playback is idle this long (ms). */
+export const FOLLOW_RESUME_AFTER_MS = 5000;
+
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 const BLACK_KEY_OFFSETS = new Set([1, 3, 6, 8, 10]);

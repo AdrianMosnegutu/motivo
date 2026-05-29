@@ -11,7 +11,7 @@ vi.mock('@/features/midi/MidiContext', () => ({
 }));
 
 vi.mock('@/features/piano-roll/hooks/usePlayheadTime', () => ({
-  usePlayheadTime: () => 1,
+  usePlayheadTracker: () => {},
 }));
 
 describe('PianoRoll', () => {

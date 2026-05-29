@@ -48,7 +48,6 @@ describe('PlaybackBar', () => {
       handleSeek: vi.fn(),
       loadState: 'ready',
       playState: 'stopped',
-      position: '0.0s / 4.0s',
       stopAll: vi.fn(),
     });
     downloadMidi.mockReset();

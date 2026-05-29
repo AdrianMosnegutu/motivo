@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import * as Tone from 'tone';
+
 import { useMidi } from '@/features/midi/MidiContext';
 import { usePlaybackController } from '@/features/playback/PlaybackControllerContext';
 import { cn } from '@/lib/utils';
 
-import { usePlayheadTime } from '../hooks/usePlayheadTime';
+import { usePlayheadTracker } from '../hooks/usePlayheadTime';
 import {
   calculateNoteRange,
   isBlackKey,
   midiToLabel,
+  NOTE_BUFFER_AHEAD_SEC,
+  NOTE_BUFFER_BEHIND_SEC,
   PIXELS_PER_SECOND,
   ROW_HEIGHT,
   trackColor,
@@ -18,12 +22,27 @@ import {
 
 const KEYBOARD_WIDTH = 48;
 
+type ViewportState = {
+  left: number;
+  width: number;
+  playheadSec: number;
+};
+
 export default function PianoRoll() {
   const { parsedMidi } = useMidi();
-  const currentTime = usePlayheadTime();
   const { seek } = usePlaybackController();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const followPlayheadRef = useRef(true);
+  const programmaticScrollRef = useRef(false);
+  const lastManualScrollAtRef = useRef(0);
+  const manualScrollIdleMsRef = useRef(0);
   const [scrollTop, setScrollTop] = useState(0);
+  const [viewport, setViewport] = useState<ViewportState>({
+    left: 0,
+    width: 0,
+    playheadSec: 0,
+  });
 
   const { minMidi, maxMidi } = useMemo(
     () => calculateNoteRange(parsedMidi?.tracks ?? null),
@@ -49,28 +68,81 @@ export default function PianoRoll() {
     );
   }, [parsedMidi]);
 
+  const visibleNotes = useMemo(() => {
+    if (viewport.width <= 0) return notes;
+
+    const scrollStartSec = viewport.left / PIXELS_PER_SECOND;
+    const scrollEndSec = (viewport.left + viewport.width) / PIXELS_PER_SECOND;
+    const start = scrollStartSec - NOTE_BUFFER_BEHIND_SEC;
+    const end = Math.max(
+      scrollEndSec + NOTE_BUFFER_AHEAD_SEC,
+      viewport.playheadSec + NOTE_BUFFER_AHEAD_SEC,
+    );
+
+    return notes.filter((note) => note.time + note.duration >= start && note.time <= end);
+  }, [notes, viewport.left, viewport.playheadSec, viewport.width]);
+
   const duration = parsedMidi?.duration ?? 0;
   const contentWidth = Math.max(duration * PIXELS_PER_SECOND, 240);
   const contentHeight = rows.length * ROW_HEIGHT;
-  const playheadX = currentTime * PIXELS_PER_SECOND;
 
-  const handleGridScroll = useCallback(() => {
+  const syncViewport = useCallback(() => {
     const grid = scrollRef.current;
     if (!grid) return;
     setScrollTop(grid.scrollTop);
+    setViewport({
+      left: grid.scrollLeft,
+      width: grid.clientWidth,
+      playheadSec: Tone.getTransport().seconds,
+    });
   }, []);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const cursorX = playheadX;
-    const viewLeft = el.scrollLeft;
-    const viewRight = viewLeft + el.clientWidth;
-    if (cursorX < viewLeft || cursorX > viewRight) {
-      el.scrollLeft = Math.max(0, cursorX - el.clientWidth / 2);
+  const handleGridScroll = useCallback(() => {
+    if (programmaticScrollRef.current) {
+      programmaticScrollRef.current = false;
+    } else {
+      followPlayheadRef.current = false;
+      lastManualScrollAtRef.current = 1;
+      manualScrollIdleMsRef.current = 0;
     }
-    setScrollTop(el.scrollTop);
-  }, [playheadX]);
+    syncViewport();
+  }, [syncViewport]);
+
+  useEffect(() => {
+    const grid = scrollRef.current;
+    if (!grid) return;
+
+    syncViewport();
+    const observer = new ResizeObserver(syncViewport);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [syncViewport, parsedMidi]);
+
+  usePlayheadTracker(scrollRef, playheadRef, {
+    followPlayheadRef,
+    lastManualScrollAtRef,
+    manualScrollIdleMsRef,
+    programmaticScrollRef,
+    onViewportChange: syncViewport,
+  });
+
+  const handleSeek = (event: React.MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offsetX = event.clientX - bounds.left;
+    const seekTime = Math.max(0, offsetX / PIXELS_PER_SECOND);
+    seek(seekTime);
+    followPlayheadRef.current = true;
+    lastManualScrollAtRef.current = 0;
+    manualScrollIdleMsRef.current = 0;
+
+    const grid = scrollRef.current;
+    if (grid) {
+      const playheadX = seekTime * PIXELS_PER_SECOND;
+      programmaticScrollRef.current = true;
+      grid.scrollLeft = Math.max(0, playheadX - grid.clientWidth / 2);
+      syncViewport();
+    }
+  };
 
   if (!parsedMidi) {
     return (
@@ -79,12 +151,6 @@ export default function PianoRoll() {
       </div>
     );
   }
-
-  const handleSeek = (event: React.MouseEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const offsetX = event.clientX - bounds.left;
-    seek(Math.max(0, offsetX / PIXELS_PER_SECOND));
-  };
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-[#151921]">
@@ -120,7 +186,11 @@ export default function PianoRoll() {
         </div>
       </div>
 
-      <div ref={scrollRef} className="min-w-0 flex-1 overflow-auto" onScroll={handleGridScroll}>
+      <div
+        ref={scrollRef}
+        className="relative min-w-0 flex-1 overflow-auto"
+        onScroll={handleGridScroll}
+      >
         <div
           className="relative shrink-0 cursor-pointer"
           onClick={handleSeek}
@@ -141,7 +211,7 @@ export default function PianoRoll() {
             ) : null,
           )}
 
-          {notes.map((note) => {
+          {visibleNotes.map((note) => {
             const color = trackColor(note.trackIndex);
             return (
               <div
@@ -161,9 +231,10 @@ export default function PianoRoll() {
           })}
 
           <div
+            ref={playheadRef}
             aria-hidden
-            className="pointer-events-none absolute bottom-0 top-0 w-px bg-white shadow-[0_0_2.5px_rgba(255,255,255,0.5)]"
-            style={{ left: playheadX }}
+            className="pointer-events-none absolute bottom-0 left-0 top-0 w-px bg-white shadow-[0_0_2.5px_rgba(255,255,255,0.5)] will-change-transform"
+            style={{ transform: 'translateX(0px)' }}
           >
             <div className="absolute -left-[5px] -top-px size-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-white" />
           </div>
