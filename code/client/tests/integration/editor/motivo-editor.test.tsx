@@ -1,10 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import MotivoEditor, {
-  type MotivoEditorHandle,
-  type MotivoEditorProps,
-} from '@/features/editor/components/MotivoEditor';
+import MotivoEditor, { type MotivoEditorHandle } from '@/features/editor/components/MotivoEditor';
 
 const setModelMarkers = vi.fn();
 const setMonacoTheme = vi.fn();

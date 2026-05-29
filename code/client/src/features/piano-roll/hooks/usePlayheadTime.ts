@@ -27,7 +27,10 @@ export function usePlayheadTracker(
   options: UsePlayheadTrackerOptions,
 ) {
   const onViewportChangeRef = useRef(options.onViewportChange);
-  onViewportChangeRef.current = options.onViewportChange;
+
+  useEffect(() => {
+    onViewportChangeRef.current = options.onViewportChange;
+  }, [options.onViewportChange]);
 
   useEffect(() => {
     let rafId = 0;
@@ -66,7 +69,11 @@ export function usePlayheadTracker(
         const delta = lastTick > 0 ? timestamp - lastTick : 0;
         lastTick = timestamp;
 
-        if (isPlaying && !options.followPlayheadRef.current && options.lastManualScrollAtRef.current > 0) {
+        if (
+          isPlaying &&
+          !options.followPlayheadRef.current &&
+          options.lastManualScrollAtRef.current > 0
+        ) {
           options.manualScrollIdleMsRef.current += delta;
           if (options.manualScrollIdleMsRef.current >= FOLLOW_RESUME_AFTER_MS) {
             options.followPlayheadRef.current = true;
@@ -89,10 +96,7 @@ export function usePlayheadTracker(
           }
         }
 
-        if (
-          onViewportChangeRef.current &&
-          timestamp - lastViewportSync >= VIEWPORT_SYNC_MS
-        ) {
+        if (onViewportChangeRef.current && timestamp - lastViewportSync >= VIEWPORT_SYNC_MS) {
           lastViewportSync = timestamp;
           onViewportChangeRef.current();
         }

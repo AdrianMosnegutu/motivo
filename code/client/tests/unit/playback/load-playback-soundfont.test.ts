@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_DRUM_MACHINE, PERCUSSION_INSTRUMENT } from '@/features/playback/lib/instruments';
+import { loadPlaybackInstrument } from '@/features/playback/lib/load-playback-instrument';
+import { SMPLR_SOUNDFONT_KIT } from '@/features/playback/lib/playback-players';
+
 const soundfont = vi.fn();
 const drumMachine = vi.fn();
 const sampleLoader = vi.fn();
@@ -9,10 +13,6 @@ vi.mock('smplr', () => ({
   SampleLoader: (...args: unknown[]) => sampleLoader(...args),
   Soundfont: (...args: unknown[]) => soundfont(...args),
 }));
-
-import { DEFAULT_DRUM_MACHINE, PERCUSSION_INSTRUMENT } from '@/features/playback/lib/instruments';
-import { loadPlaybackInstrument } from '@/features/playback/lib/load-playback-instrument';
-import { SMPLR_SOUNDFONT_KIT } from '@/features/playback/lib/playback-players';
 
 describe('loadPlaybackInstrument', () => {
   const audioContext = {} as AudioContext;

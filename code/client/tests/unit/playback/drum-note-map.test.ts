@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDrumNoteResolver,
   GM_HI_HAT_MIDI,
+  HI_HAT_VELOCITY_GAIN,
   scaleDrumVelocity,
 } from '@/features/playback/lib/drum-note-map';
 
@@ -58,7 +59,7 @@ describe('buildDrumNoteResolver', () => {
   });
 
   it('reduces hi-hat velocity relative to other drums', () => {
-    expect(scaleDrumVelocity(GM_HI_HAT_MIDI, 1)).toBe(0.5);
+    expect(scaleDrumVelocity(GM_HI_HAT_MIDI, 1)).toBe(HI_HAT_VELOCITY_GAIN);
     expect(scaleDrumVelocity(36, 1)).toBe(1);
   });
 });

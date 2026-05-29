@@ -1,5 +1,5 @@
 import type { Monaco } from '@monaco-editor/react';
-import type { languages, Position, editor } from 'monaco-editor';
+import type { editor, languages, Position } from 'monaco-editor';
 
 import {
   MOTIVO_BOOLEANS,
@@ -69,8 +69,7 @@ const SNIPPETS: SnippetSpec[] = [
   },
   {
     label: 'for',
-    insertText:
-      'for (let ${1:i} = 0; ${1:i} < ${2:16}; ${1:i} = ${1:i} + 1) {\n\t$0\n}',
+    insertText: 'for (let ${1:i} = 0; ${1:i} < ${2:16}; ${1:i} = ${1:i} + 1) {\n\t$0\n}',
     detail: 'For loop',
   },
   {

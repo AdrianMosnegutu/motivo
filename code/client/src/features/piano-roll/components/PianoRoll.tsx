@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
 import * as Tone from 'tone';
 
 import { useMidi } from '@/features/midi/MidiContext';

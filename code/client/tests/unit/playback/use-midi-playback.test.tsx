@@ -34,7 +34,6 @@ vi.mock('tone', () => ({
   start: () => toneStart(),
 }));
 
-
 const parsedMidi = {
   duration: 4,
   tracks: [

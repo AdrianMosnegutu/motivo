@@ -8,8 +8,8 @@ import type { useMidi } from '@/features/midi/MidiContext';
 import { stopPlayers, stopScheduledVoices as haltScheduledVoices } from '../lib/audio-nodes';
 import {
   findFirstNoteAtOrAfter,
-  flattenMidiNotes,
   type FlatMidiNote,
+  flattenMidiNotes,
 } from '../lib/flatten-midi-notes';
 import {
   createSharedSampleLoader,
@@ -218,7 +218,14 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
         startScheduler();
       }
     },
-    [beginPlayback, clearScheduleTimer, parsedMidi, playState, startScheduler, clearScheduledVoices],
+    [
+      beginPlayback,
+      clearScheduleTimer,
+      parsedMidi,
+      playState,
+      startScheduler,
+      clearScheduledVoices,
+    ],
   );
 
   useEffect(() => {
@@ -249,11 +256,7 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
         setMidiLoadState('loading');
         const audioContext = Tone.getContext().rawContext as AudioContext;
         const trackNames = parsedMidi.tracks.map((track) =>
-          resolveInstrument(
-            track.instrument.number,
-            track.channel,
-            track.instrument.percussion,
-          ),
+          resolveInstrument(track.instrument.number, track.channel, track.instrument.percussion),
         );
         const uniqueNames = [...new Set(trackNames)];
         const loader = createSharedSampleLoader(audioContext);
@@ -278,7 +281,6 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   useEffect(() => {
     const tick = (timestamp: number) => {
       const current = Tone.getTransport().seconds;
-      const total = parsedMidi?.duration ?? 0;
 
       if (
         playStateRef.current === 'playing' &&
@@ -320,4 +322,4 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
     stopAll,
     toggleLoop,
   };
-};
+}

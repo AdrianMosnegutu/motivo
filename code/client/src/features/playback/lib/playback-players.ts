@@ -1,7 +1,8 @@
-import { DrumMachine, SampleLoader, Soundfont, type Smplr } from 'smplr';
+import { DrumMachine, SampleLoader, type Smplr, Soundfont } from 'smplr';
+
+import type { PlaybackPlayer } from '../types';
 
 import { buildDrumNoteResolver, scaleDrumVelocity } from './drum-note-map';
-import type { PlaybackPlayer } from '../types';
 
 export const SMPLR_SOUNDFONT_KIT = 'MusyngKite';
 
