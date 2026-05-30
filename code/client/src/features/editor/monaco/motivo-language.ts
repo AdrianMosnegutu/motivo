@@ -1,36 +1,30 @@
 import type { Monaco } from '@monaco-editor/react';
 
 import { registerMotivoCompletion } from './motivo-completion';
+import {
+  MOTIVO_BOOLEANS,
+  MOTIVO_DRUM_NOTES,
+  MOTIVO_INSTRUMENTS,
+  MOTIVO_LANGUAGE_ID,
+  MOTIVO_LANGUAGE_KEYWORDS,
+  MOTIVO_TYPE_KEYWORDS,
+} from './motivo-keywords';
 
-export const MOTIVO_LANGUAGE_ID = 'motivo';
-
-export const MOTIVO_LANGUAGE_KEYWORDS = [
-  'tempo',
-  'signature',
-  'key',
-  'track',
-  'pattern',
-  'play',
-  'for',
-  'loop',
-  'if',
-  'else',
-  'let',
-  'using',
-  'from',
-  'major',
-  'minor',
-] as const;
-
-export const MOTIVO_INSTRUMENTS = ['piano', 'guitar', 'bass', 'violin', 'drums'] as const;
-export const MOTIVO_DRUM_NOTES = ['kick', 'snare', 'hihat', 'crash', 'ride'] as const;
-export const MOTIVO_BOOLEANS = ['true', 'false'] as const;
+export {
+  MOTIVO_BOOLEANS,
+  MOTIVO_DRUM_NOTES,
+  MOTIVO_INSTRUMENTS,
+  MOTIVO_LANGUAGE_ID,
+  MOTIVO_LANGUAGE_KEYWORDS,
+  MOTIVO_TYPE_KEYWORDS,
+} from './motivo-keywords';
 
 export function registerMotivoLanguage(monaco: Monaco) {
   monaco.languages.register({ id: MOTIVO_LANGUAGE_ID });
 
   monaco.languages.setMonarchTokensProvider(MOTIVO_LANGUAGE_ID, {
     keywords: [...MOTIVO_LANGUAGE_KEYWORDS],
+    typeKeywords: [...MOTIVO_TYPE_KEYWORDS],
     instruments: [...MOTIVO_INSTRUMENTS],
     drumNotes: [...MOTIVO_DRUM_NOTES],
     booleans: [...MOTIVO_BOOLEANS],
@@ -48,6 +42,7 @@ export function registerMotivoLanguage(monaco: Monaco) {
           /\b[a-z_][a-zA-Z0-9_]*\b/,
           {
             cases: {
+              '@typeKeywords': 'type-keyword',
               '@keywords': 'keyword',
               '@instruments': 'instrument',
               '@drumNotes': 'drum-note',

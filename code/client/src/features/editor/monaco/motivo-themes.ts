@@ -5,6 +5,7 @@ export const MOTIVO_DARK_THEME = 'motivo-dark';
 /** Syntax colors aligned with the Motivo Studio dark IDE palette. */
 export const MOTIVO_SYNTAX_COLORS = {
   keyword: '#c084fc',
+  typeKeyword: '#67e8f9',
   voiceKeyword: '#c084fc',
   restKeyword: '#38bdf8',
   noteLiteral: '#a6e3a1',
@@ -24,6 +25,11 @@ export function registerMotivoThemes(monaco: Monaco) {
     inherit: true,
     rules: [
       { token: 'keyword', foreground: MOTIVO_SYNTAX_COLORS.keyword, fontStyle: 'bold' },
+      {
+        token: 'type-keyword',
+        foreground: MOTIVO_SYNTAX_COLORS.typeKeyword,
+        fontStyle: 'bold',
+      },
       { token: 'voice-keyword', foreground: MOTIVO_SYNTAX_COLORS.voiceKeyword, fontStyle: 'bold' },
       { token: 'rest-keyword', foreground: MOTIVO_SYNTAX_COLORS.restKeyword },
       { token: 'note-literal', foreground: MOTIVO_SYNTAX_COLORS.noteLiteral },

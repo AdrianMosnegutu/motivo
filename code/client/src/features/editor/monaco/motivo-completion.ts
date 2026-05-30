@@ -7,9 +7,16 @@ import {
   MOTIVO_INSTRUMENTS,
   MOTIVO_LANGUAGE_ID,
   MOTIVO_LANGUAGE_KEYWORDS,
-} from './motivo-language';
+  MOTIVO_STATEMENT_KEYWORDS,
+  MOTIVO_TYPE_KEYWORDS,
+} from './motivo-keywords';
 
-export type MotivoCompletionContext = 'instruments' | 'playables' | 'statements' | 'general';
+export type MotivoCompletionContext =
+  | 'instruments'
+  | 'playables'
+  | 'statements'
+  | 'types'
+  | 'general';
 
 const COMMON_PITCHES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 const COMMON_OCTAVES = [2, 3, 4, 5] as const;
@@ -17,18 +24,6 @@ const COMMON_OCTAVES = [2, 3, 4, 5] as const;
 export const COMMON_NOTE_LITERALS = COMMON_OCTAVES.flatMap((octave) =>
   COMMON_PITCHES.map((pitch) => `${pitch}${octave}`),
 );
-
-const STATEMENT_KEYWORDS = [
-  'play',
-  'loop',
-  'let',
-  'voice',
-  'pattern',
-  'for',
-  'if',
-  'else',
-  'rest',
-] as const;
 
 type SnippetSpec = {
   label: string;
@@ -44,7 +39,7 @@ const SNIPPETS: SnippetSpec[] = [
   },
   {
     label: 'pattern',
-    insertText: 'pattern ${1:name}() {\n\t$0\n}',
+    insertText: 'pattern ${1:name}(${2:int n}) {\n\t$0\n}',
     detail: 'Pattern definition',
   },
   {
@@ -69,7 +64,7 @@ const SNIPPETS: SnippetSpec[] = [
   },
   {
     label: 'for',
-    insertText: 'for (let ${1:i} = 0; ${1:i} < ${2:16}; ${1:i} = ${1:i} + 1) {\n\t$0\n}',
+    insertText: 'for (int ${1:i} = 0; ${1:i} < ${2:16}; ${1:i} = ${1:i} + 1) {\n\t$0\n}',
     detail: 'For loop',
   },
   {
@@ -110,10 +105,31 @@ export function detectCompletionContext(linePrefix: string): MotivoCompletionCon
   if (/\bplay\s+[^;]*$/i.test(linePrefix) || /\[\s*[^;\]]*$/i.test(linePrefix)) {
     return 'playables';
   }
-  if (/[{;]\s*$/.test(linePrefix)) {
+  if (/\bfor\s*\(\s*[a-z_][a-z0-9_]*$/i.test(linePrefix) || /\bfor\s*\(\s*$/i.test(linePrefix)) {
+    return 'types';
+  }
+  if (/\bpattern\s+[a-z_][a-z0-9_]*\s*\([^)]*$/i.test(linePrefix)) {
+    return 'types';
+  }
+  if (/[{;]\s*$/.test(linePrefix) || /^\s+$/.test(linePrefix)) {
     return 'statements';
   }
   return 'general';
+}
+
+function typeKeywordItems(
+  monaco: Monaco,
+  range: languages.CompletionItem['range'],
+  labels: readonly string[] = MOTIVO_TYPE_KEYWORDS,
+): languages.CompletionItem[] {
+  return labels.map((label) => ({
+    label,
+    kind: monaco.languages.CompletionItemKind.TypeParameter,
+    insertText: label,
+    detail: 'Type',
+    sortText: `0_${label}`,
+    range,
+  }));
 }
 
 function keywordItems(
@@ -130,7 +146,7 @@ function keywordItems(
 }
 
 function valueItems(
-  monaco: Monaco,
+  _monaco: Monaco,
   range: languages.CompletionItem['range'],
   labels: readonly string[],
   kind: languages.CompletionItemKind,
@@ -199,13 +215,19 @@ export function buildMotivoCompletionItems(
       return {
         suggestions: [
           ...snippetItems(monaco, range, SNIPPETS),
-          ...keywordItems(monaco, range, STATEMENT_KEYWORDS),
+          ...typeKeywordItems(monaco, range),
+          ...keywordItems(monaco, range, MOTIVO_STATEMENT_KEYWORDS),
         ],
+      };
+    case 'types':
+      return {
+        suggestions: typeKeywordItems(monaco, range),
       };
     case 'general':
       return {
         suggestions: [
           ...snippetItems(monaco, range, SNIPPETS),
+          ...typeKeywordItems(monaco, range),
           ...keywordItems(monaco, range, MOTIVO_LANGUAGE_KEYWORDS),
           ...keywordItems(monaco, range, ['voice', 'rest']),
           ...valueItems(

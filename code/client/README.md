@@ -49,7 +49,7 @@ src/
 |   |-- compile/        API client and diagnostic mapping
 |   |-- editor/         Monaco Motivo editor integration
 |   |-- auth/           Account state and login/register UI
-|   |-- examples/       Bundled read-only Motivo examples and source files
+|   |-- examples/       Bundled read-only Motivo examples (`sources/*.motivo`)
 |   |-- files/          File explorer, API client, downloads, autosave
 |   |-- ide/            Main workspace layout and workflow hooks
 |   |-- midi/           MIDI parsing and context
@@ -64,6 +64,10 @@ tests/
 ## API Proxy
 
 `next.config.ts` rewrites `/api/:path*` to `API_PROXY_URL`, falling back to `NEXT_PUBLIC_API_URL` and then `http://localhost:3001`. Docker Compose sets this to the internal server URL automatically.
+
+## Bundled Examples
+
+Read-only Motivo programs live in `src/features/examples/sources/`. Add or edit `.motivo` files there; the client discovers them automatically at build time. Optional numeric prefixes such as `01_intro.motivo` control ordering; otherwise examples are sorted alphabetically by filename.
 
 ## Persistence Model
 

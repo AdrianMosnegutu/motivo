@@ -5,6 +5,7 @@ import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '@/features/editor/monaco
 import {
   MOTIVO_LANGUAGE_ID,
   MOTIVO_LANGUAGE_KEYWORDS,
+  MOTIVO_TYPE_KEYWORDS,
   registerMotivoLanguage,
 } from '@/features/editor/monaco/motivo-language';
 import {
@@ -45,6 +46,7 @@ describe('Monaco Motivo configuration', () => {
       MOTIVO_LANGUAGE_ID,
       expect.objectContaining({
         keywords: [...MOTIVO_LANGUAGE_KEYWORDS],
+        typeKeywords: [...MOTIVO_TYPE_KEYWORDS],
         tokenizer: expect.objectContaining({
           root: expect.any(Array),
         }),
@@ -74,6 +76,10 @@ describe('Monaco Motivo configuration', () => {
             foreground: MOTIVO_SYNTAX_COLORS.noteLiteral,
           }),
           expect.objectContaining({ token: 'number', foreground: MOTIVO_SYNTAX_COLORS.number }),
+          expect.objectContaining({
+            token: 'type-keyword',
+            foreground: MOTIVO_SYNTAX_COLORS.typeKeyword,
+          }),
           expect.objectContaining({
             token: 'voice-keyword',
             foreground: MOTIVO_SYNTAX_COLORS.voiceKeyword,

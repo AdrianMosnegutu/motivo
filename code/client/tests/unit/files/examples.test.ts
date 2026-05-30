@@ -3,17 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { listExampleFiles, readExampleSource } from '@/features/examples/example-files';
 
 describe('bundled Motivo examples contract', () => {
-  it('exposes read-only examples with stable metadata', async () => {
+  it('discovers read-only examples from the sources folder', async () => {
     const examples = listExampleFiles();
 
-    expect(examples.map((example) => example.id)).toEqual([
-      'come-as-you-are',
-      'example',
-      'fur-elise',
-      'pirates',
-    ]);
+    expect(examples.length).toBeGreaterThanOrEqual(4);
     expect(examples.every((example) => example.readOnly)).toBe(true);
     expect(examples.every((example) => example.kind === 'example')).toBe(true);
+    expect(new Set(examples.map((example) => example.id)).size).toBe(examples.length);
+    expect(examples.map((example) => example.order)).toEqual(
+      [...examples].sort((left, right) => left.order - right.order).map((example) => example.order),
+    );
   });
 
   it('loads bundled example source without calling the backend', async () => {
