@@ -205,7 +205,7 @@ TEST(Parser, GlobalVarDecl) {
     ASSERT_EQ(p->globals.size(), 1u);
     const auto& decl = global_stmt<ast::VarDeclStatement>(*p, 0);
     EXPECT_EQ(decl.name, "x");
-    EXPECT_EQ(decl.type, motivo::types::TypeKind::Int);
+    EXPECT_EQ(decl.type, motivo::types::Type::Int);
     EXPECT_EQ(std::get<ast::IntLiteralExpression>(decl.value->kind).value, 42);
 }
 
@@ -223,9 +223,9 @@ TEST(Parser, GlobalPatternWithParams) {
     const auto& pat = global_pattern(*p, 0);
     ASSERT_EQ(pat.params.size(), 3u);
     EXPECT_EQ(pat.params[0].name, "a");
-    EXPECT_EQ(pat.params[0].type, motivo::types::TypeKind::Int);
+    EXPECT_EQ(pat.params[0].type, motivo::types::Type::Int);
     EXPECT_EQ(pat.params[2].name, "c");
-    EXPECT_EQ(pat.params[2].type, motivo::types::TypeKind::Int);
+    EXPECT_EQ(pat.params[2].type, motivo::types::Type::Int);
 }
 
 TEST(Parser, GlobalAssignmentRejected) {

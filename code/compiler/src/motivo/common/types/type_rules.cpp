@@ -2,31 +2,29 @@
 
 namespace motivo::types {
 
-bool is_known(const TypeKind type) { return type != TypeKind::Unknown; }
+bool is_known(const Type type) { return type != Type::Unknown; }
 
-bool is_numeric(const TypeKind type) { return type == TypeKind::Int || type == TypeKind::Double; }
+bool is_numeric(const Type type) { return type == Type::Int || type == Type::Double; }
 
-bool is_integral(const TypeKind type) { return type == TypeKind::Int; }
+bool is_integral(const Type type) { return type == Type::Int; }
 
-bool is_boolean(const TypeKind type) { return type == TypeKind::Bool; }
+bool is_boolean(const Type type) { return type == Type::Bool; }
 
-bool is_note(const TypeKind type) { return type == TypeKind::Note; }
+bool is_note(const Type type) { return type == Type::Note; }
 
-bool same_known_type(const TypeKind left, const TypeKind right) {
-    return is_known(left) && is_known(right) && left == right;
-}
+bool same_known_type(const Type left, const Type right) { return is_known(left) && is_known(right) && left == right; }
 
-bool is_assignable(const TypeKind target, const TypeKind source) { return target == source; }
+bool is_assignable(const Type target, const Type source) { return target == source; }
 
-TypeKind numeric_result(const TypeKind left, const TypeKind right) {
+Type numeric_result(const Type left, const Type right) {
     if (!is_numeric(left) || !is_numeric(right)) {
-        return TypeKind::Unknown;
+        return Type::Unknown;
     }
 
-    return left == TypeKind::Double || right == TypeKind::Double ? TypeKind::Double : TypeKind::Int;
+    return left == Type::Double || right == Type::Double ? Type::Double : Type::Int;
 }
 
-TypeKind binary_result_type(const operators::BinaryOperator op, const TypeKind left, const TypeKind right) {
+Type binary_result_type(const operators::BinaryOperator op, const Type left, const Type right) {
     using Op = operators::BinaryOperator;
 
     switch (op) {
@@ -37,7 +35,7 @@ TypeKind binary_result_type(const operators::BinaryOperator op, const TypeKind l
             return numeric_result(left, right);
         }
         case Op::Modulo: {
-            return is_integral(left) && is_integral(right) ? TypeKind::Int : TypeKind::Unknown;
+            return is_integral(left) && is_integral(right) ? Type::Int : Type::Unknown;
         }
         case Op::Equals:
         case Op::NotEquals:
@@ -47,11 +45,11 @@ TypeKind binary_result_type(const operators::BinaryOperator op, const TypeKind l
         case Op::GreaterOrEqual:
         case Op::And:
         case Op::Or: {
-            return TypeKind::Bool;
+            return Type::Bool;
         }
     }
 
-    return TypeKind::Unknown;
+    return Type::Unknown;
 }
 
 }  // namespace motivo::types

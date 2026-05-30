@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::types::TypeKind;
+using motivo::types::Type;
 
 // -- Happy flows ---------------------------------------------------------------
 
@@ -14,7 +14,7 @@ TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
@@ -23,7 +23,7 @@ TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
@@ -32,7 +32,7 @@ TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Bool);
+    EXPECT_EQ(*t, Type::Bool);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
@@ -41,7 +41,7 @@ TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Note);
+    EXPECT_EQ(*t, Type::Note);
 }
 
 TEST(TernaryTypeCheck, NoteInsidePlayViaTernary) {

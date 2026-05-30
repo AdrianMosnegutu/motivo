@@ -22,7 +22,7 @@ void Traversal::visit_globals(const std::vector<ast::GlobalItem>& globals) {
 
 void Traversal::visit_track(const ast::TrackDefinition& track) {
     if (track.name) {
-        (void)scopes_.add_symbol(*track.name, SymbolKind::Track, TypeKind::Void, track.location, &track);
+        (void)scopes_.add_symbol(*track.name, SymbolKind::Track, Type::Void, track.location, &track);
     }
 
     ScopeStack::Guard guard(scopes_);
@@ -52,7 +52,7 @@ void Traversal::visit_track(const ast::TrackDefinition& track) {
 
 void Traversal::visit_voice(const ast::VoiceDefinition& voice) {
     if (voice.from_expression) {
-        if (const TypeKind from_type = visit_expression(**voice.from_expression);
+        if (const Type from_type = visit_expression(**voice.from_expression);
             is_known(from_type) && !is_numeric(from_type)) {
             diagnose(voice.location, "voice 'from' expression must be numeric");
         }

@@ -31,7 +31,7 @@ class AnalysisResult {
 
     [[nodiscard]] const ast::Program& program() const;
 
-    [[nodiscard]] std::optional<TypeKind> get_expression_type(const ast::Expression& expression) const;
+    [[nodiscard]] std::optional<Type> get_expression_type(const ast::Expression& expression) const;
     [[nodiscard]] std::optional<SymbolId> get_resolved_symbol(const ast::Expression& expression) const;
     [[nodiscard]] const Symbol* get_symbol_by_id(SymbolId id) const;
     [[nodiscard]] const Symbol* get_symbol_by_declaration(const void* declaration) const;

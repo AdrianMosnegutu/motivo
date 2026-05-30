@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::types::TypeKind;
+using motivo::types::Type;
 
 // -- Happy flows: result type annotation --------------------------------------
 
@@ -14,7 +14,7 @@ TEST(ArithmeticTypeCheck, IntPlusIntIsInt) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(ArithmeticTypeCheck, IntPlusDoubleIsDouble) {
@@ -23,7 +23,7 @@ TEST(ArithmeticTypeCheck, IntPlusDoubleIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, DoublePlusIntIsDouble) {
@@ -32,7 +32,7 @@ TEST(ArithmeticTypeCheck, DoublePlusIntIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, DoublePlusDoubleIsDouble) {
@@ -41,7 +41,7 @@ TEST(ArithmeticTypeCheck, DoublePlusDoubleIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, IntMinusIntIsInt) {
@@ -50,7 +50,7 @@ TEST(ArithmeticTypeCheck, IntMinusIntIsInt) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(ArithmeticTypeCheck, IntMultiplyDoubleIsDouble) {
@@ -59,7 +59,7 @@ TEST(ArithmeticTypeCheck, IntMultiplyDoubleIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, IntDivideIntIsInt) {
@@ -68,7 +68,7 @@ TEST(ArithmeticTypeCheck, IntDivideIntIsInt) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(ArithmeticTypeCheck, IntDivideDoubleIsDouble) {
@@ -77,7 +77,7 @@ TEST(ArithmeticTypeCheck, IntDivideDoubleIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, DoubleDivideIntIsDouble) {
@@ -86,7 +86,7 @@ TEST(ArithmeticTypeCheck, DoubleDivideIntIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, DoubleDivideDoubleIsDouble) {
@@ -95,7 +95,7 @@ TEST(ArithmeticTypeCheck, DoubleDivideDoubleIsDouble) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(ArithmeticTypeCheck, IntModuloIntIsInt) {
@@ -104,7 +104,7 @@ TEST(ArithmeticTypeCheck, IntModuloIntIsInt) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 // -- Error cases ---------------------------------------------------------------

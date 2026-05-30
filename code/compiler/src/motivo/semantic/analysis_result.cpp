@@ -20,7 +20,7 @@ AnalysisResult::~AnalysisResult() = default;
 
 const ast::Program& AnalysisResult::program() const { return *program_; }
 
-std::optional<TypeKind> AnalysisResult::get_expression_type(const ast::Expression& expression) const {
+std::optional<Type> AnalysisResult::get_expression_type(const ast::Expression& expression) const {
     return annotations_->get_expression_type(expression);
 }
 

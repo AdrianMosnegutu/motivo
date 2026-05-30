@@ -30,13 +30,13 @@ class SymbolTable {
     [[nodiscard]] SymbolId add_symbol(ScopeId scope,
                                       std::string name,
                                       SymbolKind kind,
-                                      TypeKind type,
+                                      Type type,
                                       const source::Location& location,
                                       const void* declaration = nullptr);
     [[nodiscard]] const Symbol* get_symbol(SymbolId id) const;
     [[nodiscard]] Symbol* get_symbol(SymbolId id);
 
-    void set_symbol_type(SymbolId id, TypeKind type);
+    void set_symbol_type(SymbolId id, Type type);
 
     [[nodiscard]] const Symbol* find_in_scope(ScopeId scope, const std::string& name) const;
     [[nodiscard]] const Symbol* find_in_scope(ScopeId scope,
@@ -45,14 +45,14 @@ class SymbolTable {
 
     [[nodiscard]] const Symbol* find_in_scope_by_signature(ScopeId scope,
                                                            const std::string& name,
-                                                           const std::vector<TypeKind>& param_types) const;
+                                                           const std::vector<Type>& param_types) const;
     [[nodiscard]] const Symbol* find_visible(ScopeId scope, const std::string& name) const;
     [[nodiscard]] const Symbol* find_visible(ScopeId scope,
                                              const std::string& name,
                                              std::initializer_list<SymbolKind> kinds) const;
     [[nodiscard]] const Symbol* find_visible_pattern_by_signature(ScopeId scope,
                                                                   const std::string& name,
-                                                                  const std::vector<TypeKind>& argument_types) const;
+                                                                  const std::vector<Type>& argument_types) const;
 
     [[nodiscard]] bool is_strict_ancestor(ScopeId ancestor, ScopeId of_scope) const;
 

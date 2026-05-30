@@ -5,7 +5,7 @@
 
 namespace motivo::types {
 
-enum class TypeKind : uint8_t {
+enum class Type : uint8_t {
     Unknown,
     Void,
     Int,
@@ -18,27 +18,27 @@ enum class TypeKind : uint8_t {
     Drum,
 };
 
-[[nodiscard]] constexpr std::string_view type_name(const TypeKind kind) {
+[[nodiscard]] constexpr std::string_view type_name(const Type kind) {
     switch (kind) {
-        case TypeKind::Unknown:
+        case Type::Unknown:
             return "unknown";
-        case TypeKind::Void:
+        case Type::Void:
             return "void";
-        case TypeKind::Int:
+        case Type::Int:
             return "int";
-        case TypeKind::Double:
+        case Type::Double:
             return "double";
-        case TypeKind::Bool:
+        case Type::Bool:
             return "bool";
-        case TypeKind::Note:
+        case Type::Note:
             return "note";
-        case TypeKind::Rest:
+        case Type::Rest:
             return "rest";
-        case TypeKind::Chord:
+        case Type::Chord:
             return "chord";
-        case TypeKind::Sequence:
+        case Type::Sequence:
             return "seq";
-        case TypeKind::Drum:
+        case Type::Drum:
             return "drum";
     }
 

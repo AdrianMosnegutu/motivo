@@ -4,15 +4,15 @@
 
 namespace motivo::semantic::detail {
 
-TypeKind Traversal::visit_expression(const ast::Expression& expression) {
-    const TypeKind expression_type = std::visit(
+Type Traversal::visit_expression(const ast::Expression& expression) {
+    const Type expression_type = std::visit(
         utils::overloaded{
-            [&](const ast::IntLiteralExpression&) { return TypeKind::Int; },
-            [&](const ast::FloatLiteralExpression&) { return TypeKind::Double; },
-            [&](const ast::BoolLiteralExpression&) { return TypeKind::Bool; },
-            [&](const ast::NoteLiteralExpression&) { return TypeKind::Note; },
-            [&](const ast::RestLiteralExpression&) { return TypeKind::Rest; },
-            [&](const ast::DrumNoteLiteralExpression&) { return TypeKind::Note; },
+            [&](const ast::IntLiteralExpression&) { return Type::Int; },
+            [&](const ast::FloatLiteralExpression&) { return Type::Double; },
+            [&](const ast::BoolLiteralExpression&) { return Type::Bool; },
+            [&](const ast::NoteLiteralExpression&) { return Type::Note; },
+            [&](const ast::RestLiteralExpression&) { return Type::Rest; },
+            [&](const ast::DrumNoteLiteralExpression&) { return Type::Note; },
             [&](const ast::IdentifierExpression& identifier) { return visit_identifier(expression, identifier); },
             [&](const ast::UnaryExpression& unary) { return visit_unary(unary, expression.location); },
             [&](const ast::BinaryExpression& binary) { return visit_binary(binary, expression.location); },
@@ -28,75 +28,73 @@ TypeKind Traversal::visit_expression(const ast::Expression& expression) {
     return expression_type;
 }
 
-TypeKind Traversal::visit_identifier(const ast::Expression& expression,
-                                     const ast::IdentifierExpression& identifier) const {
+Type Traversal::visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const {
     if (const auto* symbol = scopes_.find_visible(identifier.name, {SymbolKind::Variable, SymbolKind::Parameter})) {
         result_.annotations_->set_resolved_symbol(expression, symbol->id);
         return symbol->type;
     }
 
     diagnose(expression.location, "undefined variable '" + identifier.name + "'");
-    return TypeKind::Unknown;
+    return Type::Unknown;
 }
 
-TypeKind Traversal::visit_unary(const ast::UnaryExpression& unary, const source::Location& location) {
-    const TypeKind operand_type = visit_expression(*unary.operand);
+Type Traversal::visit_unary(const ast::UnaryExpression& unary, const source::Location& location) {
+    const Type operand_type = visit_expression(*unary.operand);
 
     switch (unary.operation) {
         case operators::UnaryOperator::Negative: {
             if (is_known(operand_type) && !is_numeric(operand_type)) {
                 diagnose(location, "unary '-' requires a numeric operand");
-                return TypeKind::Unknown;
+                return Type::Unknown;
             }
 
-            return is_numeric(operand_type) ? operand_type : TypeKind::Unknown;
+            return is_numeric(operand_type) ? operand_type : Type::Unknown;
         }
 
         case operators::UnaryOperator::Not: {
             if (is_known(operand_type) && !is_boolean(operand_type)) {
                 diagnose(location, "unary '!' requires a boolean operand");
-                return TypeKind::Unknown;
+                return Type::Unknown;
             }
 
-            return is_boolean(operand_type) ? TypeKind::Bool : TypeKind::Unknown;
+            return is_boolean(operand_type) ? Type::Bool : Type::Unknown;
         }
     }
 
     diagnose(location, "invalid unary operator");
-    return TypeKind::Unknown;
+    return Type::Unknown;
 }
 
-TypeKind Traversal::visit_binary(const ast::BinaryExpression& binary, const source::Location& location) {
-    const TypeKind left_type = visit_expression(*binary.left);
-    const TypeKind right_type = visit_expression(*binary.right);
+Type Traversal::visit_binary(const ast::BinaryExpression& binary, const source::Location& location) {
+    const Type left_type = visit_expression(*binary.left);
+    const Type right_type = visit_expression(*binary.right);
 
     validate_binary_operands(binary.operation, left_type, right_type, location);
     return binary_result_type(binary.operation, left_type, right_type);
 }
 
-TypeKind Traversal::visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location) {
-    if (const TypeKind condition_type = visit_expression(*ternary.condition);
+Type Traversal::visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location) {
+    if (const Type condition_type = visit_expression(*ternary.condition);
         is_known(condition_type) && !is_boolean(condition_type)) {
         diagnose(location, "ternary condition must be a boolean expression");
     }
 
-    const TypeKind then_type = visit_expression(*ternary.then_expression);
-    const TypeKind else_type = visit_expression(*ternary.else_expression);
+    const Type then_type = visit_expression(*ternary.then_expression);
+    const Type else_type = visit_expression(*ternary.else_expression);
 
     if (is_known(then_type) && is_known(else_type) && !same_known_type(then_type, else_type)) {
         diagnose(location, "ternary branches must evaluate to the same type");
-        return TypeKind::Unknown;
+        return Type::Unknown;
     }
 
-    return same_known_type(then_type, else_type) ? then_type : TypeKind::Unknown;
+    return same_known_type(then_type, else_type) ? then_type : Type::Unknown;
 }
 
-TypeKind Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
+Type Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
     for (const auto& [value, duration] : sequence.items) {
-        const TypeKind item_type = visit_expression(*value);
+        const Type item_type = visit_expression(*value);
 
-        const bool is_musical_item =
-            item_type == TypeKind::Note || item_type == TypeKind::Chord || item_type == TypeKind::Rest;
+        const bool is_musical_item = item_type == Type::Note || item_type == Type::Chord || item_type == Type::Rest;
         if (is_known(item_type) && !is_musical_item) {
             diagnose(value->location, "sequence items must be notes, chords, or rests");
         }
@@ -117,7 +115,7 @@ TypeKind Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
         }
 
         if (duration) {
-            const TypeKind duration_type = visit_expression(*duration);
+            const Type duration_type = visit_expression(*duration);
 
             if (is_known(duration_type) && !is_numeric(duration_type)) {
                 diagnose(duration->location, "sequence item duration must be numeric");
@@ -125,12 +123,12 @@ TypeKind Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
         }
     }
 
-    return TypeKind::Sequence;
+    return Type::Sequence;
 }
 
-TypeKind Traversal::visit_chord(const ast::ChordExpression& chord, const source::Location& location) {
+Type Traversal::visit_chord(const ast::ChordExpression& chord, const source::Location& location) {
     for (const auto& [value, duration] : chord.notes) {
-        const TypeKind value_type = visit_expression(*value);
+        const Type value_type = visit_expression(*value);
 
         if (is_known(value_type) && !is_note(value_type)) {
             diagnose(location, "chord members must be notes");
@@ -148,7 +146,7 @@ TypeKind Traversal::visit_chord(const ast::ChordExpression& chord, const source:
         }
 
         if (duration) {
-            const TypeKind duration_type = visit_expression(*duration);
+            const Type duration_type = visit_expression(*duration);
 
             if (is_known(duration_type) && !is_numeric(duration_type)) {
                 diagnose(duration->location, "chord note duration must be numeric");
@@ -156,13 +154,13 @@ TypeKind Traversal::visit_chord(const ast::ChordExpression& chord, const source:
         }
     }
 
-    return TypeKind::Chord;
+    return Type::Chord;
 }
 
-TypeKind Traversal::visit_call(const ast::Expression& expression,
-                               const ast::PatternCallExpression& call,
-                               const source::Location& location) {
-    std::vector<TypeKind> argument_types;
+Type Traversal::visit_call(const ast::Expression& expression,
+                           const ast::PatternCallExpression& call,
+                           const source::Location& location) {
+    std::vector<Type> argument_types;
 
     argument_types.reserve(call.arguments.size());
     for (const auto& arg : call.arguments) {
@@ -175,7 +173,7 @@ TypeKind Traversal::visit_call(const ast::Expression& expression,
         result_.annotations_->set_resolved_symbol(expression, symbol->id);
     }
 
-    return TypeKind::Sequence;
+    return Type::Sequence;
 }
 
 }  // namespace motivo::semantic::detail

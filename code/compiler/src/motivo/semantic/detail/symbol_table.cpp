@@ -25,7 +25,7 @@ const Scope* SymbolTable::get_scope(const ScopeId id) const { return id < scopes
 SymbolId SymbolTable::add_symbol(const ScopeId scope_id,
                                  std::string name,
                                  const SymbolKind kind,
-                                 const TypeKind type,
+                                 const Type type,
                                  const source::Location& location,
                                  const void* declaration) {
     assert(scope_id < scopes_.size());
@@ -44,7 +44,7 @@ const Symbol* SymbolTable::get_symbol(const SymbolId id) const {
 
 Symbol* SymbolTable::get_symbol(const SymbolId id) { return id < symbols_.size() ? &symbols_[id] : nullptr; }
 
-void SymbolTable::set_symbol_type(const SymbolId id, const TypeKind type) {
+void SymbolTable::set_symbol_type(const SymbolId id, const Type type) {
     if (Symbol* target = get_symbol(id)) {
         target->type = type;
     }
@@ -95,7 +95,7 @@ const Symbol* SymbolTable::find_in_scope(const ScopeId scope_id,
 
 namespace {
 
-bool same_param_signature(const ast::PatternDefinition& pattern, const std::vector<TypeKind>& param_types) {
+bool same_param_signature(const ast::PatternDefinition& pattern, const std::vector<Type>& param_types) {
     if (pattern.params.size() != param_types.size()) {
         return false;
     }
@@ -109,8 +109,8 @@ bool same_param_signature(const ast::PatternDefinition& pattern, const std::vect
     return true;
 }
 
-std::vector<TypeKind> pattern_param_types(const ast::PatternDefinition& pattern) {
-    std::vector<TypeKind> types;
+std::vector<Type> pattern_param_types(const ast::PatternDefinition& pattern) {
+    std::vector<Type> types;
     types.reserve(pattern.params.size());
     for (const auto& param : pattern.params) {
         types.push_back(param.type);
@@ -118,15 +118,15 @@ std::vector<TypeKind> pattern_param_types(const ast::PatternDefinition& pattern)
     return types;
 }
 
-int overload_match_score(const ast::PatternDefinition& pattern, const std::vector<TypeKind>& argument_types) {
+int overload_match_score(const ast::PatternDefinition& pattern, const std::vector<Type>& argument_types) {
     if (pattern.params.size() != argument_types.size()) {
         return -1;
     }
 
     int score = 0;
     for (std::size_t i = 0; i < pattern.params.size(); ++i) {
-        const TypeKind param_type = pattern.params[i].type;
-        const TypeKind arg_type = argument_types[i];
+        const Type param_type = pattern.params[i].type;
+        const Type arg_type = argument_types[i];
 
         if (!types::is_assignable(param_type, arg_type)) {
             return -1;
@@ -144,7 +144,7 @@ int overload_match_score(const ast::PatternDefinition& pattern, const std::vecto
 
 const Symbol* SymbolTable::find_in_scope_by_signature(const ScopeId scope_id,
                                                       const std::string& name,
-                                                      const std::vector<TypeKind>& param_types) const {
+                                                      const std::vector<Type>& param_types) const {
     const Scope* scope = get_scope(scope_id);
     if (!scope) {
         return nullptr;
@@ -172,7 +172,7 @@ const Symbol* SymbolTable::find_in_scope_by_signature(const ScopeId scope_id,
 
 const Symbol* SymbolTable::find_visible_pattern_by_signature(ScopeId scope_id,
                                                              const std::string& name,
-                                                             const std::vector<TypeKind>& argument_types) const {
+                                                             const std::vector<Type>& argument_types) const {
     const Symbol* best_match = nullptr;
     int best_score = -1;
 

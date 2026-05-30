@@ -6,7 +6,7 @@
 
 #include "motivo/common/ast/expressions.hpp"
 #include "motivo/common/music/drum_note.hpp"
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 
 namespace motivo::ast {
 
@@ -22,7 +22,7 @@ struct AssignStatement {
 };
 
 struct VarDeclStatement {
-    types::TypeKind type = types::TypeKind::Int;
+    types::Type type = types::Type::Int;
     std::string name;
     ExpressionPtr value;
 };

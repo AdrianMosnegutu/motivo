@@ -145,7 +145,7 @@
 %type <std::vector<ast::VoiceItem>>           voice_body
 %type <std::vector<ast::TypedParameter>>      opt_param_list param_list
 %type <ast::TypedParameter>                   param
-%type <types::TypeKind>                       type
+%type <types::Type>                       type
 %type <ast::Block>                            block stmt_list
 %type <ast::StatementPtr>                     stmt var_decl_stmt assign_stmt
 %type <ast::StatementPtr>                     play_stmt for_stmt if_stmt loop_stmt
@@ -314,12 +314,12 @@ param
     ;
 
 type
-    : "int"    { $$ = types::TypeKind::Int; }
-    | "double" { $$ = types::TypeKind::Double; }
-    | "bool"   { $$ = types::TypeKind::Bool; }
-    | "note"   { $$ = types::TypeKind::Note; }
-    | "seq"    { $$ = types::TypeKind::Sequence; }
-    | "chord"  { $$ = types::TypeKind::Chord; }
+    : "int"    { $$ = types::Type::Int; }
+    | "double" { $$ = types::Type::Double; }
+    | "bool"   { $$ = types::Type::Bool; }
+    | "note"   { $$ = types::Type::Note; }
+    | "seq"    { $$ = types::Type::Sequence; }
+    | "chord"  { $$ = types::Type::Chord; }
     ;
 
 // -- Blocks & statements ----------------------------------------------------------------------------------------------

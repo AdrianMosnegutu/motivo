@@ -5,12 +5,12 @@
 #include <string>
 
 #include "motivo/common/source/location.hpp"
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 
 namespace motivo::semantic {
 
+using types::Type;
 using types::type_name;
-using types::TypeKind;
 
 using SymbolId = std::size_t;
 
@@ -28,7 +28,7 @@ struct Symbol {
     SymbolId id = INVALID_SYMBOL_ID;
     std::string name;
     SymbolKind kind = SymbolKind::Variable;
-    TypeKind type = TypeKind::Unknown;
+    Type type = Type::Unknown;
     source::Location location;
     const void* declaration = nullptr;
     std::size_t scope_id = std::numeric_limits<std::size_t>::max();

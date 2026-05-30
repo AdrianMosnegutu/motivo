@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::types::TypeKind;
+using motivo::types::Type;
 
 // -- Basic typed declarations --------------------------------------------------
 
@@ -14,7 +14,7 @@ TEST(VarDecl, IntLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(VarDecl, DoubleLiteralMatchesDeclaredType) {
@@ -23,7 +23,7 @@ TEST(VarDecl, DoubleLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(VarDecl, BoolLiteralMatchesDeclaredType) {
@@ -32,7 +32,7 @@ TEST(VarDecl, BoolLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Bool);
+    EXPECT_EQ(*t, Type::Bool);
 }
 
 TEST(VarDecl, NoteLiteralMatchesDeclaredType) {
@@ -41,7 +41,7 @@ TEST(VarDecl, NoteLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Note);
+    EXPECT_EQ(*t, Type::Note);
 }
 
 TEST(VarDecl, ChordLiteralMatchesDeclaredType) {
@@ -50,7 +50,7 @@ TEST(VarDecl, ChordLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Chord);
+    EXPECT_EQ(*t, Type::Chord);
 }
 
 TEST(VarDecl, SequenceLiteralMatchesDeclaredType) {
@@ -59,7 +59,7 @@ TEST(VarDecl, SequenceLiteralMatchesDeclaredType) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Sequence);
+    EXPECT_EQ(*t, Type::Sequence);
 }
 
 // -- Declarations with complex expressions -------------------------------------
@@ -70,7 +70,7 @@ TEST(VarDecl, IntDeclWithIntExpressionIsValid) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(VarDecl, IntDeclBoundToAnotherIntIdentifierIsValid) {
@@ -92,7 +92,7 @@ TEST(VarDecl, DoubleDeclWithTernaryIsValid) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 // -- Type mismatches on declaration --------------------------------------------

@@ -8,8 +8,8 @@
 namespace motivo::semantic::detail {
 
 void Traversal::validate_binary_operands(const operators::BinaryOperator op,
-                                         const TypeKind left_type,
-                                         const TypeKind right_type,
+                                         const Type left_type,
+                                         const Type right_type,
                                          const source::Location& location) const {
     using Op = operators::BinaryOperator;
 
@@ -62,9 +62,7 @@ void Traversal::validate_binary_operands(const operators::BinaryOperator op,
     diagnose(location, "invalid binary operator");
 }
 
-void Traversal::validate_numeric_operand(const TypeKind type,
-                                         const char* side,
-                                         const source::Location& location) const {
+void Traversal::validate_numeric_operand(const Type type, const char* side, const source::Location& location) const {
     if (is_known(type) && !is_numeric(type)) {
         diagnose(location, std::string(side) + " operand must be numeric");
     }
@@ -72,7 +70,7 @@ void Traversal::validate_numeric_operand(const TypeKind type,
 
 void Traversal::validate_call(const ast::PatternCallExpression& call,
                               const source::Location& location,
-                              const std::vector<TypeKind>& argument_types) {
+                              const std::vector<Type>& argument_types) {
     const auto* symbol = scopes_.find_pattern_visible_by_signature(call.callee, argument_types);
     if (!symbol) {
         const auto* any_overload = scopes_.find_visible(call.callee, {SymbolKind::Pattern});

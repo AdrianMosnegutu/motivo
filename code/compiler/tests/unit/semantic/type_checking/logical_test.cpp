@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::types::TypeKind;
+using motivo::types::Type;
 
 // -- Happy flows ---------------------------------------------------------------
 
@@ -14,7 +14,7 @@ TEST(LogicalTypeCheck, BoolAndBoolIsBool) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Bool);
+    EXPECT_EQ(*t, Type::Bool);
 }
 
 TEST(LogicalTypeCheck, BoolOrBoolIsBool) {
@@ -23,7 +23,7 @@ TEST(LogicalTypeCheck, BoolOrBoolIsBool) {
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Bool);
+    EXPECT_EQ(*t, Type::Bool);
 }
 
 // -- Error cases ---------------------------------------------------------------

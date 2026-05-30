@@ -33,15 +33,15 @@ class ScopeStack {
     [[nodiscard]] ScopeId current_scope() const;
     [[nodiscard]] const Symbol* find_in_current_scope(const std::string& name) const;
     [[nodiscard]] const Symbol* find_in_current_scope_by_signature(const std::string& name,
-                                                                   const std::vector<TypeKind>& param_types) const;
+                                                                   const std::vector<Type>& param_types) const;
     [[nodiscard]] const Symbol* find_visible(const std::string& name) const;
     [[nodiscard]] const Symbol* find_visible(const std::string& name, std::initializer_list<SymbolKind> kinds) const;
     [[nodiscard]] const Symbol* find_pattern_visible_by_signature(const std::string& name,
-                                                                  const std::vector<TypeKind>& argument_types) const;
+                                                                  const std::vector<Type>& argument_types) const;
 
     SymbolId add_symbol(const std::string& name,
                         SymbolKind kind,
-                        TypeKind type,
+                        Type type,
                         const source::Location& location,
                         const void* declaration = nullptr) const;
 

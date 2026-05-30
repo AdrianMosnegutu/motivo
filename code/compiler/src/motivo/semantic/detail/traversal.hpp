@@ -57,25 +57,25 @@ class Traversal {
     void visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location);
     void visit_play_target(const ast::PlayTarget& target);
 
-    TypeKind visit_expression(const ast::Expression& expression);
-    TypeKind visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const;
-    TypeKind visit_unary(const ast::UnaryExpression& unary, const source::Location& location);
-    TypeKind visit_binary(const ast::BinaryExpression& binary, const source::Location& location);
-    TypeKind visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location);
-    TypeKind visit_sequence(const ast::SequenceExpression& sequence);
-    TypeKind visit_chord(const ast::ChordExpression& chord, const source::Location& location);
-    TypeKind visit_call(const ast::Expression& expression,
-                        const ast::PatternCallExpression& call,
-                        const source::Location& location);
+    Type visit_expression(const ast::Expression& expression);
+    Type visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const;
+    Type visit_unary(const ast::UnaryExpression& unary, const source::Location& location);
+    Type visit_binary(const ast::BinaryExpression& binary, const source::Location& location);
+    Type visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location);
+    Type visit_sequence(const ast::SequenceExpression& sequence);
+    Type visit_chord(const ast::ChordExpression& chord, const source::Location& location);
+    Type visit_call(const ast::Expression& expression,
+                    const ast::PatternCallExpression& call,
+                    const source::Location& location);
 
     void validate_binary_operands(const operators::BinaryOperator op,
-                                  const TypeKind left_type,
-                                  const TypeKind right_type,
+                                  const Type left_type,
+                                  const Type right_type,
                                   const source::Location& location) const;
-    void validate_numeric_operand(const TypeKind type, const char* side, const source::Location& location) const;
+    void validate_numeric_operand(const Type type, const char* side, const source::Location& location) const;
     void validate_call(const ast::PatternCallExpression& call,
                        const source::Location& location,
-                       const std::vector<TypeKind>& argument_types);
+                       const std::vector<Type>& argument_types);
 
     void validate_header(const ast::Header& header) const;
 

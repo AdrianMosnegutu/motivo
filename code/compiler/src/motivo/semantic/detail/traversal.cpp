@@ -13,8 +13,8 @@ namespace motivo::semantic::detail {
 
 namespace {
 
-std::vector<TypeKind> pattern_param_types(const ast::PatternDefinition& pattern) {
-    std::vector<TypeKind> types;
+std::vector<Type> pattern_param_types(const ast::PatternDefinition& pattern) {
+    std::vector<Type> types;
     types.reserve(pattern.params.size());
     for (const auto& param : pattern.params) {
         types.push_back(param.type);
@@ -69,7 +69,7 @@ void Traversal::add_pattern_symbol(const ast::PatternDefinition& pattern) const 
         return;
     }
 
-    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, TypeKind::Sequence, pattern.location, &pattern);
+    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, Type::Sequence, pattern.location, &pattern);
 }
 
 void Traversal::diagnose(const source::Location& location, std::string message) const {

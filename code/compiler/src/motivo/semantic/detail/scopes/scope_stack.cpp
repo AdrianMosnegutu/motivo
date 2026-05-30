@@ -30,12 +30,12 @@ const Symbol* ScopeStack::find_in_current_scope(const std::string& name) const {
 }
 
 const Symbol* ScopeStack::find_in_current_scope_by_signature(const std::string& name,
-                                                             const std::vector<TypeKind>& param_types) const {
+                                                             const std::vector<Type>& param_types) const {
     return symbols_.find_in_scope_by_signature(current_scope(), name, param_types);
 }
 
 const Symbol* ScopeStack::find_pattern_visible_by_signature(const std::string& name,
-                                                            const std::vector<TypeKind>& argument_types) const {
+                                                            const std::vector<Type>& argument_types) const {
     return symbols_.find_visible_pattern_by_signature(current_scope(), name, argument_types);
 }
 
@@ -49,7 +49,7 @@ const Symbol* ScopeStack::find_visible(const std::string& name, const std::initi
 
 SymbolId ScopeStack::add_symbol(const std::string& name,
                                 const SymbolKind kind,
-                                const TypeKind type,
+                                const Type type,
                                 const source::Location& location,
                                 const void* declaration) const {
     return symbols_.add_symbol(current_scope(), name, kind, type, location, declaration);

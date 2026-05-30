@@ -7,7 +7,7 @@
 namespace motivo::semantic::detail {
 
 struct ExpressionAnnotation {
-    TypeKind type = TypeKind::Unknown;
+    Type type = Type::Unknown;
     std::optional<SymbolId> resolved_symbol;
 };
 

@@ -7,14 +7,14 @@
 #include "motivo/common/ast/statements.hpp"
 #include "motivo/common/music/instrument.hpp"
 #include "motivo/common/source/location.hpp"
-#include "motivo/common/types/type_kind.hpp"
+#include "motivo/common/types/type.hpp"
 
 namespace motivo::ast {
 
 // -- Pattern ----------------------------------------------------------------------------------------------------------
 
 struct TypedParameter {
-    types::TypeKind type = types::TypeKind::Int;
+    types::Type type = types::Type::Int;
     std::string name;
     source::Location location;
 };
