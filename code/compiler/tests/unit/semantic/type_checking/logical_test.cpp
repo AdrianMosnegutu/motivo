@@ -10,7 +10,8 @@ using motivo::types::TypeKind;
 
 TEST(LogicalTypeCheck, BoolAndBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true && false;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -18,7 +19,8 @@ TEST(LogicalTypeCheck, BoolAndBoolIsBool) {
 
 TEST(LogicalTypeCheck, BoolOrBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true || false;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);

@@ -4,9 +4,9 @@
 #include <variant>
 #include <vector>
 
-#include "motivo/common/operators/operators.hpp"
 #include "motivo/common/music/drum_note.hpp"
 #include "motivo/common/music/note.hpp"
+#include "motivo/common/operators/operators.hpp"
 #include "motivo/common/source/location.hpp"
 
 namespace motivo::ast {

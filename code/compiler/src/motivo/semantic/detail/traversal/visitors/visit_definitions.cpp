@@ -1,6 +1,6 @@
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/common/utils/overloaded.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/common/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -93,8 +93,7 @@ void Traversal::visit_pattern(const ast::PatternDefinition& pattern) {
 
     for (std::size_t i = 0; i < pattern.params.size(); ++i) {
         const auto& param = pattern.params[i];
-        (void)scopes_.add_symbol(param.name, SymbolKind::Parameter, param.type, pattern.location,
-                                 &pattern.params[i]);
+        (void)scopes_.add_symbol(param.name, SymbolKind::Parameter, param.type, pattern.location, &pattern.params[i]);
     }
 
     visit_block(pattern.body);

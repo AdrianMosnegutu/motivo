@@ -10,7 +10,8 @@ using motivo::types::TypeKind;
 
 TEST(VarDecl, IntLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("int x = 42;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Int);
@@ -18,7 +19,8 @@ TEST(VarDecl, IntLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, DoubleLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("double x = 1.5;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Double);
@@ -26,7 +28,8 @@ TEST(VarDecl, DoubleLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, BoolLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("bool x = true;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -34,7 +37,8 @@ TEST(VarDecl, BoolLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, NoteLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("note x = A4;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Note);
@@ -42,7 +46,8 @@ TEST(VarDecl, NoteLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, ChordLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("chord c = (A4, C5);");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Chord);
@@ -50,7 +55,8 @@ TEST(VarDecl, ChordLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, SequenceLiteralMatchesDeclaredType) {
     const auto [prog, result] = analyze_ok("seq s = [A4, B4];");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Sequence);
@@ -60,7 +66,8 @@ TEST(VarDecl, SequenceLiteralMatchesDeclaredType) {
 
 TEST(VarDecl, IntDeclWithIntExpressionIsValid) {
     const auto [prog, result] = analyze_ok("int x = 1 + 2;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Int);
@@ -80,7 +87,8 @@ TEST(VarDecl, DoubleDeclWithWidenedIntLiteralIsValid) {
 
 TEST(VarDecl, DoubleDeclWithTernaryIsValid) {
     const auto [prog, result] = analyze_ok("double x = true ? 1.3 : 2.4;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Double);

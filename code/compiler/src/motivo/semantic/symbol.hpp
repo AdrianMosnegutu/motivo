@@ -9,8 +9,8 @@
 
 namespace motivo::semantic {
 
-using types::TypeKind;
 using types::type_name;
+using types::TypeKind;
 
 using SymbolId = std::size_t;
 

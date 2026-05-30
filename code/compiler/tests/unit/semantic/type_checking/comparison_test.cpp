@@ -10,7 +10,8 @@ using motivo::types::TypeKind;
 
 TEST(ComparisonTypeCheck, IntLessThanIntIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 1 < 2;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -18,7 +19,8 @@ TEST(ComparisonTypeCheck, IntLessThanIntIsBool) {
 
 TEST(ComparisonTypeCheck, DoubleGreaterThanDoubleIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 2.5 > 1.5;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -26,7 +28,8 @@ TEST(ComparisonTypeCheck, DoubleGreaterThanDoubleIsBool) {
 
 TEST(ComparisonTypeCheck, IntLessOrEqualDoubleIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 1 <= 2.5;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -34,7 +37,8 @@ TEST(ComparisonTypeCheck, IntLessOrEqualDoubleIsBool) {
 
 TEST(ComparisonTypeCheck, IntGreaterOrEqualIntIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 5 >= 3;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -42,7 +46,8 @@ TEST(ComparisonTypeCheck, IntGreaterOrEqualIntIsBool) {
 
 TEST(ComparisonTypeCheck, IntEqualsIntIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 1 == 1;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -50,7 +55,8 @@ TEST(ComparisonTypeCheck, IntEqualsIntIsBool) {
 
 TEST(ComparisonTypeCheck, BoolEqualsBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true == false;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);
@@ -58,7 +64,8 @@ TEST(ComparisonTypeCheck, BoolEqualsBoolIsBool) {
 
 TEST(ComparisonTypeCheck, IntNotEqualsIntIsBool) {
     const auto [prog, result] = analyze_ok("bool x = 1 != 2;");
-    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
     EXPECT_EQ(*t, TypeKind::Bool);

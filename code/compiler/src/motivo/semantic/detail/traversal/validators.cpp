@@ -2,8 +2,8 @@
 #include <vector>
 
 #include "motivo/common/ast/definitions.hpp"
-#include "motivo/semantic/detail/traversal.hpp"
 #include "motivo/common/types/type_rules.hpp"
+#include "motivo/semantic/detail/traversal.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -62,7 +62,9 @@ void Traversal::validate_binary_operands(const operators::BinaryOperator op,
     diagnose(location, "invalid binary operator");
 }
 
-void Traversal::validate_numeric_operand(const TypeKind type, const char* side, const source::Location& location) const {
+void Traversal::validate_numeric_operand(const TypeKind type,
+                                         const char* side,
+                                         const source::Location& location) const {
     if (is_known(type) && !is_numeric(type)) {
         diagnose(location, std::string(side) + " operand must be numeric");
     }
@@ -91,8 +93,7 @@ void Traversal::validate_call(const ast::PatternCallExpression& call,
     for (std::size_t i = 0; i < pattern->params.size(); ++i) {
         if (is_known(argument_types[i]) && !is_assignable(pattern->params[i].type, argument_types[i])) {
             diagnose(location,
-                     "argument " + std::to_string(i + 1) + " of pattern '" + call.callee +
-                         "' has incompatible type");
+                     "argument " + std::to_string(i + 1) + " of pattern '" + call.callee + "' has incompatible type");
         }
     }
 }

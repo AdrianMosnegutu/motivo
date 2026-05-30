@@ -2,12 +2,12 @@ tempo 108;
 signature 4/4;
 
 // -- Global motifs ------------------------------------------------
-let verse_motif  = [G4:1, A4:0.5, B4:0.5, D5:1, B4:1];
-let answer_motif = [A4:1, G4:0.5, F#4:0.5, E4:2];
-let bridge_cell  = [B4:0.5, D5:0.5, B4:1, A4:1, G4:1];
+seq verse_motif  = [G4:1, A4:0.5, B4:0.5, D5:1, B4:1];
+seq answer_motif = [A4:1, G4:0.5, F#4:0.5, E4:2];
+seq bridge_cell  = [B4:0.5, D5:0.5, B4:1, A4:1, G4:1];
 
 // Play two motifs back-to-back as a phrase
-pattern phrase(motif_a, motif_b) {
+pattern phrase(seq motif_a, seq motif_b) {
     play motif_a;
     play motif_b;
 }
@@ -15,7 +15,7 @@ pattern phrase(motif_a, motif_b) {
 // -- Melody (piano) -----------------------------------------------
 track melody using piano {
     // Local cadence pattern: run into a resolution chord
-    pattern cadence(run) {
+    pattern cadence(seq run) {
         play run;
         play (D4, F#4):2;
         play (G3, B3, D4):4;
@@ -28,7 +28,7 @@ track melody using piano {
     play phrase(verse_motif, answer_motif);
 
     // Verse B – decorated repeat (inline sequence as argument)
-    let decorated = [F#4:0.5, G4:0.5, A4:1, B4:1, rest:1];
+    seq decorated = [F#4:0.5, G4:0.5, A4:1, B4:1, rest:1];
     play phrase(answer_motif, decorated);
 
     // Bridge – riff cell loops twice
@@ -65,7 +65,7 @@ track harmony using guitar {
 
 // -- Bass ---------------------------------------------------------
 track bassline using bass {
-    let root_walk = [G2:1, A2:1, B2:1, D3:1];
+    seq root_walk = [G2:1, A2:1, B2:1, D3:1];
 
     // Intro – held root
     play G2:4;
@@ -79,7 +79,7 @@ track bassline using bass {
     }
 
     // Bridge – alternating root/fifth in eighth notes
-    for (let i = 0; i < 8; i = i + 1) {
+    for (int i = 0; i < 8; i = i + 1) {
         if (i % 2 == 0) {
             play G2:0.5;
         } else {
@@ -100,7 +100,7 @@ track percussion using drums {
 
     // Main groove: 16 steps – hi-hat every step, kick on 1 & 9, snare on 5 & 13
     pattern groove() {
-        for (let i = 0; i < 16; i = i + 1) {
+        for (int i = 0; i < 16; i = i + 1) {
             play hihat from i;
 
             if (i % 8 == 0) {

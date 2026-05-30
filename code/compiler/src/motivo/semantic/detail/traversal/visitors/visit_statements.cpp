@@ -2,11 +2,11 @@
 #include <variant>
 
 #include "motivo/common/ast/expressions.hpp"
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/common/utils/overloaded.hpp"
 #include "motivo/semantic/detail/annotations.hpp"
 #include "motivo/semantic/detail/symbol_table.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/common/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -120,9 +120,8 @@ void Traversal::visit_play_target(const ast::PlayTarget& target) {
                    [&](const ast::ExpressionPtr& expression) {
                        if (expression) {
                            const TypeKind expr_type = visit_expression(*expression);
-                           const bool is_musical =
-                               expr_type == TypeKind::Note || expr_type == TypeKind::Chord ||
-                               expr_type == TypeKind::Sequence || expr_type == TypeKind::Rest;
+                           const bool is_musical = expr_type == TypeKind::Note || expr_type == TypeKind::Chord ||
+                                                   expr_type == TypeKind::Sequence || expr_type == TypeKind::Rest;
                            if (is_known(expr_type) && !is_musical) {
                                diagnose(expression->location,
                                         "play expression must be a musical type (note, chord, sequence, or rest)");

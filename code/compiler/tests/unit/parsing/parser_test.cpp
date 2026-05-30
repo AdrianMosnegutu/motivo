@@ -174,9 +174,7 @@ TEST(Parser, DuplicateKeyRejected) { EXPECT_THROW(parse("key C major; key D mino
 
 TEST(Parser, HeaderAfterTrackRejected) { EXPECT_THROW(parse("track {} tempo 120;"), std::runtime_error); }
 
-TEST(Parser, HeaderAfterGlobalVarDeclRejected) {
-    EXPECT_THROW(parse("int x = 1; tempo 120;"), std::runtime_error);
-}
+TEST(Parser, HeaderAfterGlobalVarDeclRejected) { EXPECT_THROW(parse("int x = 1; tempo 120;"), std::runtime_error); }
 
 TEST(ParserDiagnostics, CollectsMultipleRecoverableSyntaxDiagnostics) {
     motivo::DiagnosticsEngine diagnostics;
@@ -647,7 +645,8 @@ TEST(Parser, ParensOverridePrecedence) {
 
 TEST(Parser, ComparisonBindsLooserThanAdd) {
     const auto p = parse_ok("int x = 1 + 2 < 4;");
-    EXPECT_EQ(as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind).operation, motivo::operators::BinaryOperator::Less);
+    EXPECT_EQ(as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind).operation,
+              motivo::operators::BinaryOperator::Less);
 }
 
 TEST(Parser, AndBindsTighterThanOr) {

@@ -13,7 +13,7 @@ track {
     play phrase(beats, 4);
     play undefined_melody;
     play missing_note :beats;
-    int volume = ghost_variable + 1
+    int volume = ghost_variable + 1;
     play A4 :volume;
     play B4;
 }

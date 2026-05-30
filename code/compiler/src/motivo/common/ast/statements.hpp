@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "motivo/common/ast/expressions.hpp"
-#include "motivo/common/types/type_kind.hpp"
 #include "motivo/common/music/drum_note.hpp"
+#include "motivo/common/types/type_kind.hpp"
 
 namespace motivo::ast {
 

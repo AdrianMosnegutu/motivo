@@ -8,7 +8,7 @@ pattern motif(int dur) {
 }
 
 pattern bass_line(int rep) {
-    int step = rep > 1 ? 2 : 1
+    int step = rep > 1 ? 2 : 1;
     loop (rep) {
         play A2 :step;
         play E3 :step;
@@ -16,7 +16,7 @@ pattern bass_line(int rep) {
 }
 
 track melody using piano {
-    int q = 1
+    int q = 1;
     int h = 2;
     play motif(q);
     play motif(h);
