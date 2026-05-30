@@ -144,7 +144,7 @@
 %type <ast::VoiceDefinition>                  voice_decl
 %type <std::vector<ast::VoiceItem>>           voice_body
 %type <std::vector<ast::TypedParameter>>      opt_param_list param_list
-%type <ast::TypedParameter>                     param
+%type <ast::TypedParameter>                   param
 %type <types::TypeKind>                       type
 %type <ast::Block>                            block stmt_list
 %type <ast::StatementPtr>                     stmt var_decl_stmt assign_stmt
