@@ -7,33 +7,33 @@ using namespace motivo::testing::lowerer;
 // -- Arithmetic ----------------------------------------------------------------
 
 TEST(BinaryEval, IntAddition) {
-    const auto ir = lower_ok("track { let x = 2 + 3; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = 2 + 3 play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 5.0);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].start_beat, 5.0);
 }
 
 TEST(BinaryEval, IntSubtraction) {
-    const auto ir = lower_ok("track { let x = 7 - 2; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = 7 - 2 play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 5.0);
 }
 
 TEST(BinaryEval, IntMultiplication) {
-    const auto ir = lower_ok("track { let x = 2 * 3; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = 2 * 3 play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 6.0);
 }
 
 TEST(BinaryEval, DivisionProducesFloat) {
-    const auto ir = lower_ok("track { let x = 5 / 2; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = 5 / 2 play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 2.5);
 }
 
 TEST(BinaryEval, IntPlusFloatPromotesToFloat) {
-    const auto ir = lower_ok("track { let x = 1 + 0.5; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = 1 + 0.5 play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.5);
 }
 
 TEST(BinaryEval, DivisionByZeroEmitsLoweringDiagnostic) {
-    const auto result = lower_with_diagnostics("track { let x = 1 / 0; play A4; }");
+    const auto result = lower_with_diagnostics("track { int x = 1 / 0 play A4; }");
     EXPECT_TRUE(has_lowering_error(result.diagnostics.diagnostics(), "division by zero"));
 }
 

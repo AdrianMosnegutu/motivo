@@ -70,7 +70,7 @@ TEST(SequenceCursor, ChordItemDurationOverrideAppliedToAllMembers) {
 TEST(SequenceCursor, ChordParameterDurationOverrideInPatternSequence) {
     // Pattern takes a chord param and plays it in a sequence with a :0.5 override.
     const auto ir = lower_ok(R"(
-        pattern layout(c1, c2) {
+        pattern layout(int c1, int c2) {
             play [c1, c2:0.5];
         }
         track { play layout((A4, C5), (E4, G4)); }

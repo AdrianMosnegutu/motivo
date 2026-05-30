@@ -1,14 +1,14 @@
 tempo 120;
 signature 4/4;
 
-pattern motif(dur) {
+pattern motif(int dur) {
     play A4 :dur;
     play rest :dur;
     play C5 :dur;
 }
 
-pattern bass_line(rep) {
-    let step = rep > 1 ? 2 : 1;
+pattern bass_line(int rep) {
+    int step = rep > 1 ? 2 : 1
     loop (rep) {
         play A2 :step;
         play E3 :step;
@@ -16,8 +16,8 @@ pattern bass_line(rep) {
 }
 
 track melody using piano {
-    let q = 1;
-    let h = 2;
+    int q = 1
+    int h = 2;
     play motif(q);
     play motif(h);
     play (E4, G4, B4);

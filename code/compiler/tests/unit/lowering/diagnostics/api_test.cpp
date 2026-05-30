@@ -62,8 +62,8 @@ TEST(LowererApi, ReportsMultipleLoweringDiagnosticsForSemanticallyValidProgram) 
 TEST(LowererApi, ReportsRuntimeExpressionFailuresAsLoweringDiagnostics) {
     auto input = analyze_for_lowering(R"(
         track {
-            let first = 1 / 0;
-            let second = 1 % 0;
+            int first = 1 / 0
+            int second = 1 % 0;
         }
     )");
     ASSERT_FALSE(input.diagnostics.has_errors(motivo::DiagnosticStage::Semantic));

@@ -9,7 +9,7 @@ using namespace motivo::testing::semantic;
 TEST(ControlFlow, ForLoopWithAllPartsIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            for (let i = 0; i < 4; i = i + 1) { play A4; }
+            for (int i = 0; i < 4; i = i + 1) { play A4; }
         }
     )");
 }
@@ -17,7 +17,7 @@ TEST(ControlFlow, ForLoopWithAllPartsIsValid) {
 TEST(ControlFlow, ForLoopWithBoolConditionIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            for (let i = 0; true; i = i + 1) { play A4; }
+            for (int i = 0; true; i = i + 1) { play A4; }
         }
     )");
 }
@@ -25,7 +25,7 @@ TEST(ControlFlow, ForLoopWithBoolConditionIsValid) {
 TEST(ControlFlow, ForLoopOmittingInitIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            let i = 0;
+            int i = 0
             for (; i < 4; i = i + 1) { play A4; }
         }
     )");
@@ -34,7 +34,7 @@ TEST(ControlFlow, ForLoopOmittingInitIsValid) {
 TEST(ControlFlow, ForLoopOmittingStepIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            for (let i = 0; i < 4;) { play A4; }
+            for (int i = 0; i < 4;) { play A4; }
         }
     )");
 }
@@ -55,7 +55,7 @@ TEST(ControlFlow, ForLoopWithOmittedInitAndStepButConditionPresentIsValid) {
 
 TEST(ControlFlow, ForLoopConditionMustBeBool) {
     const auto analyzed = analyze(R"(
-        track { for (let i = 0; i; i = i + 1) { play A4; } }
+        track { for (int i = 0; i; i = i + 1) { play A4; } }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "condition"));
@@ -101,7 +101,7 @@ TEST(ControlFlow, LoopWithPositiveIntCountIsValid) {
 
 TEST(ControlFlow, LoopWithIdentifierCountIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        let n = 4;
+        int n = 4
         track { loop (n) { play A4; } }
     )");
 }

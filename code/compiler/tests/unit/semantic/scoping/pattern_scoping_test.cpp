@@ -51,7 +51,7 @@ TEST(PatternScoping, TrackLocalPatternNotVisibleAtGlobalScope) {
 TEST(PatternScoping, PatternsWithSameNameDifferentArityCoexist) {
     const auto [prog, result] = analyze_ok(R"(
         pattern p() { play A4; }
-        pattern p(n) { play A4; }
+        pattern p(int n) { play A4; }
         track {
             play p();
             play p(2);
@@ -72,15 +72,15 @@ TEST(PatternScoping, DuplicatePatternSameArityIsError) {
 
 TEST(PatternScoping, PatternParameterVisibleInsideBody) {
     const auto [prog, result] = analyze_ok(R"(
-        pattern p(n) { let x = n; }
+        pattern p(int n) { int x = n }
         track { play p(3); }
     )");
 }
 
 TEST(PatternScoping, PatternParameterNotVisibleOutsidePattern) {
     const auto analyzed = analyze(R"(
-        pattern p(n) { play A4; }
-        track { let x = n; }
+        pattern p(int n) { play A4; }
+        track { int x = n }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
@@ -88,7 +88,7 @@ TEST(PatternScoping, PatternParameterNotVisibleOutsidePattern) {
 TEST(PatternScoping, PatternParameterIsImmutable) {
     // Pattern parameters cannot be re-assigned (they behave as immutable bindings).
     const auto analyzed = analyze(R"(
-        pattern p(n) { n = 5; }
+        pattern p(int n) { n = 5; }
         track { play p(3); }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));

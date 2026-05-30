@@ -5,20 +5,20 @@
 using namespace motivo::testing::lowerer;
 
 TEST(UnaryEval, NegationOfIntLiteral) {
-    const auto ir = lower_ok("track { let x = -3 + 5; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int x = -3 + 5 play A4 :x; play B4; }");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 2.0);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].start_beat, 2.0);
 }
 
 TEST(UnaryEval, NegationOfFloatLiteral) {
-    const auto ir = lower_ok("track { let x = -1.5 + 3.0; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { double x = -1.5 + 3.0 play A4 :x; play B4; }");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.5);
 }
 
 TEST(UnaryEval, NegationOfVariable) {
-    const auto ir = lower_ok("track { let n = 2; let x = -n + 4; play A4 :x; play B4; }");
+    const auto ir = lower_ok("track { int n = 2 int x = -n + 4 play A4 :x; play B4; }");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 2.0);
 }
@@ -36,6 +36,6 @@ TEST(UnaryEval, LogicalNotOfTrueSkipsBranch) {
 }
 
 TEST(UnaryEval, LogicalNotOfVariableCondition) {
-    const auto ir = lower_ok("track { let flag = false; if (!flag) { play A4; } play B4; }");
+    const auto ir = lower_ok("track { bool flag = false if (!flag) { play A4; } play B4; }");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
 }

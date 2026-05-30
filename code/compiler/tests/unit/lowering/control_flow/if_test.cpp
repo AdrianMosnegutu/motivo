@@ -64,7 +64,7 @@ TEST(IfStatement, CursorNotAdvancedWhenNoBranchTaken) {
 
 TEST(IfStatement, ConditionDrivenByVariable) {
     const auto ir = lower_ok(R"(
-        let flag = true;
+        bool flag = true
         track { if (flag) { play A4; } else { play B4; } }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 1u);

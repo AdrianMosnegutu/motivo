@@ -46,12 +46,12 @@ TEST(VoiceParallel, VoiceStartsAtCurrentOuterCursorPosition) {
     EXPECT_DOUBLE_EQ(b4_event->start_beat, 2.0);
 }
 
-TEST(VoiceParallel, VoiceLetBindingsDoNotLeakToOuterTrack) {
-    // Bug guard: a voice's let x = 5 must not change x in the enclosing track.
+TEST(VoiceParallel, VoiceVarDeclBindingsDoNotLeakToOuterTrack) {
+    // Bug guard: a voice's int x = 5 must not change x in the enclosing track.
     const auto ir = lower_ok(R"(
         track {
-            let x = 1;
-            voice { let x = 5; play A4 :x; }
+            int x = 1;
+            voice { int x = 5; play A4 :x; }
             play B4 :x;
         }
     )");
@@ -74,11 +74,11 @@ TEST(VoiceParallel, VoiceRunsInParallelWithoutAdvancingOuterCursor) {
     EXPECT_EQ(notes_at(track, 1.0), (std::vector{71, 72}));
 }
 
-TEST(VoiceParallel, VoiceLetBindingIndependentFromTrackBinding) {
+TEST(VoiceParallel, VoiceVarDeclBindingIndependentFromTrackBinding) {
     const auto ir = lower_ok(R"(
         track {
-            let x = 1;
-            voice { let x = 5; play A4 :x; }
+            int x = 1;
+            voice { int x = 5; play A4 :x; }
             play B4 :x;
         }
     )");

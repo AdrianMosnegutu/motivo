@@ -1,7 +1,7 @@
 tempo 140;
 signature 4/4;
 
-pattern rhythm(n) {
+pattern rhythm(int n) {
     loop (n) {
         play A4;
         play @;
@@ -16,7 +16,7 @@ pattern melody() {
 }
 
 track percussion {
-    let rep = 2;
+    int rep = 2;
     play rhythm(rep);
     play melody();
 }

@@ -10,7 +10,7 @@ TEST(PlayStatement, PlayNoteIsValid) { const auto [prog, result] = analyze_ok("t
 
 TEST(PlayStatement, PlayNoteViaIdentifierIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        let n = A4;
+        note n = A4
         track { play n; }
     )");
 }
@@ -19,7 +19,7 @@ TEST(PlayStatement, PlaySequenceIsValid) { const auto [prog, result] = analyze_o
 
 TEST(PlayStatement, PlaySequenceViaIdentifierIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        let s = [A4, B4];
+        seq s = [A4, B4]
         track { play s; }
     )");
 }
@@ -28,7 +28,7 @@ TEST(PlayStatement, PlayChordIsValid) { const auto [prog, result] = analyze_ok("
 
 TEST(PlayStatement, PlayChordViaIdentifierIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        let c = (A4, C5);
+        chord c = (A4, C5)
         track { play c; }
     )");
 }
@@ -87,7 +87,7 @@ TEST(PlayStatement, PlayParenthesizedTernaryOfIntIsError) {
 
 TEST(PlayStatement, PlayIdentifierOfIntTypeIsError) {
     const auto analyzed = analyze(R"(
-        let n = 42;
+        int n = 42
         track { play n; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
@@ -95,7 +95,7 @@ TEST(PlayStatement, PlayIdentifierOfIntTypeIsError) {
 
 TEST(PlayStatement, PlayIdentifierOfBoolTypeIsError) {
     const auto analyzed = analyze(R"(
-        let b = true;
+        bool b = true
         track { play b; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
@@ -103,7 +103,7 @@ TEST(PlayStatement, PlayIdentifierOfBoolTypeIsError) {
 
 TEST(PlayStatement, PlayIdentifierOfDoubleTypeIsError) {
     const auto analyzed = analyze(R"(
-        let d = 1.5;
+        double d = 1.5
         track { play d; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));

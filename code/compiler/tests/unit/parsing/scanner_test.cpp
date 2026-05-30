@@ -88,7 +88,7 @@ T scan_as(const std::string& src) {
 // ===========================================================================
 
 TEST(Scanner, AllKeywords) {
-    const auto tokens = scan_kinds("tempo signature key track pattern play for loop if else let using from rest");
+    const auto tokens = scan_kinds("tempo signature key track pattern play for loop if else voice using from rest");
     const std::vector expected = {
         S::S_TEMPO,
         S::S_SIGNATURE,
@@ -100,7 +100,7 @@ TEST(Scanner, AllKeywords) {
         S::S_LOOP,
         S::S_IF,
         S::S_ELSE,
-        S::S_LET,
+        S::S_VOICE,
         S::S_USING,
         S::S_FROM,
         S::S_REST,

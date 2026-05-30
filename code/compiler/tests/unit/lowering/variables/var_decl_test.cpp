@@ -3,11 +3,11 @@
 #include "support/lowerer_test_support.hpp"
 using namespace motivo::testing::lowerer;
 
-TEST(LetBinding, GlobalAndLocalBindingsDriveDurations) {
+TEST(VarDeclBinding, GlobalAndLocalBindingsDriveDurations) {
     const auto ir = lower_ok(R"(
-        let global_dur = 2;
+        int global_dur = 2;
         track {
-            let local_dur = global_dur + 1;
+            int local_dur = global_dur + 1;
             play A4 :global_dur;
             play B4 :local_dur;
         }
