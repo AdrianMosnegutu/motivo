@@ -8,8 +8,9 @@
 <keyword> ::= "tempo"   | "signature" | "key"
             | "track"   | "pattern"   | "play"
             | "for"     | "loop"      | "if"  | "else"
-            | "let"     | "using"     | "from" | "voice"
-            | "rest"    | "true"      | "false"
+            | "int"     | "double"    | "bool" | "note" | "seq" | "chord"
+            | "using"   | "from"      | "voice" | "rest"
+            | "true"    | "false"
 
 <instrument> ::= "piano" | "guitar" | "bass" | "violin" | "drums"
 <drum-note>  ::= "kick"  | "snare"  | "hihat" | "crash"  | "ride"

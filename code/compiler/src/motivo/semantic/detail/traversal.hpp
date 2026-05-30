@@ -1,15 +1,25 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 
 #include "motivo/common/ast/statements.hpp"
 #include "motivo/common/diagnostics/diagnostics_engine.hpp"
 #include "motivo/common/music/instrument.hpp"
 #include "motivo/common/source/location.hpp"
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/semantic/analysis_result.hpp"
 #include "motivo/semantic/detail/scopes/scope_stack.hpp"
 
 namespace motivo::semantic::detail {
+
+using types::binary_result_type;
+using types::is_boolean;
+using types::is_integral;
+using types::is_known;
+using types::is_note;
+using types::is_numeric;
+using types::same_known_type;
 
 class Traversal {
    public:
@@ -46,29 +56,30 @@ class Traversal {
     void visit_if_statement(const ast::IfStatement& if_stmt, const source::Location& location);
     void visit_for_statement(const ast::ForStatement& for_stmt, const source::Location& location);
     void visit_loop_statement(const ast::LoopStatement& loop, const source::Location& location);
-    void visit_let_statement(const ast::LetStatement& let, const source::Location& location);
+    void visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location);
     void visit_play_target(const ast::PlayTarget& target);
 
-    Type visit_expression(const ast::Expression& expression);
-    Type visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const;
-    Type visit_unary(const ast::UnaryExpression& unary, const source::Location& location);
-    Type visit_binary(const ast::BinaryExpression& binary, const source::Location& location);
-    Type visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location);
-    Type visit_sequence(const ast::SequenceExpression& sequence);
-    Type visit_chord(const ast::ChordExpression& chord, const source::Location& location);
-    Type visit_call(const ast::Expression& expression,
-                    const ast::PatternCallExpression& call,
-                    const source::Location& location);
+    TypeKind visit_expression(const ast::Expression& expression);
+    TypeKind visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const;
+    TypeKind visit_unary(const ast::UnaryExpression& unary, const source::Location& location);
+    TypeKind visit_binary(const ast::BinaryExpression& binary, const source::Location& location);
+    TypeKind visit_ternary(const ast::TernaryExpression& ternary, const source::Location& location);
+    TypeKind visit_sequence(const ast::SequenceExpression& sequence);
+    TypeKind visit_chord(const ast::ChordExpression& chord, const source::Location& location);
+    TypeKind visit_call(const ast::Expression& expression,
+                        const ast::PatternCallExpression& call,
+                        const source::Location& location);
 
-    void validate_binary_operands(const ast::BinaryOperator op,
-                                  const Type left_type,
-                                  const Type right_type,
+    void validate_binary_operands(const operators::BinaryOperator op,
+                                  const TypeKind left_type,
+                                  const TypeKind right_type,
                                   const source::Location& location) const;
-    void validate_numeric_operand(const Type type, const char* side, const source::Location& location) const;
+    void validate_numeric_operand(const TypeKind type, const char* side, const source::Location& location) const;
     void validate_call(const ast::PatternCallExpression& call,
                        const source::Location& location,
-                       const std::vector<Type>& argument_types);
-    void validate_pattern_instantiation(const ast::PatternDefinition& pattern, const std::vector<Type>& argument_types);
+                       const std::vector<TypeKind>& argument_types);
+    void validate_pattern_instantiation(const ast::PatternDefinition& pattern,
+                                        const std::vector<TypeKind>& argument_types);
 
     void validate_header(const ast::Header& header) const;
 

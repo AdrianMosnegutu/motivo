@@ -3,7 +3,7 @@
 
 #include "motivo/common/ast/definitions.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/semantic/detail/types/type_rules.hpp"
+#include "motivo/common/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -27,11 +27,11 @@ class ActivePatternGuard {
 
 }  // namespace
 
-void Traversal::validate_binary_operands(const ast::BinaryOperator op,
-                                         const Type left_type,
-                                         const Type right_type,
+void Traversal::validate_binary_operands(const operators::BinaryOperator op,
+                                         const TypeKind left_type,
+                                         const TypeKind right_type,
                                          const source::Location& location) const {
-    using Op = ast::BinaryOperator;
+    using Op = operators::BinaryOperator;
 
     switch (op) {
         case Op::Add:
@@ -82,7 +82,7 @@ void Traversal::validate_binary_operands(const ast::BinaryOperator op,
     diagnose(location, "invalid binary operator");
 }
 
-void Traversal::validate_numeric_operand(const Type type, const char* side, const source::Location& location) const {
+void Traversal::validate_numeric_operand(const TypeKind type, const char* side, const source::Location& location) const {
     if (is_known(type) && !is_numeric(type)) {
         diagnose(location, std::string(side) + " operand must be numeric");
     }
@@ -90,7 +90,7 @@ void Traversal::validate_numeric_operand(const Type type, const char* side, cons
 
 void Traversal::validate_call(const ast::PatternCallExpression& call,
                               const source::Location& location,
-                              const std::vector<Type>& argument_types) {
+                              const std::vector<TypeKind>& argument_types) {
     const auto* symbol = scopes_.find_pattern_visible_by_arity(call.callee, call.arguments.size());
     if (!symbol) {
         // Distinguish "pattern doesn't exist" from "no overload with this arity"
@@ -115,7 +115,7 @@ void Traversal::validate_call(const ast::PatternCallExpression& call,
 }
 
 void Traversal::validate_pattern_instantiation(const ast::PatternDefinition& pattern,
-                                               const std::vector<Type>& argument_types) {
+                                               const std::vector<TypeKind>& argument_types) {
     if (is_pattern_active(pattern)) {
         return;
     }
@@ -131,7 +131,8 @@ void Traversal::validate_pattern_instantiation(const ast::PatternDefinition& pat
     }
 
     for (std::size_t i = 0; i < pattern.params.size(); ++i) {
-        scopes_.add_symbol(pattern.params[i], SymbolKind::Parameter, argument_types[i], pattern.location, &pattern);
+        scopes_.add_symbol(pattern.params[i].name, SymbolKind::Parameter, argument_types[i], pattern.location,
+                           &pattern.params[i]);
     }
 
     const bool previous_skip = skip_symbol_annotation_;

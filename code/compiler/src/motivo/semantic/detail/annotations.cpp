@@ -4,7 +4,7 @@
 
 namespace motivo::semantic::detail {
 
-void Annotations::set_expression_type(const ast::Expression& expression, const Type type) {
+void Annotations::set_expression_type(const ast::Expression& expression, const TypeKind type) {
     annotations_[&expression].type = type;
 }
 
@@ -12,7 +12,7 @@ void Annotations::set_resolved_symbol(const ast::Expression& expression, const S
     annotations_[&expression].resolved_symbol = symbol;
 }
 
-std::optional<Type> Annotations::get_expression_type(const ast::Expression& expression) const {
+std::optional<TypeKind> Annotations::get_expression_type(const ast::Expression& expression) const {
     if (const auto it = annotations_.find(&expression); it != annotations_.end()) {
         return it->second.type;
     }

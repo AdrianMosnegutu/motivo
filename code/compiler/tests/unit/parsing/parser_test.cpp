@@ -205,9 +205,10 @@ TEST(ParserDiagnostics, CollectsMultipleRecoverableSyntaxDiagnostics) {
 TEST(Parser, GlobalVarDecl) {
     const auto p = parse_ok("int x = 42;");
     ASSERT_EQ(p->globals.size(), 1u);
-    const auto& [name, value] = global_stmt<ast::LetStatement>(*p, 0);
-    EXPECT_EQ(name, "x");
-    EXPECT_EQ(std::get<ast::IntLiteralExpression>(value->kind).value, 42);
+    const auto& decl = global_stmt<ast::VarDeclStatement>(*p, 0);
+    EXPECT_EQ(decl.name, "x");
+    EXPECT_EQ(decl.type, motivo::types::TypeKind::Int);
+    EXPECT_EQ(std::get<ast::IntLiteralExpression>(decl.value->kind).value, 42);
 }
 
 TEST(Parser, GlobalPatternEmpty) {
@@ -223,8 +224,10 @@ TEST(Parser, GlobalPatternWithParams) {
     const auto p = parse_ok("pattern verse(int a, int b, int c) {}");
     const auto& pat = global_pattern(*p, 0);
     ASSERT_EQ(pat.params.size(), 3u);
-    EXPECT_EQ(pat.params[0], "a");
-    EXPECT_EQ(pat.params[2], "c");
+    EXPECT_EQ(pat.params[0].name, "a");
+    EXPECT_EQ(pat.params[0].type, motivo::types::TypeKind::Int);
+    EXPECT_EQ(pat.params[2].name, "c");
+    EXPECT_EQ(pat.params[2].type, motivo::types::TypeKind::Int);
 }
 
 TEST(Parser, GlobalAssignmentRejected) {
@@ -276,7 +279,7 @@ TEST(Parser, TrackNamedWithInstrument) {
 TEST(Parser, TrackWithMixedBody) {
     const auto p = parse_ok(R"(
         track {
-            int x = 1
+            int x = 1;
             pattern p() { play A4; }
             play A4;
             loop (2) { play B4; }
@@ -284,7 +287,7 @@ TEST(Parser, TrackWithMixedBody) {
     )");
     const auto& t = p->tracks[0];
     ASSERT_EQ(t.body.size(), 4u);
-    EXPECT_NO_THROW(track_stmt<ast::LetStatement>(t, 0));
+    EXPECT_NO_THROW(track_stmt<ast::VarDeclStatement>(t, 0));
     EXPECT_NO_THROW(track_pattern(t, 1));
     EXPECT_NO_THROW(track_stmt<ast::PlayStatement>(t, 2));
     EXPECT_NO_THROW(track_stmt<ast::LoopStatement>(t, 3));
@@ -511,14 +514,14 @@ TEST(Parser, EmptySequenceRejected) { EXPECT_THROW(parse("track { play []; };"),
 TEST(Parser, ChordRequiresAtLeastTwoElements) {
     // "(X)" in expression position is a parenthesized expression.
     const auto p = parse_ok("int x = (A4);");
-    const auto& [name, value] = global_stmt<ast::LetStatement>(*p, 0);
-    EXPECT_TRUE(std::holds_alternative<ast::ParenthesisedExpression>(value->kind));
+    const auto& decl = global_stmt<ast::VarDeclStatement>(*p, 0);
+    EXPECT_TRUE(std::holds_alternative<ast::ParenthesisedExpression>(decl.value->kind));
 }
 
 TEST(Parser, ChordTwoElements) {
     const auto p = parse_ok("chord x = (A4, C5);");
-    const auto& [name, value] = global_stmt<ast::LetStatement>(*p, 0);
-    const auto& [notes] = as<ast::ChordExpression>(value->kind);
+    const auto& decl = global_stmt<ast::VarDeclStatement>(*p, 0);
+    const auto& [notes] = as<ast::ChordExpression>(decl.value->kind);
     EXPECT_EQ(notes.size(), 2u);
 }
 
@@ -541,7 +544,7 @@ TEST(Parser, ForLoopBasic) {
     )");
     const auto& pat = global_pattern(*p, 0);
     const auto& [init, condition, step, body] = as_stmt<ast::ForStatement>(pat.body[0]);
-    EXPECT_NE(std::get_if<ast::LetStatement>(&init->kind), nullptr);
+    EXPECT_NE(std::get_if<ast::VarDeclStatement>(&init->kind), nullptr);
     ASSERT_NE(condition, nullptr);
     EXPECT_TRUE(std::holds_alternative<ast::BinaryExpression>(condition->kind));
     EXPECT_NE(std::get_if<ast::AssignStatement>(&step->kind), nullptr);
@@ -595,82 +598,82 @@ TEST(Parser, IfWithElse) {
 // ===========================================================================
 
 namespace {
-const ast::Expression& first_global_let_value(const ast::Program& p) {
-    return *global_stmt<ast::LetStatement>(p, 0).value;
+const ast::Expression& first_global_var_decl_value(const ast::Program& p) {
+    return *global_stmt<ast::VarDeclStatement>(p, 0).value;
 }
 }  // namespace
 
 TEST(Parser, IntLiteralExpr) {
     const auto p = parse_ok("int x = 42;");
-    EXPECT_EQ(std::get<ast::IntLiteralExpression>(first_global_let_value(*p).kind).value, 42);
+    EXPECT_EQ(std::get<ast::IntLiteralExpression>(first_global_var_decl_value(*p).kind).value, 42);
 }
 
 TEST(Parser, FloatLiteralExpr) {
     const auto p = parse_ok("double x = 3.14;");
-    EXPECT_DOUBLE_EQ(std::get<ast::FloatLiteralExpression>(first_global_let_value(*p).kind).value, 3.14);
+    EXPECT_DOUBLE_EQ(std::get<ast::FloatLiteralExpression>(first_global_var_decl_value(*p).kind).value, 3.14);
 }
 
 TEST(Parser, BoolLiteralExpr) {
     const auto p = parse_ok("bool x = true;");
-    EXPECT_TRUE(std::get<ast::BoolLiteralExpression>(first_global_let_value(*p).kind).value);
+    EXPECT_TRUE(std::get<ast::BoolLiteralExpression>(first_global_var_decl_value(*p).kind).value);
 }
 
 TEST(Parser, IdentifierExpr) {
     const auto p = parse_ok("int x = y;");
-    EXPECT_EQ(as<ast::IdentifierExpression>(first_global_let_value(*p).kind).name, "y");
+    EXPECT_EQ(as<ast::IdentifierExpression>(first_global_var_decl_value(*p).kind).name, "y");
 }
 
 TEST(Parser, MulBindsTighterThanAdd) {
     const auto p = parse_ok("int x = 1 + 2 * 3;");
-    const auto& top = as<ast::BinaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(top.operation, ast::BinaryOperator::Add);
-    EXPECT_EQ(as<ast::BinaryExpression>(top.right->kind).operation, ast::BinaryOperator::Multiply);
+    const auto& top = as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(top.operation, motivo::operators::BinaryOperator::Add);
+    EXPECT_EQ(as<ast::BinaryExpression>(top.right->kind).operation, motivo::operators::BinaryOperator::Multiply);
 }
 
 TEST(Parser, AddLeftAssociative) {
     const auto p = parse_ok("int x = 1 - 2 - 3;");
-    const auto& top = as<ast::BinaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(top.operation, ast::BinaryOperator::Subtract);
-    EXPECT_EQ(as<ast::BinaryExpression>(top.left->kind).operation, ast::BinaryOperator::Subtract);
+    const auto& top = as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(top.operation, motivo::operators::BinaryOperator::Subtract);
+    EXPECT_EQ(as<ast::BinaryExpression>(top.left->kind).operation, motivo::operators::BinaryOperator::Subtract);
 }
 
 TEST(Parser, ParensOverridePrecedence) {
     const auto p = parse_ok("int x = 3 * (2 + 1);");
-    const auto& top = as<ast::BinaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(top.operation, ast::BinaryOperator::Multiply);
+    const auto& top = as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(top.operation, motivo::operators::BinaryOperator::Multiply);
     const auto& [inner] = as<ast::ParenthesisedExpression>(top.right->kind);
-    EXPECT_EQ(as<ast::BinaryExpression>(inner->kind).operation, ast::BinaryOperator::Add);
+    EXPECT_EQ(as<ast::BinaryExpression>(inner->kind).operation, motivo::operators::BinaryOperator::Add);
 }
 
 TEST(Parser, ComparisonBindsLooserThanAdd) {
     const auto p = parse_ok("int x = 1 + 2 < 4;");
-    EXPECT_EQ(as<ast::BinaryExpression>(first_global_let_value(*p).kind).operation, ast::BinaryOperator::Less);
+    EXPECT_EQ(as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind).operation, motivo::operators::BinaryOperator::Less);
 }
 
 TEST(Parser, AndBindsTighterThanOr) {
     const auto p = parse_ok("bool x = a || b && c;");
-    const auto& top = as<ast::BinaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(top.operation, ast::BinaryOperator::Or);
-    EXPECT_EQ(as<ast::BinaryExpression>(top.right->kind).operation, ast::BinaryOperator::And);
+    const auto& top = as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(top.operation, motivo::operators::BinaryOperator::Or);
+    EXPECT_EQ(as<ast::BinaryExpression>(top.right->kind).operation, motivo::operators::BinaryOperator::And);
 }
 
 TEST(Parser, ModuloBindsLikeMultiply) {
     const auto p = parse_ok("int x = i % 4 == 0;");
-    const auto& top = as<ast::BinaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(top.operation, ast::BinaryOperator::Equals);
-    EXPECT_EQ(as<ast::BinaryExpression>(top.left->kind).operation, ast::BinaryOperator::Modulo);
+    const auto& top = as<ast::BinaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(top.operation, motivo::operators::BinaryOperator::Equals);
+    EXPECT_EQ(as<ast::BinaryExpression>(top.left->kind).operation, motivo::operators::BinaryOperator::Modulo);
 }
 
 TEST(Parser, UnaryNegation) {
     const auto p = parse_ok("int x = -5;");
-    const auto& [op, operand] = as<ast::UnaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(op, ast::UnaryOperator::Negative);
+    const auto& [op, operand] = as<ast::UnaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(op, motivo::operators::UnaryOperator::Negative);
 }
 
 TEST(Parser, UnaryNot) {
     const auto p = parse_ok("bool x = !true;");
-    const auto& [op, operand] = as<ast::UnaryExpression>(first_global_let_value(*p).kind);
-    EXPECT_EQ(op, ast::UnaryOperator::Not);
+    const auto& [op, operand] = as<ast::UnaryExpression>(first_global_var_decl_value(*p).kind);
+    EXPECT_EQ(op, motivo::operators::UnaryOperator::Not);
 }
 
 // Pattern calls are only legal in play-source position.
@@ -723,18 +726,18 @@ TEST(Parser, RealisticProgram) {
         tempo 130;
         signature 4/4;
 
-        int GLOBAL_VAR = 10
-        seq GLOBAL_SEQ = [A4, rest, B4:2, C4:3]
-        chord GLOBAL_CHORD = (A3:2, B2, C3:3)
+        int GLOBAL_VAR = 10;
+        seq GLOBAL_SEQ = [A4, rest, B4:2, C4:3];
+        chord GLOBAL_CHORD = (A3:2, B2, C3:3);
 
         pattern global_pattern() {}
 
         track {
-            pattern intro_melody(int my_sequence) {
+            pattern intro_melody(seq my_sequence) {
                 play my_sequence;
                 play [A4, B4, A4, G4];
             }
-            seq my_seq = [A2, B2:2, rest:3, C#3:1]
+            seq my_seq = [A2, B2:2, rest:3, C#3:1];
             play (A3, C#3);
             play intro_melody(my_seq) from 1;
         }
@@ -754,7 +757,7 @@ TEST(Parser, RealisticProgram) {
             pattern rock_beat() {
                 for (int i = 0; i < 16; i = i + 1) {
                     play hihat;
-                    int my_var = 123
+                    int my_var = 123;
                     my_var = 2345;
                 }
             }
@@ -786,30 +789,30 @@ TEST(Parser, RealisticProgram) {
 // Ternary operator
 // ===========================================================================
 
-TEST(Parser, TernaryParsesInExpression) { EXPECT_NE(parse("track { play (1==1 ? A4 : B4); };"), nullptr); }
+TEST(Parser, TernaryParsesInExpression) { EXPECT_NE(parse("track { play (1==1 ? A4 : B4); }"), nullptr); }
 
-TEST(Parser, TernaryParsesAsDuration) { EXPECT_NE(parse("track { play A4 :(1==1 ? 2 : 3); };"), nullptr); }
+TEST(Parser, TernaryParsesAsDuration) { EXPECT_NE(parse("track { play A4 :(1==1 ? 2 : 3); }"), nullptr); }
 
-TEST(Parser, TernaryParsesInVarDecl) { EXPECT_NE(parse("track { int x = 1==1 ? 2 : 3; };"), nullptr); }
+TEST(Parser, TernaryParsesInVarDecl) { EXPECT_NE(parse("track { int x = 1==1 ? 2 : 3; }"), nullptr); }
 
 // ===========================================================================
 // Optional braces on control flow
 // ===========================================================================
 
-TEST(Parser, NoBraceIfParses) { EXPECT_NE(parse("track { if (1==1) play A4; };"), nullptr); }
+TEST(Parser, NoBraceIfParses) { EXPECT_NE(parse("track { if (1==1) play A4; }"), nullptr); }
 
-TEST(Parser, NoBraceIfElseParses) { EXPECT_NE(parse("track { if (1==2) play A4; else play B4; };"), nullptr); }
+TEST(Parser, NoBraceIfElseParses) { EXPECT_NE(parse("track { if (1==2) play A4; else play B4; }"), nullptr); }
 
 TEST(Parser, NoBraceElseIfChainParses) {
-    EXPECT_NE(parse("track { if (1==2) play A4; else if (1==1) play B4; else play C4; };"), nullptr);
+    EXPECT_NE(parse("track { if (1==2) play A4; else if (1==1) play B4; else play C4; }"), nullptr);
 }
 
-TEST(Parser, NoBraceLoopParses) { EXPECT_NE(parse("track { loop (3) play A4; };"), nullptr); }
+TEST(Parser, NoBraceLoopParses) { EXPECT_NE(parse("track { loop (3) play A4; }"), nullptr); }
 
-TEST(Parser, NoBraceForParses) { EXPECT_NE(parse("track { for (int i = 0; i < 3; i = i + 1) play A4; };"), nullptr); }
+TEST(Parser, NoBraceForParses) { EXPECT_NE(parse("track { for (int i = 0; i < 3; i = i + 1) play A4; }"), nullptr); }
 
 TEST(Parser, VarDeclAsNoBraceBodyIsRejected) {
-    EXPECT_THROW(parse("track { if (1==1) int x = 3; };"), std::runtime_error);
+    EXPECT_THROW(parse("track { if (1==1) int x = 3; }"), std::runtime_error);
 }
 
 // ===========================================================================
@@ -818,14 +821,14 @@ TEST(Parser, VarDeclAsNoBraceBodyIsRejected) {
 
 // -- Acceptance --
 
-TEST(Parser, VoiceParsesInTrack) { EXPECT_NE(parse("track { voice { play A4; } };"), nullptr); }
+TEST(Parser, VoiceParsesInTrack) { EXPECT_NE(parse("track { voice { play A4; } }"), nullptr); }
 
-TEST(Parser, VoiceFromLiteralParses) { EXPECT_NE(parse("track { voice from 4 { play A4; } };"), nullptr); }
+TEST(Parser, VoiceFromLiteralParses) { EXPECT_NE(parse("track { voice from 4 { play A4; } }"), nullptr); }
 
-TEST(Parser, VoiceFromExprParses) { EXPECT_NE(parse("track { int n = 2 voice from n + 1 { play A4; } };"), nullptr); }
+TEST(Parser, VoiceFromExprParses) { EXPECT_NE(parse("track { int n = 2; voice from n + 1 { play A4; } }"), nullptr); }
 
 TEST(Parser, VoiceWithLocalPatternParses) {
-    EXPECT_NE(parse("track { voice { pattern p() { play A4; } play p(); } };"), nullptr);
+    EXPECT_NE(parse("track { voice { pattern p() { play A4; } play p(); } }"), nullptr);
 }
 
 // -- Rejection --

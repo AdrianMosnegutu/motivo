@@ -1,35 +1,35 @@
 #include <gtest/gtest.h>
 
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/types/type_kind.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::semantic::TypeKind;
+using motivo::types::TypeKind;
 
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(UnaryTypeCheck, NegativeIntIsInt) {
     const auto [prog, result] = analyze_ok("int x = -(1);");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Int);
+    EXPECT_EQ(*t, TypeKind::Int);
 }
 
 TEST(UnaryTypeCheck, NegativeDoubleIsDouble) {
     const auto [prog, result] = analyze_ok("double x = -(1.5);");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Double);
+    EXPECT_EQ(*t, TypeKind::Double);
 }
 
 TEST(UnaryTypeCheck, NotBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = !true;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 // -- Error cases ---------------------------------------------------------------

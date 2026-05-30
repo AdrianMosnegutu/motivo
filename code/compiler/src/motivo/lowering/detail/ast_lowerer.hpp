@@ -7,7 +7,7 @@
 
 namespace motivo::lowering::detail {
 
-void lower_let_statement(const ast::LetStatement& stmt, LowererContext& ctx);
+void lower_var_decl_statement(const ast::VarDeclStatement& stmt, LowererContext& ctx);
 
 void lower_assign_statement(const ast::AssignStatement& stmt, const source::Location& loc, LowererContext& ctx);
 

@@ -5,15 +5,21 @@
 #include <vector>
 
 #include "motivo/common/ast/statements.hpp"
+#include "motivo/common/types/type_kind.hpp"
 #include "motivo/common/music/instrument.hpp"
 
 namespace motivo::ast {
 
 // -- Pattern ----------------------------------------------------------------------------------------------------------
 
+struct TypedParameter {
+    types::TypeKind type = types::TypeKind::Int;
+    std::string name;
+};
+
 struct PatternDefinition {
     std::string name;
-    std::vector<std::string> params;
+    std::vector<TypedParameter> params;
     Block body;
     source::Location location;
 };

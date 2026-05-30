@@ -35,7 +35,7 @@ inline bool is_bool(const ValueKind& kind) { return std::holds_alternative<bool>
 Value evaluate_binary_expression(const ast::BinaryExpression& binary,
                                  const source::Location& loc,
                                  LowererContext& context) {
-    using Op = ast::BinaryOperator;
+    using Op = operators::BinaryOperator;
 
     ValueKind lhs = evaluate_expression(*binary.left, context).kind;
     ValueKind rhs = evaluate_expression(*binary.right, context).kind;

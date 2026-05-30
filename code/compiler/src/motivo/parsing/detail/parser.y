@@ -21,6 +21,7 @@
 
 %code requires {
     #include "motivo/common/ast/program.hpp"
+    #include "motivo/common/operators/operators.hpp"
     #include "motivo/diagnostics/diagnostic.hpp"
     #include "motivo/common/diagnostics/diagnostics_engine.hpp"
     #include "motivo/common/music/drum_note.hpp"
@@ -43,8 +44,8 @@
     using motivo::DiagnosticSeverity;
     using motivo::DiagnosticStage;
 
-    using ast::BinaryOperator;
-    using ast::UnaryOperator;
+    using motivo::operators::BinaryOperator;
+    using motivo::operators::UnaryOperator;
 
     #define expression(...) std::make_unique<ast::Expression>(ast::Expression{__VA_ARGS__})
     #define statement(...) std::make_unique<ast::Statement>(ast::Statement{__VA_ARGS__})
@@ -70,7 +71,12 @@
 %token    LOOP          "loop"
 %token    IF            "if"
 %token    ELSE          "else"
-%token    LET           "let"
+%token    TYPE_INT      "int"
+%token    TYPE_DOUBLE   "double"
+%token    TYPE_BOOL     "bool"
+%token    TYPE_NOTE     "note"
+%token    TYPE_SEQ      "seq"
+%token    TYPE_CHORD    "chord"
 %token    USING         "using"
 %token    FROM          "from"
 %token    VOICE         "voice"
@@ -123,7 +129,7 @@
 %token <bool>                 BOOL_LIT            "boolean"
 %token <music::Instrument>    INSTRUMENT_LIT      "instrument"
 %token <music::DrumNote>      DRUM_NOTE_LIT       "drum_note"
-%token <music::Note>          NOTE_LIT            "note"
+%token <music::Note>          NOTE_LIT            "note_literal"
 %token <std::string>          IDENT               "identifier"
 
 // -- Non-terminal types -----------------------------------------------------------------------------------------------
@@ -137,11 +143,13 @@
 %type <std::vector<ast::TrackItem>>           track_body
 %type <ast::VoiceDefinition>                  voice_decl
 %type <std::vector<ast::VoiceItem>>           voice_body
-%type <std::vector<std::string>>              opt_param_list param_list
+%type <std::vector<ast::TypedParameter>>      opt_param_list param_list
+%type <ast::TypedParameter>                     param
+%type <types::TypeKind>                       type
 %type <ast::Block>                            block stmt_list
-%type <ast::StatementPtr>                     stmt let_stmt assign_stmt
+%type <ast::StatementPtr>                     stmt var_decl_stmt assign_stmt
 %type <ast::StatementPtr>                     play_stmt for_stmt if_stmt loop_stmt
-%type <ast::StatementPtr>                     let_decl assignment
+%type <ast::StatementPtr>                     var_decl assignment
 %type <ast::StatementPtr>                     for_init for_step
 %type <ast::ExpressionPtr>                    for_cond
 %type <ast::PlayTarget>                       play_target
@@ -209,7 +217,7 @@ top_items
     ;
 
 top_item
-    : let_stmt
+    : var_decl_stmt
       { program_out.globals.emplace_back($1); }
     | pattern_def
       { program_out.globals.emplace_back($1); }
@@ -294,10 +302,24 @@ opt_param_list
     ;
 
 param_list
-    : "identifier"
+    : param
       { $$.push_back($1); }
-    | param_list "," "identifier"
+    | param_list "," param
       { $$ = $1; $$.push_back($3); }
+    ;
+
+param
+    : type "identifier"
+      { $$ = ast::TypedParameter{$1, $2}; }
+    ;
+
+type
+    : "int"    { $$ = types::TypeKind::Int; }
+    | "double" { $$ = types::TypeKind::Double; }
+    | "bool"   { $$ = types::TypeKind::Bool; }
+    | "note"   { $$ = types::TypeKind::Note; }
+    | "seq"    { $$ = types::TypeKind::Sequence; }
+    | "chord"  { $$ = types::TypeKind::Chord; }
     ;
 
 // -- Blocks & statements ----------------------------------------------------------------------------------------------
@@ -339,7 +361,7 @@ stmt_list
     ;
 
 stmt
-    : let_stmt
+    : var_decl_stmt
       { $$ = $1; }
     | assign_stmt
       { $$ = $1; }
@@ -355,8 +377,8 @@ stmt
       { $$ = nullptr; yyerrok; }
     ;
 
-let_stmt
-    : let_decl ";"
+var_decl_stmt
+    : var_decl ";"
       { $$ = $1; }
     ;
 
@@ -365,9 +387,9 @@ assign_stmt
       { $$ = $1; }
     ;
 
-let_decl
-    : "let" "identifier" "=" expr
-      { $$ = statement(ast::LetStatement{$2, $4}, @$); }
+var_decl
+    : type "identifier" "=" expr
+      { $$ = statement(ast::VarDeclStatement{$1, $2, $4}, @$); }
     ;
 
 assignment
@@ -383,7 +405,7 @@ for_stmt
 for_init
     : %empty
       { $$ = nullptr; }
-    | let_decl
+    | var_decl
       { $$ = $1; }
     | assignment
       { $$ = $1; }
@@ -430,7 +452,7 @@ play_target
     ;
 
 durational_source
-    : "note"
+    : "note_literal"
       { $$ = expression(ast::NoteLiteralExpression{$1}, @$); }
     | "rest"
       { $$ = expression(ast::RestLiteralExpression{}, @$); }
@@ -624,7 +646,7 @@ primary
       { $$ = expression(ast::FloatLiteralExpression{$1}, @$); }
     | "boolean"
       { $$ = expression(ast::BoolLiteralExpression{$1}, @$); }
-    | "note"
+    | "note_literal"
       { $$ = expression(ast::NoteLiteralExpression{$1}, @$); }
     | "identifier"
       { $$ = expression(ast::IdentifierExpression{$1}, @$); }

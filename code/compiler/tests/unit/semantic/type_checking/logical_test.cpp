@@ -1,27 +1,27 @@
 #include <gtest/gtest.h>
 
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/types/type_kind.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::semantic::TypeKind;
+using motivo::types::TypeKind;
 
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(LogicalTypeCheck, BoolAndBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true && false;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(LogicalTypeCheck, BoolOrBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true || false;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 // -- Error cases ---------------------------------------------------------------

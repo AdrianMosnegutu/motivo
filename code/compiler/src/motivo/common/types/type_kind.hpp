@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace motivo::semantic {
+namespace motivo::types {
 
 enum class TypeKind : uint8_t {
     Unknown,
@@ -18,15 +18,8 @@ enum class TypeKind : uint8_t {
     Drum,
 };
 
-struct Type {
-    TypeKind kind = TypeKind::Unknown;
-
-    [[nodiscard]] friend bool operator==(const Type&, const Type&) = default;
-    [[nodiscard]] bool is_unknown() const { return kind == TypeKind::Unknown; }
-};
-
-[[nodiscard]] constexpr std::string_view type_name(const Type type) {
-    switch (type.kind) {
+[[nodiscard]] constexpr std::string_view type_name(const TypeKind kind) {
+    switch (kind) {
         case TypeKind::Unknown:
             return "unknown";
         case TypeKind::Void:
@@ -52,4 +45,4 @@ struct Type {
     return "unknown";
 }
 
-}  // namespace motivo::semantic
+}  // namespace motivo::types

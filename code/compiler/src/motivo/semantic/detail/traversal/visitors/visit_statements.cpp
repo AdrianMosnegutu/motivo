@@ -5,7 +5,7 @@
 #include "motivo/semantic/detail/annotations.hpp"
 #include "motivo/semantic/detail/symbol_table.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/semantic/detail/types/type_rules.hpp"
+#include "motivo/common/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -22,7 +22,7 @@ void Traversal::visit_statement(const ast::Statement& statement) {
                    [&](const ast::AssignStatement& assign) { visit_assign_statement(assign, statement.location); },
                    [&](const ast::ForStatement& for_stmt) { visit_for_statement(for_stmt, statement.location); },
                    [&](const ast::IfStatement& if_stmt) { visit_if_statement(if_stmt, statement.location); },
-                   [&](const ast::LetStatement& let) { visit_let_statement(let, statement.location); },
+                   [&](const ast::VarDeclStatement& decl) { visit_var_decl_statement(decl, statement.location); },
                    [&](const ast::LoopStatement& loop) { visit_loop_statement(loop, statement.location); },
                    [&](const ast::PlayStatement& play) { visit_play_target(play.target); },
                },
@@ -42,7 +42,7 @@ void Traversal::visit_assign_statement(const ast::AssignStatement& assign, const
         diagnose(location, "cannot assign to read-only variable '" + assign.name + "' from outer scope");
     }
 
-    const Type value_type = visit_expression(*assign.value);
+    const TypeKind value_type = visit_expression(*assign.value);
     if (symbol_id != INVALID_SYMBOL_ID) {
         result_.symbols_->set_symbol_type(symbol_id, value_type);
         if (!skip_symbol_annotation_) {
@@ -59,7 +59,7 @@ void Traversal::visit_for_statement(const ast::ForStatement& for_stmt, const sou
     }
 
     if (for_stmt.condition) {
-        const Type condition_type = visit_expression(*for_stmt.condition);
+        const TypeKind condition_type = visit_expression(*for_stmt.condition);
 
         if (is_known(condition_type) && !is_boolean(condition_type)) {
             diagnose(for_stmt.condition->location, "for condition must be a boolean");
@@ -73,7 +73,7 @@ void Traversal::visit_for_statement(const ast::ForStatement& for_stmt, const sou
 }
 
 void Traversal::visit_loop_statement(const ast::LoopStatement& loop, const source::Location& location) {
-    const Type count_type = visit_expression(*loop.count);
+    const TypeKind count_type = visit_expression(*loop.count);
 
     if (is_known(count_type) && !is_integral(count_type)) {
         diagnose(loop.count->location, "loop count must be an integer");
@@ -83,7 +83,7 @@ void Traversal::visit_loop_statement(const ast::LoopStatement& loop, const sourc
 }
 
 void Traversal::visit_if_statement(const ast::IfStatement& if_stmt, const source::Location& location) {
-    const Type condition_type = visit_expression(*if_stmt.condition);
+    const TypeKind condition_type = visit_expression(*if_stmt.condition);
 
     if (is_known(condition_type) && !is_boolean(condition_type)) {
         diagnose(if_stmt.condition->location, "if condition must be a boolean");
@@ -95,26 +95,27 @@ void Traversal::visit_if_statement(const ast::IfStatement& if_stmt, const source
     }
 }
 
-void Traversal::visit_let_statement(const ast::LetStatement& let, const source::Location& location) {
-    const Type value_type = visit_expression(*let.value);
+void Traversal::visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location) {
+    (void)visit_expression(*decl.value);
 
-    if (scopes_.find_in_current_scope(let.name)) {
-        diagnose(location, "redeclaration of variable '" + let.name + "'");
+    if (scopes_.find_in_current_scope(decl.name)) {
+        diagnose(location, "redeclaration of variable '" + decl.name + "'");
         return;
     }
 
-    const void* declaration = skip_symbol_annotation_ ? nullptr : &let;
-    (void)scopes_.add_symbol(let.name, SymbolKind::Variable, value_type, location, declaration);
+    const TypeKind declared_type{decl.type};
+    const void* declaration = skip_symbol_annotation_ ? nullptr : &decl;
+    (void)scopes_.add_symbol(decl.name, SymbolKind::Variable, declared_type, location, declaration);
 }
 
 void Traversal::visit_play_target(const ast::PlayTarget& target) {
     std::visit(utils::overloaded{
                    [&](const ast::ExpressionPtr& expression) {
                        if (expression) {
-                           const Type expr_type = visit_expression(*expression);
+                           const TypeKind expr_type = visit_expression(*expression);
                            const bool is_musical =
-                               expr_type.kind == TypeKind::Note || expr_type.kind == TypeKind::Chord ||
-                               expr_type.kind == TypeKind::Sequence || expr_type.kind == TypeKind::Rest;
+                               expr_type == TypeKind::Note || expr_type == TypeKind::Chord ||
+                               expr_type == TypeKind::Sequence || expr_type == TypeKind::Rest;
                            if (is_known(expr_type) && !is_musical) {
                                diagnose(expression->location,
                                         "play expression must be a musical type (note, chord, sequence, or rest)");
@@ -151,7 +152,7 @@ void Traversal::visit_play_target(const ast::PlayTarget& target) {
                target.source);
 
     if (target.duration) {
-        const Type duration_type = visit_expression(*target.duration);
+        const TypeKind duration_type = visit_expression(*target.duration);
 
         if (is_known(duration_type) && !is_numeric(duration_type)) {
             diagnose(target.duration->location, "play duration must be a number");
@@ -159,7 +160,7 @@ void Traversal::visit_play_target(const ast::PlayTarget& target) {
     }
 
     if (target.from_offset) {
-        const Type from_type = visit_expression(*target.from_offset);
+        const TypeKind from_type = visit_expression(*target.from_offset);
 
         if (is_known(from_type) && !is_numeric(from_type)) {
             diagnose(target.from_offset->location, "from offset must be a number");

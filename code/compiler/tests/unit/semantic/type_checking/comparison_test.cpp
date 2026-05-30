@@ -1,67 +1,67 @@
 #include <gtest/gtest.h>
 
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/types/type_kind.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::semantic::TypeKind;
+using motivo::types::TypeKind;
 
 // -- Happy flows: result type is Bool -----------------------------------------
 
 TEST(ComparisonTypeCheck, IntLessThanIntIsBool) {
     const auto [prog, result] = analyze_ok("int x = 1 < 2;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, DoubleGreaterThanDoubleIsBool) {
     const auto [prog, result] = analyze_ok("double x = 2.5 > 1.5;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, IntLessOrEqualDoubleIsBool) {
     const auto [prog, result] = analyze_ok("int x = 1 <= 2.5;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, IntGreaterOrEqualIntIsBool) {
     const auto [prog, result] = analyze_ok("int x = 5 >= 3;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, IntEqualsIntIsBool) {
     const auto [prog, result] = analyze_ok("int x = 1 == 1;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, BoolEqualsBoolIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true == false;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(ComparisonTypeCheck, IntNotEqualsIntIsBool) {
     const auto [prog, result] = analyze_ok("int x = 1 != 2;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 // -- Error cases ---------------------------------------------------------------

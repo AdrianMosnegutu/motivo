@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace motivo::ast {
+namespace motivo::operators {
 
 enum class BinaryOperator : uint8_t {
     // Arithmetic
@@ -30,4 +30,4 @@ enum class UnaryOperator : uint8_t {
     Not,
 };
 
-}  // namespace motivo::ast
+}  // namespace motivo::operators

@@ -24,7 +24,7 @@ const Scope* SymbolTable::get_scope(const ScopeId id) const { return id < scopes
 SymbolId SymbolTable::add_symbol(const ScopeId scope_id,
                                  std::string name,
                                  const SymbolKind kind,
-                                 const Type type,
+                                 const TypeKind type,
                                  const source::Location& location,
                                  const void* declaration) {
     assert(scope_id < scopes_.size());
@@ -43,7 +43,7 @@ const Symbol* SymbolTable::get_symbol(const SymbolId id) const {
 
 Symbol* SymbolTable::get_symbol(const SymbolId id) { return id < symbols_.size() ? &symbols_[id] : nullptr; }
 
-void SymbolTable::set_symbol_type(const SymbolId id, const Type type) {
+void SymbolTable::set_symbol_type(const SymbolId id, const TypeKind type) {
     if (Symbol* target = get_symbol(id)) {
         target->type = type;
     }

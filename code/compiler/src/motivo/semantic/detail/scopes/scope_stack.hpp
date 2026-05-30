@@ -38,7 +38,7 @@ class ScopeStack {
 
     SymbolId add_symbol(const std::string& name,
                         SymbolKind kind,
-                        Type type,
+                        TypeKind type,
                         const source::Location& location,
                         const void* declaration = nullptr) const;
 

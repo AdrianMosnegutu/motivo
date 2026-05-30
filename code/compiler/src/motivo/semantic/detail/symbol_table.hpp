@@ -30,13 +30,13 @@ class SymbolTable {
     [[nodiscard]] SymbolId add_symbol(ScopeId scope,
                                       std::string name,
                                       SymbolKind kind,
-                                      Type type,
+                                      TypeKind type,
                                       const source::Location& location,
                                       const void* declaration = nullptr);
     [[nodiscard]] const Symbol* get_symbol(SymbolId id) const;
     [[nodiscard]] Symbol* get_symbol(SymbolId id);
 
-    void set_symbol_type(SymbolId id, Type type);
+    void set_symbol_type(SymbolId id, TypeKind type);
 
     [[nodiscard]] const Symbol* find_in_scope(ScopeId scope, const std::string& name) const;
     [[nodiscard]] const Symbol* find_in_scope(ScopeId scope,

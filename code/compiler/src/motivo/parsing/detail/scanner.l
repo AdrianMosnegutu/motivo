@@ -87,7 +87,12 @@ octave       [0-8]
 "loop"                          { return P::make_LOOP(loc); }
 "if"                            { return P::make_IF(loc); }
 "else"                          { return P::make_ELSE(loc); }
-"let"                           { return P::make_LET(loc); }
+"int"                           { return P::make_TYPE_INT(loc); }
+"double"                        { return P::make_TYPE_DOUBLE(loc); }
+"bool"                          { return P::make_TYPE_BOOL(loc); }
+"note"                          { return P::make_TYPE_NOTE(loc); }
+"seq"                           { return P::make_TYPE_SEQ(loc); }
+"chord"                         { return P::make_TYPE_CHORD(loc); }
 "using"                         { return P::make_USING(loc); }
 "from"                          { return P::make_FROM(loc); }
 "voice"                         { return P::make_VOICE(loc); }

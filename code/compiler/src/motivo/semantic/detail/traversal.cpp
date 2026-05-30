@@ -54,7 +54,7 @@ void Traversal::add_pattern_symbol(const ast::PatternDefinition& pattern) const 
             "duplicate pattern '" + pattern.name + "' with " + std::to_string(pattern.params.size()) + " parameter(s)");
         return;
     }
-    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, Type{TypeKind::Sequence}, pattern.location, &pattern);
+    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, TypeKind::Sequence, pattern.location, &pattern);
 }
 
 bool Traversal::is_pattern_active(const ast::PatternDefinition& pattern) const {

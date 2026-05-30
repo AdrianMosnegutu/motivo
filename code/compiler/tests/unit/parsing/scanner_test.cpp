@@ -87,8 +87,17 @@ T scan_as(const std::string& src) {
 // Keywords
 // ===========================================================================
 
+TEST(Scanner, TypeKeywords) {
+    EXPECT_EQ(scan_kinds("int")[0], S::S_TYPE_INT);
+    EXPECT_EQ(scan_kinds("double")[0], S::S_TYPE_DOUBLE);
+    EXPECT_EQ(scan_kinds("bool")[0], S::S_TYPE_BOOL);
+    EXPECT_EQ(scan_kinds("note")[0], S::S_TYPE_NOTE);
+    EXPECT_EQ(scan_kinds("seq")[0], S::S_TYPE_SEQ);
+    EXPECT_EQ(scan_kinds("chord")[0], S::S_TYPE_CHORD);
+}
+
 TEST(Scanner, AllKeywords) {
-    const auto tokens = scan_kinds("tempo signature key track pattern play for loop if else voice using from rest");
+    const auto tokens = scan_kinds("tempo signature key track pattern play for loop if else voice using from rest int double bool note seq chord");
     const std::vector expected = {
         S::S_TEMPO,
         S::S_SIGNATURE,
@@ -104,6 +113,12 @@ TEST(Scanner, AllKeywords) {
         S::S_USING,
         S::S_FROM,
         S::S_REST,
+        S::S_TYPE_INT,
+        S::S_TYPE_DOUBLE,
+        S::S_TYPE_BOOL,
+        S::S_TYPE_NOTE,
+        S::S_TYPE_SEQ,
+        S::S_TYPE_CHORD,
     };
     ASSERT_EQ(tokens.size(), expected.size());
     for (size_t i = 0; i < expected.size(); ++i) EXPECT_EQ(tokens[i], expected[i]) << "at index " << i;

@@ -1,43 +1,43 @@
 #include <gtest/gtest.h>
 
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/types/type_kind.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::semantic::TypeKind;
+using motivo::types::TypeKind;
 
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
     const auto [prog, result] = analyze_ok("bool x = true ? 1 : 2;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Int);
+    EXPECT_EQ(*t, TypeKind::Int);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
     const auto [prog, result] = analyze_ok("bool x = false ? 1.5 : 2.5;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Double);
+    EXPECT_EQ(*t, TypeKind::Double);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
     const auto [prog, result] = analyze_ok("bool x = true ? false : true;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, TypeKind::Bool);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
     const auto [prog, result] = analyze_ok("bool x = true ? A4 : B4;");
-    const auto& decl = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Note);
+    EXPECT_EQ(*t, TypeKind::Note);
 }
 
 TEST(TernaryTypeCheck, NoteInsidePlayViaTernary) {
