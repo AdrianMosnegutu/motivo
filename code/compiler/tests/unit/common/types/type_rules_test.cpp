@@ -1,16 +1,17 @@
+#include "motivo/common/types/type_rules.hpp"
+
 #include <gtest/gtest.h>
 
 #include "motivo/common/operators/operators.hpp"
 #include "motivo/common/types/type_kind.hpp"
-#include "motivo/common/types/type_rules.hpp"
 
 using motivo::operators::BinaryOperator;
-using motivo::types::TypeKind;
 using motivo::types::binary_result_type;
 using motivo::types::is_assignable;
 using motivo::types::is_known;
 using motivo::types::numeric_result;
 using motivo::types::same_known_type;
+using motivo::types::TypeKind;
 
 TEST(TypeRules, IsAssignableAllowsExactMatch) {
     EXPECT_TRUE(is_assignable(TypeKind::Int, TypeKind::Int));
