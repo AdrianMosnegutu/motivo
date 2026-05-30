@@ -103,11 +103,11 @@ jobs:
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: compiler-build-logs
           path: ${{ env.COMPILER_REPORT_DIR }}
-          include-hidden-files: true
+          include-hidden-files: "true"
           retention-days: ${{ env.COMPILER_ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: warn
 
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload build artifact
         if: steps.build_compiler.outputs.exit_code == '0'
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: ${{ env.COMPILER_BUILD_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/compiler-build-artifact/compiler-build.tar
@@ -229,11 +229,11 @@ jobs:
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: ${{ env.COMPILER_TEST_REPORT_ARTIFACT_NAME }}
           path: ${{ env.COMPILER_REPORT_DIR }}
-          include-hidden-files: true
+          include-hidden-files: "true"
           retention-days: ${{ env.COMPILER_ARTIFACT_RETENTION_DAYS }}
           if-no-files-found: warn
 
