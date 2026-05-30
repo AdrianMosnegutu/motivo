@@ -105,6 +105,24 @@ jobs:
       - typecheck
       - format-check
     timeout-minutes: 15
+    env:
+      # 127.0.0.1 avoids pg connecting via ::1 when the service only listens on IPv4.
+      DATABASE_URL: postgres://motivo:motivo@127.0.0.1:5432/motivo_test
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: motivo
+          POSTGRES_PASSWORD: motivo
+          POSTGRES_DB: motivo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U motivo -d motivo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
