@@ -287,3 +287,41 @@ TEST(PatternCall, SameIdentifierPassedTwiceAsParamsResolveCorrecly) {
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].midi_note, 69);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[2].midi_note, 71);
 }
+
+TEST(PatternCall, IntLiteralRoutesToIntTypedOverload) {
+    const auto ir = lower_ok(R"(
+        pattern p(int n) { play A4 :n; }
+        pattern p(double n) { play B4 :n; }
+        track { play p(1); }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 69);
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.0);
+}
+
+TEST(PatternCall, TrackLocalPatternShadowsGlobalPattern) {
+    const auto ir = lower_ok(R"(
+        pattern p(int n) { play A4 :n; }
+        track {
+            pattern p(int n) { play B4 :n; }
+            play p(1);
+        }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 71);
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.0);
+}
+
+TEST(PatternCall, ForwardPatternReferenceInSameTrackWorks) {
+    const auto ir = lower_ok(R"(
+        track {
+            play later();
+            pattern later() { play A4; }
+        }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 69);
+}

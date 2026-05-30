@@ -17,8 +17,9 @@ set(MOTIVO_BINARY_PARSING ${CMAKE_BINARY_DIR}/src/motivo/parsing)
 # -- Common module unit tests ---------------------------------------------------
 
 motivo_add_gtest(common_tests
-        unit/common/music/note_test.cpp)
-target_link_libraries(common_tests PRIVATE motivo_music)
+        unit/common/music/note_test.cpp
+        unit/common/types/type_rules_test.cpp)
+target_link_libraries(common_tests PRIVATE motivo_music motivo_types)
 target_include_directories(common_tests PRIVATE ${MOTIVO_SRC})
 
 # -- Parsing unit tests ---------------------------------------------------------

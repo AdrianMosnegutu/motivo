@@ -93,7 +93,12 @@ void Traversal::visit_pattern(const ast::PatternDefinition& pattern) {
 
     for (std::size_t i = 0; i < pattern.params.size(); ++i) {
         const auto& param = pattern.params[i];
-        (void)scopes_.add_symbol(param.name, SymbolKind::Parameter, param.type, pattern.location, &pattern.params[i]);
+        if (scopes_.find_in_current_scope(param.name)) {
+            diagnose(param.location, "duplicate pattern parameter '" + param.name + "'");
+            continue;
+        }
+
+        (void)scopes_.add_symbol(param.name, SymbolKind::Parameter, param.type, param.location, &pattern.params[i]);
     }
 
     visit_block(pattern.body);

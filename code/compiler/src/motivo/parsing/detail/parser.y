@@ -310,7 +310,7 @@ param_list
 
 param
     : type "identifier"
-      { $$ = ast::TypedParameter{$1, $2}; }
+      { $$ = ast::TypedParameter{$1, $2, @2}; }
     ;
 
 type
