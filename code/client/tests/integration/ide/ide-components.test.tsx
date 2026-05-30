@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { MotivoEditorProps } from '@/features/editor/components/MotivoEditor';
+import type { ActiveDocument } from '@/features/files/types';
 import EditorPane from '@/features/ide/components/EditorPane';
 import LoadingPane from '@/features/ide/components/LoadingPane';
 import LogsPanel from '@/features/ide/components/LogsPanel';
@@ -13,6 +14,15 @@ type MockPanelRef = MutableRefObject<{
   expand: ReturnType<typeof vi.fn>;
 } | null>;
 type EditorComponent = ComponentProps<typeof EditorPane>['MotivoEditor'];
+
+const scratchDocument: ActiveDocument = {
+  kind: 'scratch',
+  id: 'scratch',
+  name: 'unsaved',
+  source: 'tempo 120;',
+  readOnly: false,
+  persisted: false,
+};
 
 vi.mock('react-resizable-panels', () => ({
   Panel: ({
@@ -43,49 +53,101 @@ describe('IDE shell components', () => {
     expect(screen.getByText('Loading editor...')).toHaveClass('custom');
   });
 
-  it('renders editor controls and forwards editor callbacks', () => {
+  it('renders tabs and forwards editor callbacks', () => {
     const onCompile = vi.fn();
     const onEditorChange = vi.fn();
-    const MotivoEditor: EditorComponent = ({ onChange, onCompile: compile }: MotivoEditorProps) => (
+    const MotivoEditor: EditorComponent = ({
+      documentId = 'scratch:scratch',
+      onChange,
+      onCompile: compile,
+      value,
+    }: MotivoEditorProps) => (
       <button
         onClick={() => {
-          onChange?.('tempo 120;');
+          onChange?.(documentId, 'tempo 120;');
           compile?.();
         }}
       >
-        Mock editor
+        Mock editor {value}
       </button>
     );
 
     render(
       <EditorPane
+        activeDocument={scratchDocument}
+        activeTabKey="scratch:scratch"
         MotivoEditor={MotivoEditor}
+        openTabs={[
+          {
+            key: 'scratch:scratch',
+            kind: 'scratch',
+            id: 'scratch',
+            name: 'unsaved',
+            readOnly: false,
+            closable: true,
+            syncState: 'synced',
+          },
+        ]}
         editorRef={{ current: null }}
-        compiling={false}
+        onCloseTab={vi.fn(async () => true)}
+        onDownloadActiveFile={vi.fn()}
         onCompile={onCompile}
         onEditorChange={onEditorChange}
+        onFocusTab={vi.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Compile' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Mock editor' }));
+    expect(screen.getAllByText('unsaved').length).toBeGreaterThan(0);
+    expect(screen.queryByText('scratch')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Close unsaved/ })).toBeInTheDocument();
 
-    expect(onCompile).toHaveBeenCalledTimes(2);
-    expect(onEditorChange).toHaveBeenCalledWith('tempo 120;');
+    fireEvent.click(screen.getByRole('button', { name: /Mock editor/ }));
+
+    expect(onCompile).toHaveBeenCalledTimes(1);
+    expect(onEditorChange).toHaveBeenCalledWith('scratch:scratch', 'tempo 120;');
   });
 
-  it('renders compiling state', () => {
+  it('closes a closable user tab', () => {
+    const onCloseTab = vi.fn(async () => true);
+    const userDocument: ActiveDocument = {
+      kind: 'user',
+      id: 'file-1',
+      name: 'Song.motivo',
+      source: 'tempo 120;',
+      createdAt: '2026-05-29T00:00:00.000Z',
+      updatedAt: '2026-05-29T00:00:00.000Z',
+      lastOpenedAt: null,
+      readOnly: false,
+      persisted: true,
+    };
+
     render(
       <EditorPane
+        activeDocument={userDocument}
+        activeTabKey="user:file-1"
         MotivoEditor={() => null}
+        openTabs={[
+          {
+            key: 'user:file-1',
+            kind: 'user',
+            id: 'file-1',
+            name: 'Song.motivo',
+            readOnly: false,
+            closable: true,
+            syncState: 'out-of-sync',
+          },
+        ]}
         editorRef={{ current: null }}
-        compiling
+        onCloseTab={onCloseTab}
+        onDownloadActiveFile={vi.fn()}
         onCompile={vi.fn()}
         onEditorChange={vi.fn()}
+        onFocusTab={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole('button', { name: /Compiling/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Close Song.motivo' }));
+    expect(onCloseTab).toHaveBeenCalledWith('user:file-1');
   });
 
   it('clears logs from the logs panel', () => {

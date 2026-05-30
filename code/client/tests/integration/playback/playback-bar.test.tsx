@@ -1,8 +1,14 @@
+import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { useMidi } from '@/features/midi/MidiContext';
 import PlaybackBar from '@/features/playback/components/PlaybackBar';
+
+function renderBar(ui: ReactNode) {
+  return render(<TooltipProvider>{ui}</TooltipProvider>);
+}
 
 const downloadMidi = vi.fn();
 const useMidiPlayback = vi.fn();
@@ -20,9 +26,13 @@ vi.mock('@/features/playback/hooks/usePlaybackShortcut', () => ({
   usePlaybackShortcut: vi.fn(),
 }));
 
-vi.mock('@/features/playback/lib/download-midi', () => ({
-  downloadMidi: (...args: unknown[]) => downloadMidi(...args),
-}));
+vi.mock('@/features/playback/lib/download-midi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/playback/lib/download-midi')>();
+  return {
+    ...actual,
+    downloadMidi: (...args: unknown[]) => downloadMidi(...args),
+  };
+});
 
 describe('PlaybackBar', () => {
   beforeEach(() => {
@@ -42,7 +52,6 @@ describe('PlaybackBar', () => {
       handleSeek: vi.fn(),
       loadState: 'ready',
       playState: 'stopped',
-      position: '0.0s / 4.0s',
       stopAll: vi.fn(),
     });
     downloadMidi.mockReset();
@@ -50,7 +59,7 @@ describe('PlaybackBar', () => {
 
   it('asks the user to compile before playback exists', () => {
     midiState.parsedMidi = null;
-    render(<PlaybackBar />);
+    renderBar(<PlaybackBar />);
 
     expect(screen.getByText('Compile successfully to enable playback')).toBeInTheDocument();
   });
@@ -60,21 +69,33 @@ describe('PlaybackBar', () => {
       ...useMidiPlayback(),
       loadState: 'loading',
     });
-    const { rerender } = render(<PlaybackBar />);
+    const { rerender } = renderBar(<PlaybackBar />);
     expect(screen.getByText('Loading sounds...')).toBeInTheDocument();
 
     useMidiPlayback.mockReturnValueOnce({
       ...useMidiPlayback(),
       loadState: 'error',
     });
-    rerender(<PlaybackBar />);
+    rerender(<TooltipProvider>{<PlaybackBar />}</TooltipProvider>);
     expect(screen.getByText('Instrument Error')).toBeInTheDocument();
   });
 
   it('downloads the current MIDI bytes', () => {
-    render(<PlaybackBar />);
+    renderBar(<PlaybackBar />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Download/ }));
-    expect(downloadMidi).toHaveBeenCalledWith(new Uint8Array([1, 2]));
+    fireEvent.click(screen.getByRole('button', { name: 'Export MIDI' }));
+    expect(downloadMidi).toHaveBeenCalledWith(new Uint8Array([1, 2]), 'output.mid');
+  });
+
+  it('stops playback and resets position', () => {
+    const stopAll = vi.fn();
+    useMidiPlayback.mockReturnValue({
+      ...useMidiPlayback(),
+      stopAll,
+    });
+
+    renderBar(<PlaybackBar />);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(stopAll).toHaveBeenCalledTimes(1);
   });
 });

@@ -154,7 +154,7 @@ jobs:
           cp "${PAPER_DIR}/${paper_pdf_file}" "dist/${PAPER_ARTIFACT_FILE}"
 
       - name: Upload article PDF artifact
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: ${{ env.PAPER_ARTIFACT_NAME }}
           path: dist/${{ env.PAPER_ARTIFACT_FILE }}

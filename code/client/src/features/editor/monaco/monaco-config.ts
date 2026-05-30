@@ -1,7 +1,5 @@
 import type { EditorProps } from '@monaco-editor/react';
 
-export const EDITOR_STORAGE_KEY = 'motivo-studio-editor-content';
-
 export const DEFAULT_MOTIVO_SNIPPET = `tempo 120;
 signature 4/4;
 
@@ -11,14 +9,17 @@ track hello_world {
 `;
 
 export const EDITOR_OPTIONS: EditorProps['options'] = {
-  fontSize: 14,
-  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+  fontSize: 13,
+  fontFamily: 'var(--font-fira-code), ui-monospace, monospace',
+  lineHeight: 22,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   lineNumbers: 'on',
   renderLineHighlight: 'line',
   padding: { top: 16, bottom: 16 },
   overviewRulerLanes: 0,
+  quickSuggestions: { other: true, comments: false, strings: false },
+  suggestOnTriggerCharacters: true,
+  tabCompletion: 'on',
+  wordBasedSuggestions: 'off',
 };
-
-export const EDITOR_PERSISTENCE_DELAY_MS = 300;

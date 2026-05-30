@@ -1,11 +1,16 @@
 export type PlayState = 'stopped' | 'playing' | 'paused';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 
-export interface SfPlayer {
-  play(
-    note: string,
-    when: number,
-    options?: { duration?: number; gain?: number },
-  ): AudioBufferSourceNode;
+export type ScheduledVoice = {
+  stop: (when?: number) => void;
+};
+
+export interface PlaybackPlayer {
+  playNote(params: {
+    midi: number;
+    when: number;
+    duration: number;
+    velocity: number;
+  }): ScheduledVoice;
   stop(when?: number): void;
 }

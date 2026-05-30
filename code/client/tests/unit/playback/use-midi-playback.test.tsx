@@ -10,14 +10,21 @@ const transport = {
   stop: vi.fn(),
 };
 const toneStart = vi.fn();
-const instrument = vi.fn();
-const play = vi.fn(() => ({ stop: vi.fn() }));
+const loadPlaybackInstrument = vi.fn();
+const createSharedSampleLoader = vi.fn(() => ({}));
+const playNote = vi.fn(() => ({ stop: vi.fn() }));
 const playerStop = vi.fn();
 
+vi.mock('@/features/playback/lib/instruments', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/playback/lib/instruments')>();
+  return {
+    ...actual,
+    createSharedSampleLoader: () => createSharedSampleLoader(),
+    loadPlaybackInstrument: (...args: unknown[]) => loadPlaybackInstrument(...args),
+  };
+});
+
 vi.mock('tone', () => ({
-  Frequency: (midi: number) => ({
-    toNote: () => `note-${midi}`,
-  }),
   getContext: () => ({
     rawContext: {
       currentTime: 1,
@@ -25,12 +32,6 @@ vi.mock('tone', () => ({
   }),
   getTransport: () => transport,
   start: () => toneStart(),
-}));
-
-vi.mock('soundfont-player', () => ({
-  default: {
-    instrument: (...args: unknown[]) => instrument(...args),
-  },
 }));
 
 const parsedMidi = {
@@ -58,8 +59,8 @@ describe('useMidiPlayback', () => {
     transport.start.mockClear();
     transport.stop.mockClear();
     toneStart.mockResolvedValue(undefined);
-    instrument.mockResolvedValue({ play, stop: playerStop });
-    play.mockClear();
+    loadPlaybackInstrument.mockResolvedValue({ playNote, stop: playerStop });
+    playNote.mockClear();
     playerStop.mockClear();
   });
 
@@ -81,9 +82,11 @@ describe('useMidiPlayback', () => {
 
     expect(toneStart).toHaveBeenCalled();
     expect(transport.start).toHaveBeenCalled();
-    expect(play).toHaveBeenCalledWith('note-60', expect.any(Number), {
+    expect(playNote).toHaveBeenCalledWith({
+      midi: 60,
+      when: expect.any(Number),
       duration: 1,
-      gain: 0.8,
+      velocity: 0.8,
     });
     expect(result.current.playState).toBe('playing');
 
@@ -100,7 +103,7 @@ describe('useMidiPlayback', () => {
   });
 
   it('reports instrument loading failures', async () => {
-    instrument.mockRejectedValueOnce(new Error('soundfont unavailable'));
+    loadPlaybackInstrument.mockRejectedValueOnce(new Error('instrument unavailable'));
     const { result } = renderHook(() => useMidiPlayback(parsedMidi as never));
 
     await waitFor(() => expect(result.current.loadState).toBe('error'));

@@ -4,35 +4,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { useMidi } from '@/features/midi/MidiContext';
 import PianoRoll from '@/features/piano-roll/components/PianoRoll';
 
-const renderPianoRollFrame = vi.fn();
 let midiState: ReturnType<typeof useMidi>;
-
-vi.mock('next-themes', () => ({
-  useTheme: () => ({ resolvedTheme: 'dark' }),
-}));
 
 vi.mock('@/features/midi/MidiContext', () => ({
   useMidi: () => midiState,
 }));
 
-vi.mock('@/features/piano-roll/hooks/useCanvasSize', () => ({
-  useCanvasSize: () => ({ width: 400, height: 200 }),
-}));
-
 vi.mock('@/features/piano-roll/hooks/usePlayheadTime', () => ({
-  usePlayheadTime: () => 1,
-}));
-
-vi.mock('@/features/piano-roll/lib/render-frame', () => ({
-  renderPianoRollFrame: (...args: unknown[]) => renderPianoRollFrame(...args),
+  usePlayheadTracker: () => {},
 }));
 
 describe('PianoRoll', () => {
   beforeEach(() => {
-    renderPianoRollFrame.mockReset();
-    HTMLCanvasElement.prototype.getContext = vi.fn(
-      () => ({}) as CanvasRenderingContext2D,
-    ) as unknown as HTMLCanvasElement['getContext'];
     midiState = {
       midiBytes: null,
       parsedMidi: null,
@@ -45,24 +28,19 @@ describe('PianoRoll', () => {
     expect(screen.getByText('Compile your code to see the visualizer')).toBeInTheDocument();
   });
 
-  it('renders a canvas frame when MIDI is available', () => {
+  it('renders keyboard labels for the parsed MIDI range', () => {
     midiState = {
       midiBytes: null,
       parsedMidi: {
-        tracks: [{ notes: [{ midi: 60 }] }],
-      } as ReturnType<typeof useMidi>['parsedMidi'],
+        duration: 2,
+        tracks: [{ notes: [{ midi: 60, time: 0, duration: 1 }] }],
+      } as unknown as ReturnType<typeof useMidi>['parsedMidi'],
       setMidiBytes: vi.fn(),
     };
 
     render(<PianoRoll />);
 
-    expect(renderPianoRollFrame).toHaveBeenCalledWith(
-      expect.objectContaining({
-        currentTime: 1,
-        width: 400,
-        height: 200,
-        theme: 'dark',
-      }),
-    );
+    expect(screen.queryByText('Compile your code to see the visualizer')).not.toBeInTheDocument();
+    expect(screen.getByText('C4')).toBeInTheDocument();
   });
 });

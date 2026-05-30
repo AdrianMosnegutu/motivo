@@ -1,20 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createErrorMarker } from '@/features/editor/monaco/markers';
-import {
-  DEFAULT_MOTIVO_SNIPPET,
-  EDITOR_OPTIONS,
-  EDITOR_STORAGE_KEY,
-} from '@/features/editor/monaco/monaco-config';
+import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '@/features/editor/monaco/monaco-config';
 import {
   MOTIVO_LANGUAGE_ID,
   MOTIVO_LANGUAGE_KEYWORDS,
   registerMotivoLanguage,
 } from '@/features/editor/monaco/motivo-language';
 import {
-  getMotivoTheme,
   MOTIVO_DARK_THEME,
-  MOTIVO_LIGHT_THEME,
+  MOTIVO_SYNTAX_COLORS,
   registerMotivoThemes,
 } from '@/features/editor/monaco/motivo-themes';
 
@@ -23,6 +18,15 @@ function createMonacoMock() {
     languages: {
       register: vi.fn(),
       setMonarchTokensProvider: vi.fn(),
+      registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      CompletionItemKind: {
+        Keyword: 17,
+        Snippet: 27,
+        EnumMember: 13,
+        Value: 12,
+        Constant: 21,
+      },
+      CompletionItemInsertTextRule: { InsertAsSnippet: 4 },
     },
     editor: {
       defineTheme: vi.fn(),
@@ -46,35 +50,54 @@ describe('Monaco Motivo configuration', () => {
         }),
       }),
     );
+    expect(monaco.languages.registerCompletionItemProvider).toHaveBeenCalledWith(
+      MOTIVO_LANGUAGE_ID,
+      expect.objectContaining({
+        triggerCharacters: expect.arrayContaining([' ']),
+        provideCompletionItems: expect.any(Function),
+      }),
+    );
   });
 
-  it('registers light and dark Motivo themes', () => {
+  it('registers the dark Motivo theme with distinct syntax colors', () => {
     const monaco = createMonacoMock();
 
     registerMotivoThemes(monaco as never);
 
     expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
       MOTIVO_DARK_THEME,
-      expect.objectContaining({ base: 'vs-dark' }),
+      expect.objectContaining({
+        base: 'vs-dark',
+        rules: expect.arrayContaining([
+          expect.objectContaining({
+            token: 'note-literal',
+            foreground: MOTIVO_SYNTAX_COLORS.noteLiteral,
+          }),
+          expect.objectContaining({ token: 'number', foreground: MOTIVO_SYNTAX_COLORS.number }),
+          expect.objectContaining({
+            token: 'voice-keyword',
+            foreground: MOTIVO_SYNTAX_COLORS.voiceKeyword,
+          }),
+          expect.objectContaining({
+            token: 'rest-keyword',
+            foreground: MOTIVO_SYNTAX_COLORS.restKeyword,
+          }),
+          expect.objectContaining({
+            token: 'identifier',
+            foreground: MOTIVO_SYNTAX_COLORS.identifier,
+          }),
+        ]),
+      }),
     );
-    expect(monaco.editor.defineTheme).toHaveBeenCalledWith(
-      MOTIVO_LIGHT_THEME,
-      expect.objectContaining({ base: 'vs' }),
-    );
-  });
-
-  it('resolves theme names from the active app theme', () => {
-    expect(getMotivoTheme('dark')).toBe(MOTIVO_DARK_THEME);
-    expect(getMotivoTheme('light')).toBe(MOTIVO_LIGHT_THEME);
-    expect(getMotivoTheme(undefined)).toBe(MOTIVO_LIGHT_THEME);
   });
 
   it('exports stable editor defaults', () => {
-    expect(EDITOR_STORAGE_KEY).toBe('motivo-studio-editor-content');
     expect(DEFAULT_MOTIVO_SNIPPET).toContain('tempo 120');
     expect(EDITOR_OPTIONS).toMatchObject({
-      fontSize: 14,
+      fontSize: 13,
       minimap: { enabled: false },
+      quickSuggestions: { other: true, comments: false, strings: false },
+      suggestOnTriggerCharacters: true,
     });
   });
 

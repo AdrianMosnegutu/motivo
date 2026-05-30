@@ -19,12 +19,12 @@ make build
 make run
 ```
 
-`make run` compiles and runs `examples/example.motivo` through `build/apps/motivoc`.
+`make run` compiles the frontend-owned `../client/src/features/examples/sources/example.motivo` through `build/apps/motivoc` and writes `out.mid` in `compiler/`.
 
 To use another example:
 
 ```sh
-make run EXAMPLE=examples/fur_elise.motivo
+make run EXAMPLE=../client/src/features/examples/sources/fur_elise.motivo
 ```
 
 ## Tests And Coverage
@@ -55,7 +55,6 @@ make coverage-clean
 ```text
 apps/          motivoc command-line entrypoint
 docs/          grammar and lexical references
-examples/      sample Motivo programs
 include/       public compiler API headers
 src/           parser, semantic analysis, lowering, and MIDI writer
 tests/         unit, integration, and golden tests

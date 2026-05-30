@@ -2,7 +2,7 @@ SHELL      := /bin/bash
 BUILD_DIR  ?= $(if $(filter ON on 1 true yes,$(COVERAGE)),build-coverage,build)
 BUILD_TYPE ?= Debug
 COVERAGE   ?= OFF
-EXAMPLE    := examples/example.motivo
+EXAMPLE    := ../client/src/features/examples/sources/example.motivo
 NPROC      := $(shell nproc 2>/dev/null || echo 4)
 
 CTEST      = ctest --test-dir $(BUILD_DIR) --output-on-failure -j$(NPROC)
@@ -64,7 +64,7 @@ compile-commands:
 	ln -sf $(BUILD_DIR)/compile_commands.json compile_commands.json
 
 run: build
-	./$(BUILD_DIR)/apps/motivoc $(EXAMPLE)
+	./$(BUILD_DIR)/apps/motivoc - < $(EXAMPLE)
 
 # Run all compiler tests. Use `make test COVERAGE=ON` to also write an lcov HTML report.
 test: build

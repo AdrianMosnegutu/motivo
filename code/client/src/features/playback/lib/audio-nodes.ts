@@ -1,21 +1,21 @@
-import type { SfPlayer } from '../types';
+import type { PlaybackPlayer, ScheduledVoice } from '../types';
 
-export function stopAudioNodes(nodes: AudioBufferSourceNode[]) {
-  nodes.forEach((node) => {
+export function stopScheduledVoices(voices: ScheduledVoice[]) {
+  voices.forEach((voice) => {
     try {
-      node.stop(0);
+      voice.stop(0);
     } catch {
       // Already stopped.
     }
   });
 }
 
-export function stopPlayers(players: SfPlayer[]) {
+export function stopPlayers(players: PlaybackPlayer[]) {
   players.forEach((player) => {
     try {
       player.stop(0);
     } catch {
-      // Soundfont players may already be stopped.
+      // Players may already be stopped.
     }
   });
 }

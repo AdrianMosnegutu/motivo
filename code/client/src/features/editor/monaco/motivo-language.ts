@@ -1,5 +1,7 @@
 import type { Monaco } from '@monaco-editor/react';
 
+import { registerMotivoCompletion } from './motivo-completion';
+
 export const MOTIVO_LANGUAGE_ID = 'motivo';
 
 export const MOTIVO_LANGUAGE_KEYWORDS = [
@@ -16,7 +18,6 @@ export const MOTIVO_LANGUAGE_KEYWORDS = [
   'let',
   'using',
   'from',
-  'rest',
   'major',
   'minor',
 ] as const;
@@ -41,6 +42,8 @@ export function registerMotivoLanguage(monaco: Monaco) {
         [/\b[A-G][#b]?[0-9]\b/, 'note-literal'],
         [/"([^"\\]|\\.)*"/, 'string'],
         [/\b\d+(\.\d+)?\b/, 'number'],
+        [/\bvoice\b/, 'voice-keyword'],
+        [/\brest\b/, 'rest-keyword'],
         [
           /\b[a-z_][a-zA-Z0-9_]*\b/,
           {
@@ -53,8 +56,8 @@ export function registerMotivoLanguage(monaco: Monaco) {
             },
           },
         ],
-        [/[+\-*/%<>!=&|]+/, 'operator'],
-        [/[{}();,]/, 'delimiter'],
+        [/[+\-*/%<>!=&|.:]+/, 'operator'],
+        [/[{}();,\[\]]/, 'delimiter'],
       ],
       blockComment: [
         [/[^/*]+/, 'comment'],
@@ -63,4 +66,6 @@ export function registerMotivoLanguage(monaco: Monaco) {
       ],
     },
   });
+
+  registerMotivoCompletion(monaco);
 }

@@ -1,20 +1,15 @@
 'use client';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import Editor, { type BeforeMount, type Monaco, type OnMount } from '@monaco-editor/react';
-import { useTheme } from 'next-themes';
 
 import { createErrorMarker } from '../monaco/markers';
-import {
-  DEFAULT_MOTIVO_SNIPPET,
-  EDITOR_OPTIONS,
-  EDITOR_PERSISTENCE_DELAY_MS,
-  EDITOR_STORAGE_KEY,
-} from '../monaco/monaco-config';
+import { DEFAULT_MOTIVO_SNIPPET, EDITOR_OPTIONS } from '../monaco/monaco-config';
 import { MOTIVO_LANGUAGE_ID, registerMotivoLanguage } from '../monaco/motivo-language';
-import { getMotivoTheme, registerMotivoThemes } from '../monaco/motivo-themes';
+import { MOTIVO_DARK_THEME, registerMotivoThemes } from '../monaco/motivo-themes';
 
 export interface MotivoEditorHandle {
+  getValue: () => string;
   jumpTo: (line: number, column: number) => void;
   blur: () => void;
   setError: (line: number, column: number, message: string) => void;
@@ -22,35 +17,36 @@ export interface MotivoEditorHandle {
 }
 
 export interface MotivoEditorProps {
-  onChange?: (value: string) => void;
+  documentId?: string;
+  onChange?: (documentId: string, value: string) => void;
   onCompile?: () => void;
+  readOnly?: boolean;
+  value?: string;
 }
 
 const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function MotivoEditor(
-  { onChange, onCompile },
+  { documentId = 'scratch:scratch', onChange, onCompile, readOnly = false, value },
   ref,
 ) {
-  const { theme } = useTheme();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCompileRef = useRef(onCompile);
   onCompileRef.current = onCompile;
 
   const editorInstanceRef = useRef<Parameters<OnMount>[0] | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+  const documentEpochRef = useRef(0);
+  const lastHandledChangeEpochRef = useRef(0);
+  const previousDocumentIdRef = useRef(documentId);
 
-  useEffect(() => {
-    if (editorInstanceRef.current && monacoRef.current) {
-      monacoRef.current.editor.setTheme(getMotivoTheme(theme));
-    }
-  }, [theme]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  useLayoutEffect(() => {
+    if (previousDocumentIdRef.current === documentId) return;
+    previousDocumentIdRef.current = documentId;
+    documentEpochRef.current += 1;
+  }, [documentId]);
 
   useImperativeHandle(ref, () => ({
+    getValue() {
+      return editorInstanceRef.current?.getValue() ?? '';
+    },
     jumpTo(line: number, column: number) {
       const editor = editorInstanceRef.current;
       if (!editor) return;
@@ -95,29 +91,21 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
     registerMotivoThemes(m);
   }, []);
 
-  const initialValue =
-    (typeof window !== 'undefined' && localStorage.getItem(EDITOR_STORAGE_KEY)) ||
-    DEFAULT_MOTIVO_SNIPPET;
-
   const handleChange = useCallback(
-    (value: string | undefined) => {
-      const v = value ?? '';
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        localStorage.setItem(EDITOR_STORAGE_KEY, v);
-      }, EDITOR_PERSISTENCE_DELAY_MS);
-      onChange?.(v);
+    (nextValue: string | undefined) => {
+      if (readOnly) return;
+      if (lastHandledChangeEpochRef.current < documentEpochRef.current) {
+        lastHandledChangeEpochRef.current = documentEpochRef.current;
+        return;
+      }
+      onChange?.(documentId, nextValue ?? '');
     },
-    [onChange],
+    [documentId, onChange, readOnly],
   );
-
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
 
   const handleMount: OnMount = useCallback((editor, m) => {
     editorInstanceRef.current = editor;
     monacoRef.current = m;
-    onChangeRef.current?.(editor.getValue());
 
     editor.addAction({
       id: 'motivo.compile',
@@ -131,12 +119,13 @@ const MotivoEditor = forwardRef<MotivoEditorHandle, MotivoEditorProps>(function 
     <Editor
       height="100%"
       defaultLanguage={MOTIVO_LANGUAGE_ID}
-      defaultValue={initialValue}
-      theme={getMotivoTheme(theme)}
+      path={documentId}
+      value={value ?? DEFAULT_MOTIVO_SNIPPET}
+      theme={MOTIVO_DARK_THEME}
       beforeMount={handleBeforeMount}
       onChange={handleChange}
       onMount={handleMount}
-      options={EDITOR_OPTIONS}
+      options={{ ...EDITOR_OPTIONS, readOnly }}
     />
   );
 });

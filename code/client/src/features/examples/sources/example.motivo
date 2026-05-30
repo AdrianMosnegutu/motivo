@@ -1,6 +1,5 @@
 tempo 108;
 signature 4/4;
-key G major;
 
 // -- Global motifs ------------------------------------------------
 let verse_motif  = [G4:1, A4:0.5, B4:0.5, D5:1, B4:1];

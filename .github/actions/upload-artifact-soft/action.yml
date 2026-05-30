@@ -1,0 +1,42 @@
+name: Upload artifact (soft fail)
+description: Upload an artifact and warn instead of failing the job when upload fails.
+
+inputs:
+  name:
+    description: Artifact name
+    required: true
+  path:
+    description: Path to upload
+    required: true
+  retention-days:
+    description: Artifact retention in days
+    required: false
+    default: "7"
+  if-no-files-found:
+    description: Behavior when no files are found
+    required: false
+    default: warn
+  include-hidden-files:
+    description: Include hidden files in the upload
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Upload artifact
+      id: upload
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: ${{ inputs.if-no-files-found }}
+        include-hidden-files: ${{ inputs.include-hidden-files }}
+
+    - name: Warn on upload failure
+      if: steps.upload.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "::warning title=Artifact upload failed::Failed to upload artifact '${{ inputs.name }}'."

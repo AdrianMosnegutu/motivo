@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: client-test-reports
           path: ${{ env.CLIENT_REPORT_DIR }}
@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-soft
         with:
           name: client-coverage
           path: ${{ env.CLIENT_COVERAGE_DIR }}
