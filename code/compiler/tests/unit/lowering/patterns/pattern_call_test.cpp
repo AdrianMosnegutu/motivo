@@ -50,8 +50,8 @@ TEST(PatternCall, OuterCursorAdvancedByPatternTotalDuration) {
 
 TEST(PatternCall, PatternCalledMultipleTimesSpacedCorrectly) {
     const auto ir = lower_ok(R"(
-        pattern note() { play A4; }
-        track { play note(); play note(); play note(); }
+        pattern hit() { play A4; }
+        track { play hit(); play hit(); play hit(); }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 3u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].start_beat, 0.0);
@@ -119,7 +119,7 @@ TEST(PatternCall, PatternInternalRestsPreserveTemporalSpan) {
 
 TEST(PatternCall, PatternParameterShadowsGlobalWithSameName) {
     const auto ir = lower_ok(R"(
-        int n = 100
+        int n = 100;
         pattern p(int n) { play A4 :n; }
         track { play p(2); }
     )");
@@ -237,10 +237,10 @@ TEST(PatternCall, TwoArityOverloadsRouteToCorrectBody) {
 TEST(PatternCall, TrackLocalArityOverloadsRouteToCorrectBody) {
     const auto ir = lower_ok(R"(
         track {
-            pattern note(int a) { play A4 :a; }
-            pattern note(int a, int b) { play B4 :b; }
-            play note(2);
-            play note(1, 4);
+            pattern hit(int a) { play A4 :a; }
+            pattern hit(int a, int b) { play B4 :b; }
+            play hit(2);
+            play hit(1, 4);
         }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
@@ -261,7 +261,7 @@ TEST(PatternCall, ArityOverloadCallSiteCursorAdvancesCorrectly) {
         }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
-    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 3.0);  // A4 for 3 beats
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 3.0);  // A4; for 3 beats
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].start_beat, 3.0);      // C4 starts after 3-beat pattern
 }
 
@@ -269,16 +269,16 @@ TEST(PatternCall, SameIdentifierPassedTwiceAsParamsResolveCorrecly) {
     const auto ir = lower_ok(R"(
         track {
             pattern foo1(int a, int b, int c) {
-                play a;
-                play b;
-                play c;
+                play A4 :a;
+                play A4 :b;
+                play B4 :c;
             }
 
             pattern foo2(int a, int b) {
-                play foo1(a, a, b); 
+                play foo1(a, a, b);
             }
 
-            play foo2(A4, B4);
+            play foo2(1, 2);
         }
     )");
 

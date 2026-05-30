@@ -47,7 +47,7 @@ TEST(VoiceParallel, VoiceStartsAtCurrentOuterCursorPosition) {
 }
 
 TEST(VoiceParallel, VoiceVarDeclBindingsDoNotLeakToOuterTrack) {
-    // Bug guard: a voice's int x = 5 must not change x in the enclosing track.
+    // Bug guard: a voice's; int x = 5 must not change x in the enclosing; track.
     const auto ir = lower_ok(R"(
         track {
             int x = 1;

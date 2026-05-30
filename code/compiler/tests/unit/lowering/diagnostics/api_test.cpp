@@ -62,7 +62,7 @@ TEST(LowererApi, ReportsMultipleLoweringDiagnosticsForSemanticallyValidProgram) 
 TEST(LowererApi, ReportsRuntimeExpressionFailuresAsLoweringDiagnostics) {
     auto input = analyze_for_lowering(R"(
         track {
-            int first = 1 / 0
+            double first = 1 / 0;
             int second = 1 % 0;
         }
     )");

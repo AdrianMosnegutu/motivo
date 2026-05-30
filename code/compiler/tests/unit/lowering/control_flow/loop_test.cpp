@@ -46,7 +46,7 @@ TEST(LoopStatement, NoteAfterLoopStartsAfterLoopEnd) {
 }
 
 TEST(LoopStatement, LoopCountFromIdentifierIsRespected) {
-    const auto ir = lower_ok("int n = 4 track { loop (n) { play A4; } }");
+    const auto ir = lower_ok("int n = 4; track { loop (n) { play A4; } }");
     EXPECT_EQ(ir.tracks[0].events.size(), 4u);
 }
 

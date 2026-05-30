@@ -70,17 +70,17 @@ TEST(SequenceCursor, ChordItemDurationOverrideAppliedToAllMembers) {
 TEST(SequenceCursor, ChordParameterDurationOverrideInPatternSequence) {
     // Pattern takes a chord param and plays it in a sequence with a :0.5 override.
     const auto ir = lower_ok(R"(
-        pattern layout(int c1, int c2) {
+        pattern layout(chord c1, chord c2) {
             play [c1, c2:0.5];
         }
         track { play layout((A4, C5), (E4, G4)); }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 4u);
-    // c1 = (A4, C5) at beat 0 for 1.0 beat
+    // c1 = (A4, C5) at beat 0; for 1.0 beat
     EXPECT_EQ(notes_at(ir.tracks[0], 0.0), (std::vector{69, 72}));
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.0);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].duration_beats, 1.0);
-    // c2 = (E4, G4) at beat 1 for 0.5 beats
+    // c2 = (E4, G4) at beat 1; for 0.5 beats
     EXPECT_EQ(notes_at(ir.tracks[0], 1.0), (std::vector{64, 67}));
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[2].duration_beats, 0.5);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[3].duration_beats, 0.5);

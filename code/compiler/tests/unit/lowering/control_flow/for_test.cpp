@@ -29,7 +29,7 @@ TEST(ForLoop, CursorAccumulatesAcrossIterations) {
 }
 
 TEST(ForLoop, IterationVariableCanBeUsedFromOutside) {
-    const auto ir = lower_ok("track { int i = 1 for (; i <= 3; i = i + 1) { play A4 :i; } }");
+    const auto ir = lower_ok("track { int i = 1; for (; i <= 3; i = i + 1) { play A4 :i; } }");
     ASSERT_EQ(ir.tracks[0].events.size(), 3u);
     // Durations: 1, 2, 3 → start beats: 0, 1, 3
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].start_beat, 0.0);
