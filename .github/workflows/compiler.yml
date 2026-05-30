@@ -147,26 +147,72 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build
-    timeout-minutes: 10
+    # Extra time when the build artifact is missing and we compile from scratch.
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Download build artifact
+        id: download_build
+        continue-on-error: true
         uses: actions/download-artifact@v8
         with:
           name: ${{ env.COMPILER_BUILD_ARTIFACT_NAME }}
           path: ${{ runner.temp }}/compiler-build-artifact
 
       - name: Restore build artifact
+        id: restore_build
+        if: steps.download_build.outcome == 'success'
+        continue-on-error: true
         run: |
           set -euo pipefail
+          build_tar="${RUNNER_TEMP}/compiler-build-artifact/compiler-build.tar"
+          if [ ! -f "${build_tar}" ]; then
+            echo "Build artifact archive not found at ${build_tar}"
+            exit 1
+          fi
           mkdir -p "${COMPILER_BUILD_DIR}"
           tar \
             --extract \
-            --file "${RUNNER_TEMP}/compiler-build-artifact/compiler-build.tar" \
+            --file "${build_tar}" \
             --directory "${COMPILER_BUILD_DIR}"
+
+      - name: Warn on artifact fallback
+        if: steps.download_build.outcome != 'success' || steps.restore_build.outcome != 'success'
+        run: |
+          echo "::warning title=Build artifact unavailable::Could not restore the compiler build from artifacts (download or upload may have failed). Rebuilding from scratch in the test job."
+
+      - name: Setup CMake
+        if: steps.download_build.outcome != 'success' || steps.restore_build.outcome != 'success'
+        uses: lukka/get-cmake@latest
+
+      - name: Restore FetchContent cache
+        if: steps.download_build.outcome != 'success' || steps.restore_build.outcome != 'success'
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.CI_FETCHCONTENT_BASE_DIR }}
+          key: ${{ runner.os }}-compiler-fetchcontent-${{ hashFiles('code/compiler/tests/CMakeLists.txt') }}
+
+      - name: Install build dependencies
+        if: steps.download_build.outcome != 'success' || steps.restore_build.outcome != 'success'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y bison flex g++ libfl-dev ninja-build
+
+      - name: Build compiler from scratch
+        if: steps.download_build.outcome != 'success' || steps.restore_build.outcome != 'success'
+        working-directory: ${{ env.COMPILER_DIR }}
+        env:
+          CI_BUILD_DIR: ../../${{ env.COMPILER_BUILD_DIR }}
+          CI_BUILD_TYPE: ${{ env.COMPILER_BUILD_TYPE }}
+          CI_REPORT_DIR: ../../${{ env.COMPILER_REPORT_DIR }}
+          CI_CMAKE_GENERATOR: ${{ env.CI_CMAKE_GENERATOR }}
+          CI_FETCHCONTENT_BASE_DIR: ${{ env.CI_FETCHCONTENT_BASE_DIR }}
+          CI_ENABLE_COVERAGE: ${{ env.COMPILER_ENABLE_COVERAGE }}
+        run: make ci-build
 
       - name: Install coverage reporter
         run: |
