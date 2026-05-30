@@ -32,7 +32,7 @@ TEST(PatternCall, PatternEventsPositionedAtCallSiteCursor) {
 
 TEST(PatternCall, PatternWithParameterUsesPassedValue) {
     const auto ir = lower_ok(R"(
-        pattern timed(d) { play A4 :d; }
+        pattern timed(int d) { play A4 :d; }
         track { play timed(3); }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 1u);
@@ -50,8 +50,8 @@ TEST(PatternCall, OuterCursorAdvancedByPatternTotalDuration) {
 
 TEST(PatternCall, PatternCalledMultipleTimesSpacedCorrectly) {
     const auto ir = lower_ok(R"(
-        pattern note() { play A4; }
-        track { play note(); play note(); play note(); }
+        pattern hit() { play A4; }
+        track { play hit(); play hit(); play hit(); }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 3u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].start_beat, 0.0);
@@ -62,9 +62,9 @@ TEST(PatternCall, PatternCalledMultipleTimesSpacedCorrectly) {
 TEST(PatternCall, PatternArgumentsEvaluatedInCallerScope) {
     // Bug regression: arguments must be evaluated in caller scope, not callee.
     const auto ir = lower_ok(R"(
-        pattern p(a, b) { play A4 :a; play B4 :b; }
+        pattern p(int a, int b) { play A4 :a; play B4 :b; }
         track {
-            let n = 2;
+            int n = 2;
             play p(n, n + 1);
         }
     )");
@@ -75,13 +75,13 @@ TEST(PatternCall, PatternArgumentsEvaluatedInCallerScope) {
 
 TEST(PatternCall, PatternArgumentsResolveInCallerScopeBeforeCalleeBindings) {
     const auto ir = lower_ok(R"(
-        pattern timed_pair(a, b) {
+        pattern timed_pair(int a, int b) {
             play A4 :a;
             play B4 :b;
         }
 
         track {
-            let n = 2;
+            int n = 2;
             play timed_pair(n, n + 1);
         }
     )");
@@ -119,8 +119,8 @@ TEST(PatternCall, PatternInternalRestsPreserveTemporalSpan) {
 
 TEST(PatternCall, PatternParameterShadowsGlobalWithSameName) {
     const auto ir = lower_ok(R"(
-        let n = 100;
-        pattern p(n) { play A4 :n; }
+        int n = 100;
+        pattern p(int n) { play A4 :n; }
         track { play p(2); }
     )");
 
@@ -131,8 +131,8 @@ TEST(PatternCall, PatternParameterShadowsGlobalWithSameName) {
 
 TEST(PatternCall, TwoPatternCallsWithIdenticalParameterNamesDontCrossContaminate) {
     const auto ir = lower_ok(R"(
-        pattern first(n) { play A4 :n; }
-        pattern second(n) { play B4 :n; }
+        pattern first(int n) { play A4 :n; }
+        pattern second(int n) { play B4 :n; }
         track {
             play first(1);
             play second(3);
@@ -149,8 +149,8 @@ TEST(PatternCall, TwoPatternCallsWithIdenticalParameterNamesDontCrossContaminate
 
 TEST(PatternCall, OuterPatternParameterUsedAfterNestedPatternCall) {
     const auto ir = lower_ok(R"(
-        pattern inner(x) { play A4 :x; }
-        pattern outer(a, b) {
+        pattern inner(int x) { play A4 :x; }
+        pattern outer(int a, int b) {
             play inner(a);
             play B4 :b;
         }
@@ -168,8 +168,8 @@ TEST(PatternCall, OuterPatternParameterUsedAfterNestedPatternCall) {
 TEST(PatternCall, TrackLocalPatternParameterUsedAfterNestedPatternCall) {
     const auto ir = lower_ok(R"(
         track {
-            pattern inner(x) { play A4 :x; }
-            pattern outer(a, b) {
+            pattern inner(int x) { play A4 :x; }
+            pattern outer(int a, int b) {
                 play inner(a);
                 play B4 :b;
             }
@@ -187,8 +187,8 @@ TEST(PatternCall, TrackLocalPatternParameterUsedAfterNestedPatternCall) {
 
 TEST(PatternCall, PatternWithForLoopCalledViaLoop) {
     const auto ir = lower_ok(R"(
-        pattern phrase(n) {
-            for (let i = 0; i < n; i = i + 1) {
+        pattern phrase(int n) {
+            for (int i = 0; i < n; i = i + 1) {
                 play A4;
             }
         }
@@ -201,9 +201,9 @@ TEST(PatternCall, PatternWithForLoopCalledViaLoop) {
 
 TEST(PatternCall, ThreeLevelNestedPatternCallsResolveCorrectly) {
     const auto ir = lower_ok(R"(
-        pattern leaf(d) { play A4 :d; }
-        pattern mid(d) { play leaf(d); play B4 :d; }
-        pattern top(d) { play mid(d); play C4 :d; }
+        pattern leaf(int d) { play A4 :d; }
+        pattern mid(int d) { play leaf(d); play B4 :d; }
+        pattern top(int d) { play mid(d); play C4 :d; }
         track { play top(2); }
     )");
 
@@ -220,8 +220,8 @@ TEST(PatternCall, TwoArityOverloadsRouteToCorrectBody) {
     // 1-arg overload plays A4, 2-arg overload plays B4.
     // Calling each should emit exactly the note from that overload.
     const auto ir = lower_ok(R"(
-        pattern foo(a) { play A4 :a; }
-        pattern foo(a, b) { play B4 :b; }
+        pattern foo(int a) { play A4 :a; }
+        pattern foo(int a, int b) { play B4 :b; }
         track {
             play foo(1);
             play foo(2, 3);
@@ -237,10 +237,10 @@ TEST(PatternCall, TwoArityOverloadsRouteToCorrectBody) {
 TEST(PatternCall, TrackLocalArityOverloadsRouteToCorrectBody) {
     const auto ir = lower_ok(R"(
         track {
-            pattern note(a) { play A4 :a; }
-            pattern note(a, b) { play B4 :b; }
-            play note(2);
-            play note(1, 4);
+            pattern hit(int a) { play A4 :a; }
+            pattern hit(int a, int b) { play B4 :b; }
+            play hit(2);
+            play hit(1, 4);
         }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
@@ -253,32 +253,32 @@ TEST(PatternCall, TrackLocalArityOverloadsRouteToCorrectBody) {
 TEST(PatternCall, ArityOverloadCallSiteCursorAdvancesCorrectly) {
     // Ensure cursor advances by the right amount regardless of which overload is chosen.
     const auto ir = lower_ok(R"(
-        pattern p(d) { play A4 :d; }
-        pattern p(d1, d2) { play A4 :d1; play B4 :d2; }
+        pattern p(int d) { play A4 :d; }
+        pattern p(int d1, int d2) { play A4 :d1; play B4 :d2; }
         track {
             play p(3);
             play C4;
         }
     )");
     ASSERT_EQ(ir.tracks[0].events.size(), 2u);
-    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 3.0);  // A4 for 3 beats
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 3.0);  // A4; for 3 beats
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].start_beat, 3.0);      // C4 starts after 3-beat pattern
 }
 
 TEST(PatternCall, SameIdentifierPassedTwiceAsParamsResolveCorrecly) {
     const auto ir = lower_ok(R"(
         track {
-            pattern foo1(a, b, c) {
-                play a;
-                play b;
-                play c;
+            pattern foo1(int a, int b, int c) {
+                play A4 :a;
+                play A4 :b;
+                play B4 :c;
             }
 
-            pattern foo2(a, b) {
-                play foo1(a, a, b); 
+            pattern foo2(int a, int b) {
+                play foo1(a, a, b);
             }
 
-            play foo2(A4, B4);
+            play foo2(1, 2);
         }
     )");
 
@@ -286,4 +286,42 @@ TEST(PatternCall, SameIdentifierPassedTwiceAsParamsResolveCorrecly) {
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].midi_note, 69);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[1].midi_note, 69);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[2].midi_note, 71);
+}
+
+TEST(PatternCall, IntLiteralRoutesToIntTypedOverload) {
+    const auto ir = lower_ok(R"(
+        pattern p(int n) { play A4 :n; }
+        pattern p(double n) { play B4 :n; }
+        track { play p(1); }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 69);
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.0);
+}
+
+TEST(PatternCall, TrackLocalPatternShadowsGlobalPattern) {
+    const auto ir = lower_ok(R"(
+        pattern p(int n) { play A4 :n; }
+        track {
+            pattern p(int n) { play B4 :n; }
+            play p(1);
+        }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 71);
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 1.0);
+}
+
+TEST(PatternCall, ForwardPatternReferenceInSameTrackWorks) {
+    const auto ir = lower_ok(R"(
+        track {
+            play later();
+            pattern later() { play A4; }
+        }
+    )");
+
+    ASSERT_EQ(ir.tracks[0].events.size(), 1u);
+    EXPECT_EQ(ir.tracks[0].events[0].midi_note, 69);
 }

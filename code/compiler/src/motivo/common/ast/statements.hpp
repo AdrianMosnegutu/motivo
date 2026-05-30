@@ -6,6 +6,7 @@
 
 #include "motivo/common/ast/expressions.hpp"
 #include "motivo/common/music/drum_note.hpp"
+#include "motivo/common/types/type.hpp"
 
 namespace motivo::ast {
 
@@ -20,7 +21,8 @@ struct AssignStatement {
     ExpressionPtr value;
 };
 
-struct LetStatement {
+struct VarDeclStatement {
+    types::Type type = types::Type::Int;
     std::string name;
     ExpressionPtr value;
 };
@@ -63,7 +65,7 @@ struct PlayStatement {
 // -- Base statement ---------------------------------------------------------------------------------------------------
 
 using StatementKind =
-    std::variant<AssignStatement, ForStatement, IfStatement, LetStatement, LoopStatement, PlayStatement>;
+    std::variant<AssignStatement, ForStatement, IfStatement, VarDeclStatement, LoopStatement, PlayStatement>;
 
 struct Statement {
     StatementKind kind;

@@ -15,14 +15,14 @@ TEST(PatternDeclaration, ParameterlessPatternIsValid) {
 
 TEST(PatternDeclaration, PatternWithOneParameterIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        pattern p(n) { let x = n + 1; }
+        pattern p(int n) { int x = n + 1; }
         track { play p(3); }
     )");
 }
 
 TEST(PatternDeclaration, PatternWithMultipleParametersIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        pattern p(a, b) { let x = a + b; }
+        pattern p(int a, int b) { int x = a + b; }
         track { play p(1, 2); }
     )");
 }
@@ -31,7 +31,7 @@ TEST(PatternDeclaration, PatternWithMultipleParametersIsValid) {
 
 TEST(PatternDeclaration, CallingPatternWithWrongArityIsError) {
     const auto analyzed = analyze(R"(
-        pattern p(a, b) { let x = a + b; }
+        pattern p(int a, int b) { int x = a + b; }
         track { play p(1); }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
@@ -55,11 +55,11 @@ TEST(PatternDeclaration, CallingUndeclaredPatternIsError) {
 TEST(PatternDeclaration, CallingPatternShouldResolveByArity) {
     const auto analyzed = analyze_ok(R"(
         track {
-            pattern foo(a, b, c) {
+            pattern foo(int a, int b, int c) {
                 play A4;
             }
 
-            pattern foo(a, b) {
+            pattern foo(int a, int b) {
                 play B4;
             }
 
@@ -72,11 +72,11 @@ TEST(PatternDeclaration, CallingPatternShouldResolveByArity) {
 TEST(PatternDeclaration, CallingPatternShouldResolveByArityUsingComplexParams) {
     const auto analyzed = analyze_ok(R"(
         track lead_piano using piano {
-           pattern foo(chord1, chord2, chord3) {
+           pattern foo(chord chord1, chord chord2, chord chord3) {
               play [chord1, chord1, chord2:0.5, chord3:0.5];
            }
 
-           pattern foo(chord1, chord2) {
+           pattern foo(chord chord1, chord chord2) {
               play foo(chord1, chord1, chord2);
            }
 
@@ -91,13 +91,13 @@ TEST(PatternDeclaration, CallingPatternShouldResolveByArityUsingComplexParams) {
     )");
 }
 
-// -- Pattern local let ---------------------------------------------------------
+// -- Pattern local typed declarations ------------------------------------------
 
-TEST(PatternDeclaration, PatternLocalLetIsVisible) {
+TEST(PatternDeclaration, PatternLocalVarDeclIsVisible) {
     const auto [prog, result] = analyze_ok(R"(
         pattern p() {
-            let x = 1;
-            let y = x + 2;
+            int x = 1;
+            int y = x + 2;
         }
         track { play p(); }
     )");
@@ -105,21 +105,23 @@ TEST(PatternDeclaration, PatternLocalLetIsVisible) {
 
 // -- Pattern overloading -------------------------------------------------------
 
-TEST(PatternDeclaration, PatternOverloadByArityIsValid) {
+TEST(PatternDeclaration, PatternOverloadByTypeIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         pattern p() { play A4; }
-        pattern p(n) { play A4; }
+        pattern p(int n) { play A4; }
+        pattern p(double n) { play B4; }
         track {
             play p();
             play p(2);
+            play p(2.0);
         }
     )");
 }
 
-TEST(PatternDeclaration, DuplicatePatternArityIsError) {
+TEST(PatternDeclaration, DuplicatePatternSignatureIsError) {
     const auto analyzed = analyze(R"(
-        pattern p(a) { play A4; }
-        pattern p(b) { play B4; }
+        pattern p(int a) { play A4; }
+        pattern p(int b) { play B4; }
         track { play p(1); }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));

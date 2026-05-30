@@ -28,9 +28,9 @@ LowerResult lower(const semantic::AnalysisResult& analysis, DiagnosticsEngine& d
     detail::LowererScopeGuard scope(context);
     for (const auto& item : globals) {
         if (const auto* stmt_ptr = std::get_if<ast::StatementPtr>(&item)) {
-            if (const auto* let = std::get_if<ast::LetStatement>(&(*stmt_ptr)->kind)) {
+            if (const auto* decl = std::get_if<ast::VarDeclStatement>(&(*stmt_ptr)->kind)) {
                 try {
-                    detail::lower_let_statement(*let, context);
+                    detail::lower_var_decl_statement(*decl, context);
                 } catch (const detail::LoweringFailure& error) {
                     context.report_lowering_error(error.what());
                 }

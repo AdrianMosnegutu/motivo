@@ -6,7 +6,6 @@
 #include "motivo/common/ast/expressions.hpp"
 #include "motivo/common/ast/program.hpp"
 #include "motivo/semantic/symbol.hpp"
-#include "motivo/semantic/type.hpp"
 
 namespace motivo::semantic::detail {
 class SymbolTable;

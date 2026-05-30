@@ -18,14 +18,14 @@ Value evaluate_unary_expression(const ast::UnaryExpression& unary,
     const ValueKind operand = evaluate_expression(*unary.operand, context).kind;
 
     switch (unary.operation) {
-        case ast::UnaryOperator::Negative: {
+        case operators::UnaryOperator::Negative: {
             if (const auto* integer = std::get_if<int>(&operand)) {
                 return Value{-*integer};
             }
 
             return Value{-std::get<double>(operand)};
         }
-        case ast::UnaryOperator::Not: {
+        case operators::UnaryOperator::Not: {
             return Value{!std::get<bool>(operand)};
         }
     }

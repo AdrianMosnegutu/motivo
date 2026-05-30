@@ -19,7 +19,7 @@ TEST(FromOffset, PlayFromLiteralStartsAtThatBeat) {
 }
 
 TEST(FromOffset, PlayFromExpressionIsEvaluated) {
-    const auto ir = lower_ok("track { let start = 3; play A4 from start + 1; }");
+    const auto ir = lower_ok("track { int start = 3; play A4 from start + 1; }");
     ASSERT_EQ(ir.tracks[0].events.size(), 1u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].start_beat, 4.0);
 }
@@ -62,13 +62,13 @@ TEST(FromOffset, VoiceFromLiteralStartsAtThatBeat) {
 }
 
 TEST(FromOffset, VoiceFromExpressionIsEvaluated) {
-    const auto ir = lower_ok("track { let start = 3; voice from start + 1 { play A4; } }");
+    const auto ir = lower_ok("track { int start = 3; voice from start + 1 { play A4; } }");
     ASSERT_EQ(ir.tracks[0].events.size(), 1u);
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].start_beat, 4.0);
 }
 
 TEST(FromOffset, VoiceFromOffsetDoesNotAffectOuterCursor) {
-    // A voice is parallel — it does not advance the enclosing track's cursor.
+    // A voice is parallel — it does not advance the enclosing; track's cursor.
     // Events sorted by start_beat: A4(0), C5(1), B4(5).
     const auto ir = lower_ok(R"(
         track {
@@ -84,7 +84,7 @@ TEST(FromOffset, VoiceFromOffsetDoesNotAffectOuterCursor) {
 }
 
 TEST(FromOffset, VoiceFromExpressionUsesEvaluatedOffset) {
-    const auto ir = lower_ok("track { let start = 3; voice from start + 1 { play A4; } }");
+    const auto ir = lower_ok("track { int start = 3; voice from start + 1 { play A4; } }");
 
     ASSERT_EQ(ir.tracks.size(), 1u);
     ASSERT_EQ(ir.tracks[0].events.size(), 1u);

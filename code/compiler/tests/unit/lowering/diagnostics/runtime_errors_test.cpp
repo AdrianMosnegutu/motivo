@@ -56,7 +56,7 @@ TEST(RuntimeErrors, ModuloByZeroAtRuntimeIsError) {
 
 TEST(RuntimeErrors, DivisionByZeroViaVariableIsError) {
     const auto res = lower_with_diagnostics(R"(
-        let d = 0;
+        int d = 0;
         track { play A4 :(4 / d); }
     )");
     EXPECT_TRUE(has_lowering_error(res.diagnostics.diagnostics(), "division"));

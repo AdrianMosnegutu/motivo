@@ -1,43 +1,47 @@
 #include <gtest/gtest.h>
 
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/types/type.hpp"
 #include "support/semantic_test_utils.hpp"
 
 using namespace motivo::testing::semantic;
-using motivo::semantic::TypeKind;
+using motivo::types::Type;
 
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
-    const auto [prog, result] = analyze_ok("let x = true ? 1 : 2;");
-    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
-    const auto t = result.get_expression_type(*let.value);
+    const auto [prog, result] = analyze_ok("int x = true ? 1 : 2;");
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Int);
+    EXPECT_EQ(*t, Type::Int);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
-    const auto [prog, result] = analyze_ok("let x = false ? 1.5 : 2.5;");
-    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
-    const auto t = result.get_expression_type(*let.value);
+    const auto [prog, result] = analyze_ok("double x = false ? 1.5 : 2.5;");
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Double);
+    EXPECT_EQ(*t, Type::Double);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
-    const auto [prog, result] = analyze_ok("let x = true ? false : true;");
-    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
-    const auto t = result.get_expression_type(*let.value);
+    const auto [prog, result] = analyze_ok("bool x = true ? false : true;");
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Bool);
+    EXPECT_EQ(*t, Type::Bool);
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
-    const auto [prog, result] = analyze_ok("let x = true ? A4 : B4;");
-    const auto& let = std::get<motivo::ast::LetStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
-    const auto t = result.get_expression_type(*let.value);
+    const auto [prog, result] = analyze_ok("note x = true ? A4 : B4;");
+    const auto& decl =
+        std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
+    const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(t->kind, TypeKind::Note);
+    EXPECT_EQ(*t, Type::Note);
 }
 
 TEST(TernaryTypeCheck, NoteInsidePlayViaTernary) {
@@ -53,20 +57,20 @@ TEST(TernaryTypeCheck, IntConditionIsError) {
 }
 
 TEST(TernaryTypeCheck, NoteConditionIsError) {
-    const auto analyzed = analyze("let x = A4 ? 1 : 2;");
+    const auto analyzed = analyze("note x = A4 ? 1 : 2;");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "ternary condition"));
 }
 
 TEST(TernaryTypeCheck, MismatchedBranchTypesIsError) {
-    const auto analyzed = analyze("let x = true ? A4 : 3;");
+    const auto analyzed = analyze("bool x = true ? A4 : 3;");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "ternary branches"));
 }
 
 TEST(TernaryTypeCheck, IntBranchVsDoubleBranchIsError) {
     // Int and Double are different types — branches must be identical
-    const auto analyzed = analyze("let x = true ? 1 : 2.0;");
+    const auto analyzed = analyze("bool x = true ? 1 : 2.0;");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "ternary branches"));
 }

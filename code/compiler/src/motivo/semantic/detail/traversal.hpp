@@ -1,15 +1,26 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 
 #include "motivo/common/ast/statements.hpp"
 #include "motivo/common/diagnostics/diagnostics_engine.hpp"
 #include "motivo/common/music/instrument.hpp"
 #include "motivo/common/source/location.hpp"
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/semantic/analysis_result.hpp"
 #include "motivo/semantic/detail/scopes/scope_stack.hpp"
 
 namespace motivo::semantic::detail {
+
+using types::binary_result_type;
+using types::is_assignable;
+using types::is_boolean;
+using types::is_integral;
+using types::is_known;
+using types::is_note;
+using types::is_numeric;
+using types::same_known_type;
 
 class Traversal {
    public:
@@ -21,8 +32,6 @@ class Traversal {
     AnalysisResult& result_;
     DiagnosticsEngine& diagnostics_;
     ScopeStack scopes_;
-    std::vector<const ast::PatternDefinition*> active_patterns_;
-    bool skip_symbol_annotation_ = false;
 
     // Track/voice instrument context for note-type mismatch checking (nullopt = no instrument)
     std::optional<std::optional<music::Instrument>> current_track_instrument_;
@@ -30,7 +39,6 @@ class Traversal {
     ScopeId writable_boundary_ = INVALID_SCOPE_ID;
 
     void add_pattern_symbol(const ast::PatternDefinition& pattern) const;
-    [[nodiscard]] bool is_pattern_active(const ast::PatternDefinition& pattern) const;
 
     void diagnose(const source::Location& location, std::string message) const;
 
@@ -46,7 +54,7 @@ class Traversal {
     void visit_if_statement(const ast::IfStatement& if_stmt, const source::Location& location);
     void visit_for_statement(const ast::ForStatement& for_stmt, const source::Location& location);
     void visit_loop_statement(const ast::LoopStatement& loop, const source::Location& location);
-    void visit_let_statement(const ast::LetStatement& let, const source::Location& location);
+    void visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location);
     void visit_play_target(const ast::PlayTarget& target);
 
     Type visit_expression(const ast::Expression& expression);
@@ -60,7 +68,7 @@ class Traversal {
                     const ast::PatternCallExpression& call,
                     const source::Location& location);
 
-    void validate_binary_operands(const ast::BinaryOperator op,
+    void validate_binary_operands(const operators::BinaryOperator op,
                                   const Type left_type,
                                   const Type right_type,
                                   const source::Location& location) const;
@@ -68,7 +76,6 @@ class Traversal {
     void validate_call(const ast::PatternCallExpression& call,
                        const source::Location& location,
                        const std::vector<Type>& argument_types);
-    void validate_pattern_instantiation(const ast::PatternDefinition& pattern, const std::vector<Type>& argument_types);
 
     void validate_header(const ast::Header& header) const;
 

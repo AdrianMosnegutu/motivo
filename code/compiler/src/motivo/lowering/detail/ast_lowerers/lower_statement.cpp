@@ -13,8 +13,8 @@ ir::NoteEvents lower_statement(const ast::Statement& stmt, LowererContext& ctx, 
                           [&](const ast::ForStatement& s) { return lower_for_statement(s, loc, ctx, cursor); },
                           [&](const ast::LoopStatement& s) { return lower_loop_statement(s, loc, ctx, cursor); },
                           [&](const ast::IfStatement& s) { return lower_if_statement(s, ctx, cursor); },
-                          [&](const ast::LetStatement& s) {
-                              lower_let_statement(s, ctx);
+                          [&](const ast::VarDeclStatement& s) {
+                              lower_var_decl_statement(s, ctx);
                               return ir::NoteEvents{};
                           },
                           [&](const ast::AssignStatement& s) {

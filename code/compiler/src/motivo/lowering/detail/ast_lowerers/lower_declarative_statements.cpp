@@ -7,10 +7,10 @@ void lower_assign_statement(const ast::AssignStatement& stmt, const source::Loca
     ctx.assign(ctx.analysis().get_assign_target(stmt), evaluate_expression(*stmt.value, ctx), loc);
 }
 
-void lower_let_statement(const ast::LetStatement& stmt, LowererContext& ctx) {
+void lower_var_decl_statement(const ast::VarDeclStatement& stmt, LowererContext& ctx) {
     const auto* symbol = ctx.analysis().get_symbol_by_declaration(&stmt);
     if (!symbol) {
-        throw LoweringFailure(stmt.value->location, "lowering reached let statement with no symbol annotation");
+        throw LoweringFailure(stmt.value->location, "lowering reached var declaration with no symbol annotation");
     }
 
     ctx.bind(symbol->id, evaluate_expression(*stmt.value, ctx));

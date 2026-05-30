@@ -1,17 +1,3 @@
-import comeAsYouAreSource from './sources/come_as_you_are.motivo?raw';
-import exampleSource from './sources/example.motivo?raw';
-import furEliseSource from './sources/fur_elise.motivo?raw';
-import piratesSource from './sources/pirates.motivo?raw';
-
-interface ExampleBundleEntry {
-  id: string;
-  displayName: string;
-  fileName: string;
-  order: number;
-  readOnly: boolean;
-  source: string;
-}
-
 export interface ExampleFileSummary {
   kind: 'example';
   id: string;
@@ -26,58 +12,110 @@ export interface ExampleFile extends ExampleFileSummary {
   source: string;
 }
 
-const exampleBundle: { examples: ExampleBundleEntry[] } = {
-  examples: [
-    {
-      id: 'come-as-you-are',
-      displayName: 'Come As You Are',
-      fileName: 'come_as_you_are.motivo',
-      order: 0,
-      readOnly: true,
-      source: comeAsYouAreSource,
-    },
-    {
-      id: 'example',
-      displayName: 'Example',
-      fileName: 'example.motivo',
-      order: 1,
-      readOnly: true,
-      source: exampleSource,
-    },
-    {
-      id: 'fur-elise',
-      displayName: 'Fur Elise',
-      fileName: 'fur_elise.motivo',
-      order: 2,
-      readOnly: true,
-      source: furEliseSource,
-    },
-    {
-      id: 'pirates',
-      displayName: 'Pirates',
-      fileName: 'pirates.motivo',
-      order: 3,
-      readOnly: true,
-      source: piratesSource,
-    },
-  ],
-};
+interface ExampleSourceContext {
+  keys(): string[];
+  read(path: string): string;
+}
 
-const bundledExamples = exampleBundle.examples
-  .slice()
-  .sort((left, right) => left.order - right.order)
-  .map(
-    (example): ExampleFile => ({
-      kind: 'example',
-      id: example.id,
-      name: `${example.displayName}.motivo`,
-      displayName: example.displayName,
-      fileName: example.fileName,
-      order: example.order,
-      readOnly: true,
-      source: example.source,
-    }),
-  );
+function createExampleSourceContext(): ExampleSourceContext {
+  if (process.env.VITEST === 'true') {
+    const modules = import.meta.glob<string>('./sources/*.motivo', {
+      eager: true,
+      query: '?raw',
+      import: 'default',
+    });
+
+    return {
+      keys: () =>
+        Object.keys(modules).map((path) => {
+          const fileName = path.split('/').pop() ?? path;
+          return `./${fileName}`;
+        }),
+      read(path: string) {
+        const fileName = path.replace(/^\.\//, '');
+        const modulePath = `./sources/${fileName}`;
+        const source = modules[modulePath];
+
+        if (typeof source !== 'string') {
+          throw new Error(`Missing Motivo example source: ${fileName}`);
+        }
+
+        return source;
+      },
+    };
+  }
+
+  const context = require.context('./sources', false, /\.motivo$/);
+
+  return {
+    keys: () => context.keys(),
+    read: (path: string) => context(path) as string,
+  };
+}
+
+const exampleSourceContext = createExampleSourceContext();
+
+function fileNameFromPath(path: string): string {
+  return path.replace(/^\.\//, '');
+}
+
+function fileNameToId(fileName: string): string {
+  return fileName
+    .replace(/\.motivo$/i, '')
+    .replace(/_/g, '-')
+    .toLowerCase();
+}
+
+function fileNameToDisplayName(fileName: string): string {
+  const base = fileName.replace(/\.motivo$/i, '').replace(/^\d+_/, '');
+
+  return base
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function fileNameToSortKey(fileName: string): [number, string] {
+  const orderMatch = fileName.match(/^(\d+)_/);
+  const order = orderMatch ? Number.parseInt(orderMatch[1], 10) : Number.MAX_SAFE_INTEGER;
+
+  return [order, fileName];
+}
+
+function buildBundledExamples(): ExampleFile[] {
+  return exampleSourceContext
+    .keys()
+    .map((path) => {
+      const fileName = fileNameFromPath(path);
+      const displayName = fileNameToDisplayName(fileName);
+      const source = exampleSourceContext.read(path);
+
+      return {
+        kind: 'example' as const,
+        id: fileNameToId(fileName),
+        name: `${displayName}.motivo`,
+        displayName,
+        fileName,
+        order: 0,
+        readOnly: true as const,
+        source,
+      };
+    })
+    .sort((left, right) => {
+      const [leftOrder, leftName] = fileNameToSortKey(left.fileName);
+      const [rightOrder, rightName] = fileNameToSortKey(right.fileName);
+
+      if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+
+      return leftName.localeCompare(rightName);
+    })
+    .map((example, index) => ({ ...example, order: index }));
+}
+
+const bundledExamples = buildBundledExamples();
 
 export function listExampleFiles(): ExampleFileSummary[] {
   return bundledExamples.map(({ source: _source, ...example }) => example);

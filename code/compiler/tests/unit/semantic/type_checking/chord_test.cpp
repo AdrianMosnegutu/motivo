@@ -14,15 +14,15 @@ TEST(ChordTypeCheck, ChordWithExplicitMemberDurationsIsValid) {
     const auto [prog, result] = analyze_ok("track { play (A4 :3, C5 :1); }");
 }
 
-TEST(ChordTypeCheck, ChordAssignedToLetIsValid) { const auto [prog, result] = analyze_ok("let c = (A4, C5);"); }
+TEST(ChordTypeCheck, ChordAssignedToLetIsValid) { const auto [prog, result] = analyze_ok("chord c = (A4, C5);"); }
 
 TEST(ChordTypeCheck, ChordWithDurationsAssignedToLetIsValid) {
-    const auto [prog, result] = analyze_ok("let c = (A4 :2, C5 :1);");
+    const auto [prog, result] = analyze_ok("chord c = (A4 :2, C5 :1);");
 }
 
 TEST(ChordTypeCheck, ChordUsedAsPlayTargetViaIdentifierIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        let c = (A4, C5);
+        chord c = (A4, C5);
         track { play c; }
     )");
 }
@@ -48,7 +48,7 @@ TEST(ChordTypeCheck, DoubleMemberIsError) {
 }
 
 TEST(ChordTypeCheck, IdentifierOfIntTypeAsMemberIsError) {
-    const auto analyzed = analyze("track { let n = 1; play (n, A4); }");
+    const auto analyzed = analyze("track { int n = 1; play (n, A4); }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "chord"));
 }

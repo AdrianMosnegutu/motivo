@@ -7,7 +7,6 @@
 #include "motivo/common/ast/statements.hpp"
 #include "motivo/semantic/detail/expression_annotation.hpp"
 #include "motivo/semantic/symbol.hpp"
-#include "motivo/semantic/type.hpp"
 
 namespace motivo::semantic::detail {
 

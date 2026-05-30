@@ -7,7 +7,7 @@
 <tempo-decl>     ::= "tempo" INT SEMICOLON
 <signature-decl> ::= "signature" INT SLASH INT SEMICOLON
 
-<top-item>       ::= <let-stmt> | <pattern-def> | <track-decl>
+<top-item>       ::= <var-decl-stmt> | <pattern-def> | <track-decl>
 
 <track-decl>     ::= "track" IDENT? ("using" <instrument>)? LBRACE <track-body> RBRACE
 <track-body>     ::= (<stmt> | <pattern-def> | <voice-decl>)*
@@ -17,7 +17,10 @@
 
 <pattern-def>    ::= "pattern" IDENT LPAREN <opt-param-list> RPAREN <block>
 <opt-param-list> ::= (%empty | <param-list>)
-<param-list>     ::= IDENT (COMMA IDENT)*
+<param-list>     ::= <param> (COMMA <param>)*
+<param>          ::= <type> IDENT
+
+<type>           ::= "int" | "double" | "bool" | "note" | "seq" | "chord"
 
 <block>          ::= LBRACE <stmt-list> RBRACE
 <stmt-list>      ::= <stmt>*
@@ -25,15 +28,16 @@
 <body-stmt>      ::= <block> | <unbrace-stmt>
 <unbrace-stmt>   ::= <assign-stmt> | <play-stmt> | <for-stmt> | <loop-stmt> | <if-stmt>
 
-<stmt>           ::= <let-stmt> | <assign-stmt> | <play-stmt>
+<stmt>           ::= <var-decl-stmt> | <assign-stmt> | <play-stmt>
                    | <for-stmt> | <loop-stmt>   | <if-stmt>
 
-<let-stmt>       ::= "let" IDENT EQ <expr> SEMICOLON
+<var-decl-stmt>  ::= <type> IDENT EQ <expr> SEMICOLON
 <assign-stmt>    ::= IDENT EQ <expr> SEMICOLON
 <for-stmt>       ::= "for" LPAREN <for-init> SEMICOLON <for-cond> SEMICOLON <for-step> RPAREN <body-stmt>
-<for-init>       ::= (%empty | <let-decl> | <assignment>)
+<for-init>       ::= (%empty | <var-decl> | <assignment>)
 <for-cond>       ::= (%empty | <expr>)
 <for-step>       ::= (%empty | <assignment>)
+<var-decl>       ::= <type> IDENT EQ <expr>
 
 <loop-stmt>      ::= "loop" LPAREN <expr> RPAREN <body-stmt>
 <if-stmt>        ::= "if" LPAREN <expr> RPAREN <body-stmt> ("else" <body-stmt>)?

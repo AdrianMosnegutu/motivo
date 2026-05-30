@@ -4,9 +4,9 @@
 #include <variant>
 #include <vector>
 
-#include "motivo/common/ast/operators.hpp"
 #include "motivo/common/music/drum_note.hpp"
 #include "motivo/common/music/note.hpp"
+#include "motivo/common/operators/operators.hpp"
 #include "motivo/common/source/location.hpp"
 
 namespace motivo::ast {
@@ -17,12 +17,12 @@ using ExpressionPtr = std::unique_ptr<Expression>;
 // -- Composable expressions -------------------------------------------------------------------------------------------
 
 struct UnaryExpression {
-    UnaryOperator operation;
+    operators::UnaryOperator operation;
     ExpressionPtr operand;
 };
 
 struct BinaryExpression {
-    BinaryOperator operation;
+    operators::BinaryOperator operation;
     ExpressionPtr left;
     ExpressionPtr right;
 };

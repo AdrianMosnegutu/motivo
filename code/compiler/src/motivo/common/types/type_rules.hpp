@@ -1,9 +1,9 @@
 #pragma once
 
-#include "motivo/common/ast/operators.hpp"
-#include "motivo/semantic/type.hpp"
+#include "motivo/common/operators/operators.hpp"
+#include "motivo/common/types/type.hpp"
 
-namespace motivo::semantic::detail {
+namespace motivo::types {
 
 [[nodiscard]] bool is_known(Type type);
 [[nodiscard]] bool is_numeric(Type type);
@@ -12,7 +12,9 @@ namespace motivo::semantic::detail {
 [[nodiscard]] bool is_note(Type type);
 [[nodiscard]] bool same_known_type(Type left, Type right);
 
-[[nodiscard]] Type numeric_result(Type left, Type right);
-[[nodiscard]] Type binary_result_type(ast::BinaryOperator op, Type left, Type right);
+[[nodiscard]] bool is_assignable(Type target, Type source);
 
-}  // namespace motivo::semantic::detail
+[[nodiscard]] Type numeric_result(Type left, Type right);
+[[nodiscard]] Type binary_result_type(operators::BinaryOperator op, Type left, Type right);
+
+}  // namespace motivo::types

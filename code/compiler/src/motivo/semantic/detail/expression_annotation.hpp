@@ -3,12 +3,11 @@
 #include <optional>
 
 #include "motivo/semantic/symbol.hpp"
-#include "motivo/semantic/type.hpp"
 
 namespace motivo::semantic::detail {
 
 struct ExpressionAnnotation {
-    Type type;
+    Type type = Type::Unknown;
     std::optional<SymbolId> resolved_symbol;
 };
 

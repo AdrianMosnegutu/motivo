@@ -35,7 +35,7 @@ TEST(SequenceTypeCheck, DrumNoteItemInDrumSequenceIsValid) {
 }
 
 TEST(SequenceTypeCheck, SequenceAssignedToLetIsValid) {
-    const auto [prog, result] = analyze_ok("let s = [A4 :2, B4 :3];");
+    const auto [prog, result] = analyze_ok("seq s = [A4 :2, B4 :3];");
 }
 
 TEST(SequenceTypeCheck, SingleItemSequenceIsValid) { const auto [prog, result] = analyze_ok("track { play [A4]; }"); }
@@ -76,6 +76,6 @@ TEST(SequenceTypeCheck, NestedSequenceIsError) {
 }
 
 TEST(SequenceTypeCheck, IdentifierOfIntTypeAsItemIsError) {
-    const auto analyzed = analyze("track { let n = 1; play [n, A4]; }");
+    const auto analyzed = analyze("track { int n = 1; play [n, A4]; }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }

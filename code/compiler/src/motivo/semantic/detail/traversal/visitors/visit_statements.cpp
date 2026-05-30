@@ -1,11 +1,12 @@
+#include <string>
 #include <variant>
 
 #include "motivo/common/ast/expressions.hpp"
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/common/utils/overloaded.hpp"
 #include "motivo/semantic/detail/annotations.hpp"
 #include "motivo/semantic/detail/symbol_table.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/semantic/detail/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -22,7 +23,7 @@ void Traversal::visit_statement(const ast::Statement& statement) {
                    [&](const ast::AssignStatement& assign) { visit_assign_statement(assign, statement.location); },
                    [&](const ast::ForStatement& for_stmt) { visit_for_statement(for_stmt, statement.location); },
                    [&](const ast::IfStatement& if_stmt) { visit_if_statement(if_stmt, statement.location); },
-                   [&](const ast::LetStatement& let) { visit_let_statement(let, statement.location); },
+                   [&](const ast::VarDeclStatement& decl) { visit_var_decl_statement(decl, statement.location); },
                    [&](const ast::LoopStatement& loop) { visit_loop_statement(loop, statement.location); },
                    [&](const ast::PlayStatement& play) { visit_play_target(play.target); },
                },
@@ -44,10 +45,11 @@ void Traversal::visit_assign_statement(const ast::AssignStatement& assign, const
 
     const Type value_type = visit_expression(*assign.value);
     if (symbol_id != INVALID_SYMBOL_ID) {
-        result_.symbols_->set_symbol_type(symbol_id, value_type);
-        if (!skip_symbol_annotation_) {
-            result_.annotations_->set_assign_target(assign, symbol_id);
+        if (is_known(value_type) && !is_assignable(symbol->type, value_type)) {
+            diagnose(location, "cannot assign value of incompatible type to '" + assign.name + "'");
         }
+
+        result_.annotations_->set_assign_target(assign, symbol_id);
     }
 }
 
@@ -95,16 +97,22 @@ void Traversal::visit_if_statement(const ast::IfStatement& if_stmt, const source
     }
 }
 
-void Traversal::visit_let_statement(const ast::LetStatement& let, const source::Location& location) {
-    const Type value_type = visit_expression(*let.value);
+void Traversal::visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location) {
+    const Type value_type = visit_expression(*decl.value);
 
-    if (scopes_.find_in_current_scope(let.name)) {
-        diagnose(location, "redeclaration of variable '" + let.name + "'");
+    if (scopes_.find_in_current_scope(decl.name)) {
+        diagnose(location, "redeclaration of variable '" + decl.name + "'");
         return;
     }
 
-    const void* declaration = skip_symbol_annotation_ ? nullptr : &let;
-    (void)scopes_.add_symbol(let.name, SymbolKind::Variable, value_type, location, declaration);
+    const Type declared_type = decl.type;
+    if (is_known(value_type) && !is_assignable(declared_type, value_type)) {
+        diagnose(location,
+                 "cannot initialize '" + decl.name + "' of type " + std::string(types::type_name(declared_type)) +
+                     " with value of type " + std::string(types::type_name(value_type)));
+    }
+
+    (void)scopes_.add_symbol(decl.name, SymbolKind::Variable, declared_type, location, &decl);
 }
 
 void Traversal::visit_play_target(const ast::PlayTarget& target) {
@@ -112,9 +120,8 @@ void Traversal::visit_play_target(const ast::PlayTarget& target) {
                    [&](const ast::ExpressionPtr& expression) {
                        if (expression) {
                            const Type expr_type = visit_expression(*expression);
-                           const bool is_musical =
-                               expr_type.kind == TypeKind::Note || expr_type.kind == TypeKind::Chord ||
-                               expr_type.kind == TypeKind::Sequence || expr_type.kind == TypeKind::Rest;
+                           const bool is_musical = expr_type == Type::Note || expr_type == Type::Chord ||
+                                                   expr_type == Type::Sequence || expr_type == Type::Rest;
                            if (is_known(expr_type) && !is_musical) {
                                diagnose(expression->location,
                                         "play expression must be a musical type (note, chord, sequence, or rest)");

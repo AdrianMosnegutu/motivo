@@ -1,19 +1,18 @@
 #include "motivo/common/utils/overloaded.hpp"
 #include "motivo/semantic/detail/annotations.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/semantic/detail/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
 Type Traversal::visit_expression(const ast::Expression& expression) {
     const Type expression_type = std::visit(
         utils::overloaded{
-            [&](const ast::IntLiteralExpression&) { return Type{TypeKind::Int}; },
-            [&](const ast::FloatLiteralExpression&) { return Type{TypeKind::Double}; },
-            [&](const ast::BoolLiteralExpression&) { return Type{TypeKind::Bool}; },
-            [&](const ast::NoteLiteralExpression&) { return Type{TypeKind::Note}; },
-            [&](const ast::RestLiteralExpression&) { return Type{TypeKind::Rest}; },
-            [&](const ast::DrumNoteLiteralExpression&) { return Type{TypeKind::Note}; },
+            [&](const ast::IntLiteralExpression&) { return Type::Int; },
+            [&](const ast::FloatLiteralExpression&) { return Type::Double; },
+            [&](const ast::BoolLiteralExpression&) { return Type::Bool; },
+            [&](const ast::NoteLiteralExpression&) { return Type::Note; },
+            [&](const ast::RestLiteralExpression&) { return Type::Rest; },
+            [&](const ast::DrumNoteLiteralExpression&) { return Type::Note; },
             [&](const ast::IdentifierExpression& identifier) { return visit_identifier(expression, identifier); },
             [&](const ast::UnaryExpression& unary) { return visit_unary(unary, expression.location); },
             [&](const ast::BinaryExpression& binary) { return visit_binary(binary, expression.location); },
@@ -31,41 +30,39 @@ Type Traversal::visit_expression(const ast::Expression& expression) {
 
 Type Traversal::visit_identifier(const ast::Expression& expression, const ast::IdentifierExpression& identifier) const {
     if (const auto* symbol = scopes_.find_visible(identifier.name, {SymbolKind::Variable, SymbolKind::Parameter})) {
-        if (!skip_symbol_annotation_) {
-            result_.annotations_->set_resolved_symbol(expression, symbol->id);
-        }
+        result_.annotations_->set_resolved_symbol(expression, symbol->id);
         return symbol->type;
     }
 
     diagnose(expression.location, "undefined variable '" + identifier.name + "'");
-    return Type{TypeKind::Unknown};
+    return Type::Unknown;
 }
 
 Type Traversal::visit_unary(const ast::UnaryExpression& unary, const source::Location& location) {
     const Type operand_type = visit_expression(*unary.operand);
 
     switch (unary.operation) {
-        case ast::UnaryOperator::Negative: {
+        case operators::UnaryOperator::Negative: {
             if (is_known(operand_type) && !is_numeric(operand_type)) {
                 diagnose(location, "unary '-' requires a numeric operand");
-                return Type{TypeKind::Unknown};
+                return Type::Unknown;
             }
 
-            return is_numeric(operand_type) ? operand_type : Type{TypeKind::Unknown};
+            return is_numeric(operand_type) ? operand_type : Type::Unknown;
         }
 
-        case ast::UnaryOperator::Not: {
+        case operators::UnaryOperator::Not: {
             if (is_known(operand_type) && !is_boolean(operand_type)) {
                 diagnose(location, "unary '!' requires a boolean operand");
-                return Type{TypeKind::Unknown};
+                return Type::Unknown;
             }
 
-            return is_boolean(operand_type) ? Type{TypeKind::Bool} : Type{TypeKind::Unknown};
+            return is_boolean(operand_type) ? Type::Bool : Type::Unknown;
         }
     }
 
     diagnose(location, "invalid unary operator");
-    return Type{TypeKind::Unknown};
+    return Type::Unknown;
 }
 
 Type Traversal::visit_binary(const ast::BinaryExpression& binary, const source::Location& location) {
@@ -87,18 +84,17 @@ Type Traversal::visit_ternary(const ast::TernaryExpression& ternary, const sourc
 
     if (is_known(then_type) && is_known(else_type) && !same_known_type(then_type, else_type)) {
         diagnose(location, "ternary branches must evaluate to the same type");
-        return Type{TypeKind::Unknown};
+        return Type::Unknown;
     }
 
-    return same_known_type(then_type, else_type) ? then_type : Type{TypeKind::Unknown};
+    return same_known_type(then_type, else_type) ? then_type : Type::Unknown;
 }
 
 Type Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
     for (const auto& [value, duration] : sequence.items) {
         const Type item_type = visit_expression(*value);
 
-        const bool is_musical_item =
-            item_type.kind == TypeKind::Note || item_type.kind == TypeKind::Chord || item_type.kind == TypeKind::Rest;
+        const bool is_musical_item = item_type == Type::Note || item_type == Type::Chord || item_type == Type::Rest;
         if (is_known(item_type) && !is_musical_item) {
             diagnose(value->location, "sequence items must be notes, chords, or rests");
         }
@@ -127,7 +123,7 @@ Type Traversal::visit_sequence(const ast::SequenceExpression& sequence) {
         }
     }
 
-    return Type{TypeKind::Sequence};
+    return Type::Sequence;
 }
 
 Type Traversal::visit_chord(const ast::ChordExpression& chord, const source::Location& location) {
@@ -158,7 +154,7 @@ Type Traversal::visit_chord(const ast::ChordExpression& chord, const source::Loc
         }
     }
 
-    return Type{TypeKind::Chord};
+    return Type::Chord;
 }
 
 Type Traversal::visit_call(const ast::Expression& expression,
@@ -171,14 +167,13 @@ Type Traversal::visit_call(const ast::Expression& expression,
         argument_types.push_back(visit_expression(*arg));
     }
 
-    if (!skip_symbol_annotation_) {
-        if (const auto* symbol = scopes_.find_pattern_visible_by_arity(call.callee, call.arguments.size())) {
-            result_.annotations_->set_resolved_symbol(expression, symbol->id);
-        }
+    validate_call(call, location, argument_types);
+
+    if (const auto* symbol = scopes_.find_pattern_visible_by_signature(call.callee, argument_types)) {
+        result_.annotations_->set_resolved_symbol(expression, symbol->id);
     }
 
-    validate_call(call, location, argument_types);
-    return Type{TypeKind::Sequence};
+    return Type::Sequence;
 }
 
 }  // namespace motivo::semantic::detail

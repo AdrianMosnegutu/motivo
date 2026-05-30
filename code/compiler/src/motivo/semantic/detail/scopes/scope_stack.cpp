@@ -1,6 +1,7 @@
 #include "motivo/semantic/detail/scopes/scope_stack.hpp"
 
 #include <cassert>
+#include <vector>
 
 namespace motivo::semantic::detail {
 
@@ -28,12 +29,14 @@ const Symbol* ScopeStack::find_in_current_scope(const std::string& name) const {
     return symbols_.find_in_scope(current_scope(), name);
 }
 
-const Symbol* ScopeStack::find_in_current_scope_by_arity(const std::string& name, const std::size_t arity) const {
-    return symbols_.find_in_scope_by_arity(current_scope(), name, arity);
+const Symbol* ScopeStack::find_in_current_scope_by_signature(const std::string& name,
+                                                             const std::vector<Type>& param_types) const {
+    return symbols_.find_in_scope_by_signature(current_scope(), name, param_types);
 }
 
-const Symbol* ScopeStack::find_pattern_visible_by_arity(const std::string& name, const std::size_t arity) const {
-    return symbols_.find_visible_by_arity(current_scope(), name, arity);
+const Symbol* ScopeStack::find_pattern_visible_by_signature(const std::string& name,
+                                                            const std::vector<Type>& argument_types) const {
+    return symbols_.find_visible_pattern_by_signature(current_scope(), name, argument_types);
 }
 
 const Symbol* ScopeStack::find_visible(const std::string& name) const {

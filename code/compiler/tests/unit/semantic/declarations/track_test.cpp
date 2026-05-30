@@ -61,12 +61,12 @@ TEST(TrackDeclaration, MelodicNoteInChordDrumTrackIsError) {
 }
 
 TEST(TrackDeclaration, MelodicNoteInPatternInDrumTrackIsError) {
-    const auto analyzed = analyze("pattern foo() { play A4; } track using drums { play foo(); }");
+    const auto analyzed = analyze("track using drums { pattern foo() { play A4; } play foo(); }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
 
 TEST(TrackDeclaration, DrumNoteInPatternInMelodicTrackIsError) {
-    const auto analyzed = analyze("pattern foo() { play [kick, snare]; } track using violin { play foo(); }");
+    const auto analyzed = analyze("track using violin { pattern foo() { play kick; } play foo(); }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
 

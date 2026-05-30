@@ -2,12 +2,27 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
+#include "motivo/common/ast/definitions.hpp"
 #include "motivo/common/diagnostics/diagnostics_engine.hpp"
 #include "motivo/semantic/analysis_result.hpp"
 #include "motivo/semantic/detail/scopes/scope_stack.hpp"
 
 namespace motivo::semantic::detail {
+
+namespace {
+
+std::vector<Type> pattern_param_types(const ast::PatternDefinition& pattern) {
+    std::vector<Type> types;
+    types.reserve(pattern.params.size());
+    for (const auto& param : pattern.params) {
+        types.push_back(param.type);
+    }
+    return types;
+}
+
+}  // namespace
 
 Traversal::Traversal(AnalysisResult& result, DiagnosticsEngine& diagnostics)
     : result_(result), diagnostics_(diagnostics), scopes_(*result.symbols_) {}
@@ -48,17 +63,13 @@ void Traversal::validate_header(const ast::Header& header) const {
 }
 
 void Traversal::add_pattern_symbol(const ast::PatternDefinition& pattern) const {
-    if (scopes_.find_in_current_scope_by_arity(pattern.name, pattern.params.size())) {
-        diagnose(
-            pattern.location,
-            "duplicate pattern '" + pattern.name + "' with " + std::to_string(pattern.params.size()) + " parameter(s)");
+    const auto signature = pattern_param_types(pattern);
+    if (scopes_.find_in_current_scope_by_signature(pattern.name, signature)) {
+        diagnose(pattern.location, "duplicate pattern '" + pattern.name + "' with the same parameter types");
         return;
     }
-    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, Type{TypeKind::Sequence}, pattern.location, &pattern);
-}
 
-bool Traversal::is_pattern_active(const ast::PatternDefinition& pattern) const {
-    return std::ranges::find(active_patterns_, &pattern) != active_patterns_.end();
+    scopes_.add_symbol(pattern.name, SymbolKind::Pattern, Type::Sequence, pattern.location, &pattern);
 }
 
 void Traversal::diagnose(const source::Location& location, std::string message) const {

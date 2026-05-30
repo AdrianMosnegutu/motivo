@@ -6,14 +6,22 @@
 
 #include "motivo/common/ast/statements.hpp"
 #include "motivo/common/music/instrument.hpp"
+#include "motivo/common/source/location.hpp"
+#include "motivo/common/types/type.hpp"
 
 namespace motivo::ast {
 
 // -- Pattern ----------------------------------------------------------------------------------------------------------
 
+struct TypedParameter {
+    types::Type type = types::Type::Int;
+    std::string name;
+    source::Location location;
+};
+
 struct PatternDefinition {
     std::string name;
-    std::vector<std::string> params;
+    std::vector<TypedParameter> params;
     Block body;
     source::Location location;
 };

@@ -1,6 +1,6 @@
+#include "motivo/common/types/type_rules.hpp"
 #include "motivo/common/utils/overloaded.hpp"
 #include "motivo/semantic/detail/traversal.hpp"
-#include "motivo/semantic/detail/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -22,7 +22,7 @@ void Traversal::visit_globals(const std::vector<ast::GlobalItem>& globals) {
 
 void Traversal::visit_track(const ast::TrackDefinition& track) {
     if (track.name) {
-        (void)scopes_.add_symbol(*track.name, SymbolKind::Track, Type{TypeKind::Void}, track.location, &track);
+        (void)scopes_.add_symbol(*track.name, SymbolKind::Track, Type::Void, track.location, &track);
     }
 
     ScopeStack::Guard guard(scopes_);
@@ -91,8 +91,14 @@ void Traversal::visit_pattern(const ast::PatternDefinition& pattern) {
         writable_boundary_ = scopes_.current_scope();
     }
 
-    for (const auto& param : pattern.params) {
-        (void)scopes_.add_symbol(param, SymbolKind::Parameter, Type{TypeKind::Unknown}, pattern.location, &param);
+    for (std::size_t i = 0; i < pattern.params.size(); ++i) {
+        const auto& param = pattern.params[i];
+        if (scopes_.find_in_current_scope(param.name)) {
+            diagnose(param.location, "duplicate pattern parameter '" + param.name + "'");
+            continue;
+        }
+
+        (void)scopes_.add_symbol(param.name, SymbolKind::Parameter, param.type, param.location, &pattern.params[i]);
     }
 
     visit_block(pattern.body);

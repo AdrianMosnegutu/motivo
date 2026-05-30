@@ -20,7 +20,7 @@ track using bass {
 }
 
 track using drums {
-    pattern ok(play_crash) {
+    pattern ok(bool play_crash) {
         play kick;
         play rest;
 
