@@ -22,8 +22,13 @@ TEST(BinaryEval, IntMultiplication) {
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 6.0);
 }
 
-TEST(BinaryEval, DivisionProducesFloat) {
-    const auto ir = lower_ok("track { double x = 5 / 2; play A4 :x; play B4; }");
+TEST(BinaryEval, IntDivisionTruncates) {
+    const auto ir = lower_ok("track { int x = 5 / 2; play A4 :x; play B4; }");
+    EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 2.0);
+}
+
+TEST(BinaryEval, DoubleDivisionProducesFloat) {
+    const auto ir = lower_ok("track { double x = 5.0 / 2; play A4 :x; play B4; }");
     EXPECT_DOUBLE_EQ(ir.tracks[0].events[0].duration_beats, 2.5);
 }
 
@@ -33,7 +38,7 @@ TEST(BinaryEval, IntPlusFloatPromotesToFloat) {
 }
 
 TEST(BinaryEval, DivisionByZeroEmitsLoweringDiagnostic) {
-    const auto result = lower_with_diagnostics("track { double x = 1 / 0; play A4; }");
+    const auto result = lower_with_diagnostics("track { int x = 1 / 0; play A4; }");
     EXPECT_TRUE(has_lowering_error(result.diagnostics.diagnostics(), "division by zero"));
 }
 

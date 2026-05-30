@@ -23,13 +23,14 @@ TEST(AssignmentTypeCheck, IntVariableAcceptsIntAssignment) {
     )");
 }
 
-TEST(AssignmentTypeCheck, DoubleVariableAcceptsIntLiteralAssignment) {
-    analyze_ok(R"(
+TEST(AssignmentTypeCheck, DoubleVariableRejectsIntLiteralAssignment) {
+    const auto analyzed = analyze(R"(
         track {
             double x = 1.0;
             x = 2;
         }
     )");
+    EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
 
 TEST(AssignmentTypeCheck, DoubleVariableAcceptsDoubleAssignment) {

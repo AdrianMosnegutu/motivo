@@ -20,8 +20,8 @@ TEST(TypeRules, IsAssignableAllowsExactMatch) {
     EXPECT_TRUE(is_assignable(TypeKind::Sequence, TypeKind::Sequence));
 }
 
-TEST(TypeRules, IsAssignableAllowsIntToDoubleWideningOnly) {
-    EXPECT_TRUE(is_assignable(TypeKind::Double, TypeKind::Int));
+TEST(TypeRules, IsAssignableRequiresExactTypeMatch) {
+    EXPECT_FALSE(is_assignable(TypeKind::Double, TypeKind::Int));
     EXPECT_FALSE(is_assignable(TypeKind::Int, TypeKind::Double));
 }
 
@@ -41,10 +41,17 @@ TEST(TypeRules, NumericResultPromotesToDoubleWhenEitherOperandIsDouble) {
 
 TEST(TypeRules, BinaryResultTypeMatchesOperatorRules) {
     EXPECT_EQ(binary_result_type(BinaryOperator::Add, TypeKind::Int, TypeKind::Int), TypeKind::Int);
-    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Int, TypeKind::Int), TypeKind::Double);
+    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Int, TypeKind::Int), TypeKind::Int);
     EXPECT_EQ(binary_result_type(BinaryOperator::Modulo, TypeKind::Int, TypeKind::Int), TypeKind::Int);
     EXPECT_EQ(binary_result_type(BinaryOperator::Equals, TypeKind::Int, TypeKind::Int), TypeKind::Bool);
     EXPECT_EQ(binary_result_type(BinaryOperator::And, TypeKind::Bool, TypeKind::Bool), TypeKind::Bool);
+}
+
+TEST(TypeRules, DivideResultFollowsNumericPromotion) {
+    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Int, TypeKind::Int), TypeKind::Int);
+    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Int, TypeKind::Double), TypeKind::Double);
+    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Double, TypeKind::Int), TypeKind::Double);
+    EXPECT_EQ(binary_result_type(BinaryOperator::Divide, TypeKind::Double, TypeKind::Double), TypeKind::Double);
 }
 
 TEST(TypeRules, SameKnownTypeRequiresBothKnownAndEqual) {

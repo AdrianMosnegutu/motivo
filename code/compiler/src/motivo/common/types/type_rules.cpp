@@ -16,17 +16,7 @@ bool same_known_type(const TypeKind left, const TypeKind right) {
     return is_known(left) && is_known(right) && left == right;
 }
 
-bool is_assignable(const TypeKind target, const TypeKind source) {
-    if (target == source) {
-        return true;
-    }
-
-    if (target == TypeKind::Double && source == TypeKind::Int) {
-        return true;
-    }
-
-    return false;
-}
+bool is_assignable(const TypeKind target, const TypeKind source) { return target == source; }
 
 TypeKind numeric_result(const TypeKind left, const TypeKind right) {
     if (!is_numeric(left) || !is_numeric(right)) {
@@ -42,11 +32,9 @@ TypeKind binary_result_type(const operators::BinaryOperator op, const TypeKind l
     switch (op) {
         case Op::Add:
         case Op::Subtract:
-        case Op::Multiply: {
-            return numeric_result(left, right);
-        }
+        case Op::Multiply:
         case Op::Divide: {
-            return is_numeric(left) && is_numeric(right) ? TypeKind::Double : TypeKind::Unknown;
+            return numeric_result(left, right);
         }
         case Op::Modulo: {
             return is_integral(left) && is_integral(right) ? TypeKind::Int : TypeKind::Unknown;

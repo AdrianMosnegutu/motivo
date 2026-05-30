@@ -80,10 +80,11 @@ TEST(VarDecl, IntDeclBoundToAnotherIntIdentifierIsValid) {
     )");
 }
 
-TEST(VarDecl, DoubleDeclWithWidenedIntLiteralIsValid) {
-    analyze_ok("double x = 1;");
-    analyze_ok("double x = 1.0;");
+TEST(VarDecl, DoubleDeclWithIntLiteralIsError) {
+    EXPECT_TRUE(has_semantic_error(analyze("double x = 1;").diagnostics));
 }
+
+TEST(VarDecl, DoubleDeclWithDoubleLiteralIsValid) { analyze_ok("double x = 1.0;"); }
 
 TEST(VarDecl, DoubleDeclWithTernaryIsValid) {
     const auto [prog, result] = analyze_ok("double x = true ? 1.3 : 2.4;");

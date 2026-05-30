@@ -134,8 +134,6 @@ int overload_match_score(const ast::PatternDefinition& pattern, const std::vecto
 
         if (param_type == arg_type) {
             score += 2;
-        } else if (param_type == TypeKind::Double && arg_type == TypeKind::Int) {
-            score += 1;
         }
     }
 

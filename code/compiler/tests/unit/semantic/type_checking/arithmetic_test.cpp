@@ -62,14 +62,13 @@ TEST(ArithmeticTypeCheck, IntMultiplyDoubleIsDouble) {
     EXPECT_EQ(*t, TypeKind::Double);
 }
 
-TEST(ArithmeticTypeCheck, IntDivideIntIsDouble) {
-    // Division always produces Double regardless of operand types.
-    const auto [prog, result] = analyze_ok("double x = 6 / 2;");
+TEST(ArithmeticTypeCheck, IntDivideIntIsInt) {
+    const auto [prog, result] = analyze_ok("int x = 6 / 2;");
     const auto& decl =
         std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
-    EXPECT_EQ(*t, TypeKind::Double);
+    EXPECT_EQ(*t, TypeKind::Int);
 }
 
 TEST(ArithmeticTypeCheck, IntDivideDoubleIsDouble) {

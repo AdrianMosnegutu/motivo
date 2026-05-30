@@ -4,10 +4,7 @@
 
 using namespace motivo::testing::semantic;
 
-TEST(VarDeclStrictness, IntDeclWithDivisionExpressionIsError) {
-    const auto analyzed = analyze("int x = 6 / 2;");
-    EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
-}
+TEST(VarDeclStrictness, IntDeclWithDivisionExpressionIsValid) { analyze_ok("int x = 6 / 2;"); }
 
 TEST(VarDeclStrictness, IntDeclWithDoubleVariableIsError) {
     const auto analyzed = analyze(R"(
@@ -24,11 +21,12 @@ TEST(VarDeclStrictness, IntDeclWithIntVariableIsValid) {
     )");
 }
 
-TEST(VarDeclStrictness, DoubleDeclWithIntVariableIsValid) {
-    analyze_ok(R"(
+TEST(VarDeclStrictness, DoubleDeclWithIntVariableIsError) {
+    const auto analyzed = analyze(R"(
         int y = 1;
         double x = y;
     )");
+    EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
 
 TEST(VarDeclStrictness, IntDeclWithMixedTernaryBranchesIsError) {

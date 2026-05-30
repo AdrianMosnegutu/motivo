@@ -54,6 +54,15 @@ Value evaluate_binary_expression(const ast::BinaryExpression& binary,
                                       : Value{cast_to_double(lhs) * cast_to_double(rhs)};
         }
         case Op::Divide: {
+            if (both_int(lhs, rhs)) {
+                const int right_raw = as<int>(rhs);
+                if (right_raw == 0) {
+                    throw LoweringFailure(loc, "division by zero");
+                }
+
+                return Value{as<int>(lhs) / right_raw};
+            }
+
             const double right_raw = cast_to_double(rhs);
             if (right_raw == 0.0) {
                 throw LoweringFailure(loc, "division by zero");

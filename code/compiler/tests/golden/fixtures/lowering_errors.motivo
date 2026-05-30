@@ -4,7 +4,7 @@ signature 4/4;
 track lead {
     int base = 8;
     int divisor = 0;
-    double duration = base / divisor;
+    int duration = base / divisor;
     play A4 :duration;
     play C5;
 }
@@ -12,7 +12,7 @@ track lead {
 track harmony {
     int scale = 3;
     int shift = scale - 3;
-    double length = scale / shift;
+    int length = scale / shift;
     play E4 :length;
     play G4;
 }
