@@ -43,12 +43,16 @@ class SymbolTable {
                                               const std::string& name,
                                               std::initializer_list<SymbolKind> kinds) const;
 
-    [[nodiscard]] const Symbol* find_in_scope_by_arity(ScopeId scope, const std::string& name, std::size_t arity) const;
+    [[nodiscard]] const Symbol* find_in_scope_by_signature(ScopeId scope,
+                                                           const std::string& name,
+                                                           const std::vector<TypeKind>& param_types) const;
     [[nodiscard]] const Symbol* find_visible(ScopeId scope, const std::string& name) const;
     [[nodiscard]] const Symbol* find_visible(ScopeId scope,
                                              const std::string& name,
                                              std::initializer_list<SymbolKind> kinds) const;
-    [[nodiscard]] const Symbol* find_visible_by_arity(ScopeId scope, const std::string& name, std::size_t arity) const;
+    [[nodiscard]] const Symbol* find_visible_pattern_by_signature(ScopeId scope,
+                                                                  const std::string& name,
+                                                                  const std::vector<TypeKind>& argument_types) const;
 
     [[nodiscard]] bool is_strict_ancestor(ScopeId ancestor, ScopeId of_scope) const;
 

@@ -9,7 +9,7 @@ using motivo::types::TypeKind;
 // -- Happy flows ---------------------------------------------------------------
 
 TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
-    const auto [prog, result] = analyze_ok("bool x = true ? 1 : 2;");
+    const auto [prog, result] = analyze_ok("int x = true ? 1 : 2;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
@@ -17,7 +17,7 @@ TEST(TernaryTypeCheck, BoolConditionWithIntBranchesIsInt) {
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithDoubleBranchesIsDouble) {
-    const auto [prog, result] = analyze_ok("bool x = false ? 1.5 : 2.5;");
+    const auto [prog, result] = analyze_ok("double x = false ? 1.5 : 2.5;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
@@ -33,7 +33,7 @@ TEST(TernaryTypeCheck, BoolConditionWithBoolBranchesIsBool) {
 }
 
 TEST(TernaryTypeCheck, BoolConditionWithNoteBranchesIsNote) {
-    const auto [prog, result] = analyze_ok("bool x = true ? A4 : B4;");
+    const auto [prog, result] = analyze_ok("note x = true ? A4 : B4;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());

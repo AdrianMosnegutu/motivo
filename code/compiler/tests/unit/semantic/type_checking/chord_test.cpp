@@ -22,7 +22,7 @@ TEST(ChordTypeCheck, ChordWithDurationsAssignedToLetIsValid) {
 
 TEST(ChordTypeCheck, ChordUsedAsPlayTargetViaIdentifierIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        chord c = (A4, C5)
+        chord c = (A4, C5);
         track { play c; }
     )");
 }
@@ -48,7 +48,7 @@ TEST(ChordTypeCheck, DoubleMemberIsError) {
 }
 
 TEST(ChordTypeCheck, IdentifierOfIntTypeAsMemberIsError) {
-    const auto analyzed = analyze("track { int n = 1 play (n, A4); }");
+    const auto analyzed = analyze("track { int n = 1; play (n, A4); }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
     EXPECT_TRUE(has_error(analyzed.diagnostics, "chord"));
 }

@@ -31,9 +31,7 @@ TypeKind Traversal::visit_expression(const ast::Expression& expression) {
 TypeKind Traversal::visit_identifier(const ast::Expression& expression,
                                      const ast::IdentifierExpression& identifier) const {
     if (const auto* symbol = scopes_.find_visible(identifier.name, {SymbolKind::Variable, SymbolKind::Parameter})) {
-        if (!skip_symbol_annotation_) {
-            result_.annotations_->set_resolved_symbol(expression, symbol->id);
-        }
+        result_.annotations_->set_resolved_symbol(expression, symbol->id);
         return symbol->type;
     }
 
@@ -171,13 +169,12 @@ TypeKind Traversal::visit_call(const ast::Expression& expression,
         argument_types.push_back(visit_expression(*arg));
     }
 
-    if (!skip_symbol_annotation_) {
-        if (const auto* symbol = scopes_.find_pattern_visible_by_arity(call.callee, call.arguments.size())) {
-            result_.annotations_->set_resolved_symbol(expression, symbol->id);
-        }
+    validate_call(call, location, argument_types);
+
+    if (const auto* symbol = scopes_.find_pattern_visible_by_signature(call.callee, argument_types)) {
+        result_.annotations_->set_resolved_symbol(expression, symbol->id);
     }
 
-    validate_call(call, location, argument_types);
     return TypeKind::Sequence;
 }
 

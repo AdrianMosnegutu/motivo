@@ -8,7 +8,7 @@ using namespace motivo::testing::semantic;
 
 TEST(ScopeAccess, TrackBodyCanReadGlobal) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
+        int x = 5;
         track { play A4 :x; }
     )");
 }
@@ -24,7 +24,7 @@ TEST(ScopeAccess, TrackBodyCanReadTrackLocal) {
 
 TEST(ScopeAccess, VoiceBodyCanReadGlobal) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
+        int x = 5;
         track {
             voice { play A4 :x; }
         }
@@ -42,7 +42,7 @@ TEST(ScopeAccess, VoiceBodyCanReadTrackLocal) {
 
 TEST(ScopeAccess, PatternInTrackCanReadGlobal) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
+        int x = 5;
         track {
             pattern p() { play A4 :x; }
             play p();
@@ -53,7 +53,7 @@ TEST(ScopeAccess, PatternInTrackCanReadGlobal) {
 TEST(ScopeAccess, PatternInTrackCanReadTrackLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 5
+            int x = 5;
             pattern p() { play A4 :x; }
             play p();
         }
@@ -64,7 +64,7 @@ TEST(ScopeAccess, PatternInVoiceCanReadVoiceLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 5
+                int x = 5;
                 pattern p() { play A4 :x; }
                 play p();
             }
@@ -88,7 +88,7 @@ TEST(ScopeAccess, PatternInVoiceCanReadTrackLocal) {
 
 TEST(ScopeAccess, TrackBodyCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track { x = 1; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
@@ -98,7 +98,7 @@ TEST(ScopeAccess, TrackBodyCannotWriteGlobal) {
 TEST(ScopeAccess, TrackBodyCanWriteTrackLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 0
+            int x = 0;
             x = 5;
         }
     )");
@@ -108,7 +108,7 @@ TEST(ScopeAccess, TrackBodyCanWriteTrackLocal) {
 
 TEST(ScopeAccess, GlobalPatternCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         pattern p() { x = 1; }
         track { play p(); }
     )");
@@ -121,7 +121,7 @@ TEST(ScopeAccess, GlobalPatternCannotWriteGlobal) {
 TEST(ScopeAccess, PatternInTrackCanWriteTrackLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 0
+            int x = 0;
             pattern p() { x = 5; }
             play p();
         }
@@ -130,7 +130,7 @@ TEST(ScopeAccess, PatternInTrackCanWriteTrackLocal) {
 
 TEST(ScopeAccess, PatternInTrackCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             pattern p() { x = 1; }
             play p();
@@ -144,7 +144,7 @@ TEST(ScopeAccess, PatternInTrackCannotWriteGlobal) {
 
 TEST(ScopeAccess, VoiceBodyCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             voice { x = 1; }
         }
@@ -168,7 +168,7 @@ TEST(ScopeAccess, VoiceBodyCanWriteVoiceLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 0
+                int x = 0;
                 x = 5;
             }
         }
@@ -181,7 +181,7 @@ TEST(ScopeAccess, PatternInVoiceCanWriteVoiceLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 0
+                int x = 0;
                 pattern p() { x = 5; }
                 play p();
             }
@@ -205,7 +205,7 @@ TEST(ScopeAccess, PatternInVoiceCannotWriteTrackLocal) {
 
 TEST(ScopeAccess, PatternInVoiceCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             voice {
                 pattern p() { x = 1; }
@@ -221,7 +221,7 @@ TEST(ScopeAccess, PatternInVoiceCannotWriteGlobal) {
 
 TEST(ScopeAccess, ForInTrackCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             for (int i = 0; i < 3; i = i + 1) { x = i; }
         }
@@ -233,7 +233,7 @@ TEST(ScopeAccess, ForInTrackCannotWriteGlobal) {
 TEST(ScopeAccess, ForInTrackCanWriteTrackLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 0
+            int x = 0;
             for (int i = 0; i < 3; i = i + 1) { x = i; }
         }
     )");
@@ -241,7 +241,7 @@ TEST(ScopeAccess, ForInTrackCanWriteTrackLocal) {
 
 TEST(ScopeAccess, IfInTrackCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             if (true) { x = 1; }
         }
@@ -252,7 +252,7 @@ TEST(ScopeAccess, IfInTrackCannotWriteGlobal) {
 
 TEST(ScopeAccess, LoopInTrackCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             loop (3) { x = 1; }
         }
@@ -278,7 +278,7 @@ TEST(ScopeAccess, ForInVoiceCannotWriteTrackLocal) {
 
 TEST(ScopeAccess, ForInVoiceCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             voice {
                 for (int i = 0; i < 3; i = i + 1) { x = i; }
@@ -293,7 +293,7 @@ TEST(ScopeAccess, ForInVoiceCanWriteVoiceLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 0
+                int x = 0;
                 for (int i = 0; i < 3; i = i + 1) { x = i; }
             }
         }
@@ -305,7 +305,7 @@ TEST(ScopeAccess, ForInVoiceCanWriteVoiceLocal) {
 TEST(ScopeAccess, ForInPatternInTrackCanWriteTrackLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 0
+            int x = 0;
             pattern p() {
                 for (int i = 0; i < 3; i = i + 1) { x = i; }
             }
@@ -316,7 +316,7 @@ TEST(ScopeAccess, ForInPatternInTrackCanWriteTrackLocal) {
 
 TEST(ScopeAccess, ForInPatternInTrackCannotWriteGlobal) {
     const auto analyzed = analyze(R"(
-        int x = 0
+        int x = 0;
         track {
             pattern p() {
                 for (int i = 0; i < 3; i = i + 1) { x = i; }
@@ -334,7 +334,7 @@ TEST(ScopeAccess, ForInPatternInVoiceCanWriteVoiceLocal) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 0
+                int x = 0;
                 pattern p() {
                     for (int i = 0; i < 3; i = i + 1) { x = i; }
                 }

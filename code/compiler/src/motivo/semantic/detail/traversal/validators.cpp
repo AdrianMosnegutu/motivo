@@ -7,26 +7,6 @@
 
 namespace motivo::semantic::detail {
 
-namespace {
-
-class ActivePatternGuard {
-   public:
-    ActivePatternGuard(std::vector<const ast::PatternDefinition*> patterns, const ast::PatternDefinition* pattern)
-        : patterns_(patterns) {
-        patterns_.push_back(pattern);
-    }
-
-    ActivePatternGuard(const ActivePatternGuard&) = delete;
-    ActivePatternGuard& operator=(const ActivePatternGuard&) = delete;
-
-    ~ActivePatternGuard() { patterns_.pop_back(); }
-
-   private:
-    std::vector<const ast::PatternDefinition*>& patterns_;
-};
-
-}  // namespace
-
 void Traversal::validate_binary_operands(const operators::BinaryOperator op,
                                          const TypeKind left_type,
                                          const TypeKind right_type,
@@ -91,16 +71,13 @@ void Traversal::validate_numeric_operand(const TypeKind type, const char* side, 
 void Traversal::validate_call(const ast::PatternCallExpression& call,
                               const source::Location& location,
                               const std::vector<TypeKind>& argument_types) {
-    const auto* symbol = scopes_.find_pattern_visible_by_arity(call.callee, call.arguments.size());
+    const auto* symbol = scopes_.find_pattern_visible_by_signature(call.callee, argument_types);
     if (!symbol) {
-        // Distinguish "pattern doesn't exist" from "no overload with this arity"
         const auto* any_overload = scopes_.find_visible(call.callee, {SymbolKind::Pattern});
         if (!any_overload) {
             diagnose(location, "undefined pattern '" + call.callee + "'");
         } else {
-            std::stringstream ss;
-            ss << "no overload of pattern '" << call.callee << "' takes " << call.arguments.size() << " argument(s)";
-            diagnose(location, ss.str());
+            diagnose(location, "no matching overload of pattern '" + call.callee + "'");
         }
         return;
     }
@@ -111,36 +88,13 @@ void Traversal::validate_call(const ast::PatternCallExpression& call,
         return;
     }
 
-    validate_pattern_instantiation(*pattern, argument_types);
-}
-
-void Traversal::validate_pattern_instantiation(const ast::PatternDefinition& pattern,
-                                               const std::vector<TypeKind>& argument_types) {
-    if (is_pattern_active(pattern)) {
-        return;
+    for (std::size_t i = 0; i < pattern->params.size(); ++i) {
+        if (is_known(argument_types[i]) && !is_assignable(pattern->params[i].type, argument_types[i])) {
+            diagnose(location,
+                     "argument " + std::to_string(i + 1) + " of pattern '" + call.callee +
+                         "' has incompatible type");
+        }
     }
-
-    ActivePatternGuard pattern_guard(active_patterns_, &pattern);
-    ScopeStack::Guard scope_guard(scopes_);
-
-    const ScopeId prev_boundary = writable_boundary_;
-    // Patterns called via validate_call inherit the enclosing boundary.
-    // Only establish a new boundary if none exists (global pattern).
-    if (writable_boundary_ == INVALID_SCOPE_ID) {
-        writable_boundary_ = scopes_.current_scope();
-    }
-
-    for (std::size_t i = 0; i < pattern.params.size(); ++i) {
-        scopes_.add_symbol(pattern.params[i].name, SymbolKind::Parameter, argument_types[i], pattern.location,
-                           &pattern.params[i]);
-    }
-
-    const bool previous_skip = skip_symbol_annotation_;
-    skip_symbol_annotation_ = true;
-    visit_block(pattern.body);
-    skip_symbol_annotation_ = previous_skip;
-
-    writable_boundary_ = prev_boundary;
 }
 
 }  // namespace motivo::semantic::detail

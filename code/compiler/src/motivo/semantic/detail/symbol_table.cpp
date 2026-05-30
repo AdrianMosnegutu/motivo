@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "motivo/common/ast/definitions.hpp"
+#include "motivo/common/types/type_rules.hpp"
 
 namespace motivo::semantic::detail {
 
@@ -92,9 +93,60 @@ const Symbol* SymbolTable::find_in_scope(const ScopeId scope_id,
     return nullptr;
 }
 
-const Symbol* SymbolTable::find_in_scope_by_arity(const ScopeId scope_id,
-                                                  const std::string& name,
-                                                  const std::size_t arity) const {
+namespace {
+
+bool same_param_signature(const ast::PatternDefinition& pattern, const std::vector<TypeKind>& param_types) {
+    if (pattern.params.size() != param_types.size()) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < pattern.params.size(); ++i) {
+        if (pattern.params[i].type != param_types[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::vector<TypeKind> pattern_param_types(const ast::PatternDefinition& pattern) {
+    std::vector<TypeKind> types;
+    types.reserve(pattern.params.size());
+    for (const auto& param : pattern.params) {
+        types.push_back(param.type);
+    }
+    return types;
+}
+
+int overload_match_score(const ast::PatternDefinition& pattern, const std::vector<TypeKind>& argument_types) {
+    if (pattern.params.size() != argument_types.size()) {
+        return -1;
+    }
+
+    int score = 0;
+    for (std::size_t i = 0; i < pattern.params.size(); ++i) {
+        const TypeKind param_type = pattern.params[i].type;
+        const TypeKind arg_type = argument_types[i];
+
+        if (!types::is_assignable(param_type, arg_type)) {
+            return -1;
+        }
+
+        if (param_type == arg_type) {
+            score += 2;
+        } else if (param_type == TypeKind::Double && arg_type == TypeKind::Int) {
+            score += 1;
+        }
+    }
+
+    return score;
+}
+
+}  // namespace
+
+const Symbol* SymbolTable::find_in_scope_by_signature(const ScopeId scope_id,
+                                                      const std::string& name,
+                                                      const std::vector<TypeKind>& param_types) const {
     const Scope* scope = get_scope(scope_id);
     if (!scope) {
         return nullptr;
@@ -110,8 +162,9 @@ const Symbol* SymbolTable::find_in_scope_by_arity(const ScopeId scope_id,
         if (!candidate || candidate->kind != SymbolKind::Pattern) {
             continue;
         }
+
         const auto* pattern = static_cast<const ast::PatternDefinition*>(candidate->declaration);
-        if (pattern && pattern->params.size() == arity) {
+        if (pattern && same_param_signature(*pattern, param_types)) {
             return candidate;
         }
     }
@@ -119,19 +172,42 @@ const Symbol* SymbolTable::find_in_scope_by_arity(const ScopeId scope_id,
     return nullptr;
 }
 
-const Symbol* SymbolTable::find_visible_by_arity(ScopeId scope_id,
-                                                 const std::string& name,
-                                                 const std::size_t arity) const {
+const Symbol* SymbolTable::find_visible_pattern_by_signature(ScopeId scope_id,
+                                                             const std::string& name,
+                                                             const std::vector<TypeKind>& argument_types) const {
+    const Symbol* best_match = nullptr;
+    int best_score = -1;
+
     while (const Scope* scope = get_scope(scope_id)) {
-        if (const Symbol* found = find_in_scope_by_arity(scope_id, name, arity)) {
-            return found;
+        const auto found = scope->symbols.find(name);
+        if (found != scope->symbols.end()) {
+            for (const SymbolId id : found->second) {
+                const Symbol* candidate = get_symbol(id);
+                if (!candidate || candidate->kind != SymbolKind::Pattern) {
+                    continue;
+                }
+
+                const auto* pattern = static_cast<const ast::PatternDefinition*>(candidate->declaration);
+                if (!pattern) {
+                    continue;
+                }
+
+                const int score = overload_match_score(*pattern, argument_types);
+                if (score > best_score) {
+                    best_score = score;
+                    best_match = candidate;
+                }
+            }
         }
+
         if (!scope->parent) {
             break;
         }
+
         scope_id = *scope->parent;
     }
-    return nullptr;
+
+    return best_match;
 }
 
 const Symbol* SymbolTable::find_visible(ScopeId scope_id, const std::string& name) const {

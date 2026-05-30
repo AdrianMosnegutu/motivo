@@ -76,6 +76,6 @@ TEST(SequenceTypeCheck, NestedSequenceIsError) {
 }
 
 TEST(SequenceTypeCheck, IdentifierOfIntTypeAsItemIsError) {
-    const auto analyzed = analyze("track { int n = 1 play [n, A4]; }");
+    const auto analyzed = analyze("track { int n = 1; play [n, A4]; }");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }

@@ -97,7 +97,7 @@ TEST(PatternDeclaration, PatternLocalVarDeclIsVisible) {
     const auto [prog, result] = analyze_ok(R"(
         pattern p() {
             int x = 1;
-            int y = x + 2;;
+            int y = x + 2;
         }
         track { play p(); }
     )");

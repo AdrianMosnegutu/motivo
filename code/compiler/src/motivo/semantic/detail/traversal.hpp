@@ -14,6 +14,7 @@
 namespace motivo::semantic::detail {
 
 using types::binary_result_type;
+using types::is_assignable;
 using types::is_boolean;
 using types::is_integral;
 using types::is_known;
@@ -31,8 +32,6 @@ class Traversal {
     AnalysisResult& result_;
     DiagnosticsEngine& diagnostics_;
     ScopeStack scopes_;
-    std::vector<const ast::PatternDefinition*> active_patterns_;
-    bool skip_symbol_annotation_ = false;
 
     // Track/voice instrument context for note-type mismatch checking (nullopt = no instrument)
     std::optional<std::optional<music::Instrument>> current_track_instrument_;
@@ -40,7 +39,6 @@ class Traversal {
     ScopeId writable_boundary_ = INVALID_SCOPE_ID;
 
     void add_pattern_symbol(const ast::PatternDefinition& pattern) const;
-    [[nodiscard]] bool is_pattern_active(const ast::PatternDefinition& pattern) const;
 
     void diagnose(const source::Location& location, std::string message) const;
 
@@ -78,8 +76,6 @@ class Traversal {
     void validate_call(const ast::PatternCallExpression& call,
                        const source::Location& location,
                        const std::vector<TypeKind>& argument_types);
-    void validate_pattern_instantiation(const ast::PatternDefinition& pattern,
-                                        const std::vector<TypeKind>& argument_types);
 
     void validate_header(const ast::Header& header) const;
 

@@ -12,6 +12,8 @@ namespace motivo::types {
 [[nodiscard]] bool is_note(TypeKind type);
 [[nodiscard]] bool same_known_type(TypeKind left, TypeKind right);
 
+[[nodiscard]] bool is_assignable(TypeKind target, TypeKind source);
+
 [[nodiscard]] TypeKind numeric_result(TypeKind left, TypeKind right);
 [[nodiscard]] TypeKind binary_result_type(operators::BinaryOperator op, TypeKind left, TypeKind right);
 

@@ -17,7 +17,7 @@ TEST(ArithmeticTypeCheck, IntPlusIntIsInt) {
 }
 
 TEST(ArithmeticTypeCheck, IntPlusDoubleIsDouble) {
-    const auto [prog, result] = analyze_ok("int x = 1 + 2.5;");
+    const auto [prog, result] = analyze_ok("double x = 1 + 2.5;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
@@ -49,7 +49,7 @@ TEST(ArithmeticTypeCheck, IntMinusIntIsInt) {
 }
 
 TEST(ArithmeticTypeCheck, IntMultiplyDoubleIsDouble) {
-    const auto [prog, result] = analyze_ok("int x = 2 * 1.5;");
+    const auto [prog, result] = analyze_ok("double x = 2 * 1.5;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
@@ -58,7 +58,7 @@ TEST(ArithmeticTypeCheck, IntMultiplyDoubleIsDouble) {
 
 TEST(ArithmeticTypeCheck, IntDivideIntIsDouble) {
     // Division always produces Double regardless of operand types.
-    const auto [prog, result] = analyze_ok("int x = 6 / 2;");
+    const auto [prog, result] = analyze_ok("double x = 6 / 2;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());
@@ -66,7 +66,7 @@ TEST(ArithmeticTypeCheck, IntDivideIntIsDouble) {
 }
 
 TEST(ArithmeticTypeCheck, IntDivideDoubleIsDouble) {
-    const auto [prog, result] = analyze_ok("int x = 6 / 2.0;");
+    const auto [prog, result] = analyze_ok("double x = 6 / 2.0;");
     const auto& decl = std::get<motivo::ast::VarDeclStatement>(std::get<motivo::ast::StatementPtr>(prog->globals[0])->kind);
     const auto t = result.get_expression_type(*decl.value);
     ASSERT_TRUE(t.has_value());

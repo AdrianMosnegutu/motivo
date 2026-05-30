@@ -25,7 +25,7 @@ TEST(ControlFlow, ForLoopWithBoolConditionIsValid) {
 TEST(ControlFlow, ForLoopOmittingInitIsValid) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int i = 0
+            int i = 0;
             for (; i < 4; i = i + 1) { play A4; }
         }
     )");
@@ -101,7 +101,7 @@ TEST(ControlFlow, LoopWithPositiveIntCountIsValid) {
 
 TEST(ControlFlow, LoopWithIdentifierCountIsValid) {
     const auto [prog, result] = analyze_ok(R"(
-        int n = 4
+        int n = 4;
         track { loop (n) { play A4; } }
     )");
 }

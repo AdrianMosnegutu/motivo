@@ -8,22 +8,22 @@ using namespace motivo::testing::semantic;
 
 TEST(VariableScoping, GlobalLetIsVisibleInsideTrack) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
-        track { int y = x }
+        int x = 5;
+        track { int y = x; }
     )");
 }
 
 TEST(VariableScoping, GlobalLetIsVisibleInsidePattern) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
-        pattern p() { int y = x }
+        int x = 5;
+        pattern p() { int y = x; }
     )");
 }
 
 TEST(VariableScoping, GlobalLetIsVisibleInsideVoice) {
     const auto [prog, result] = analyze_ok(R"(
-        int x = 5
-        track { voice { int y = x } }
+        int x = 5;
+        track { voice { int y = x; } }
     )");
 }
 
@@ -34,16 +34,16 @@ TEST(VariableScoping, TrackLocalLetNotVisibleInGlobalScope) {
     // The only way to test this is via a pattern defined at global scope — it
     // must not see variables from any specific track.
     const auto analyzed = analyze(R"(
-        pattern p() { int y = x }
-        track { int x = 5 }
+        pattern p() { int y = x; }
+        track { int x = 5; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
 
 TEST(VariableScoping, TrackLocalLetNotVisibleInSiblingTrack) {
     const auto analyzed = analyze(R"(
-        track { int x = 5 }
-        track { int y = x }
+        track { int x = 5; }
+        track { int y = x; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }
@@ -51,7 +51,7 @@ TEST(VariableScoping, TrackLocalLetNotVisibleInSiblingTrack) {
 TEST(VariableScoping, TrackLocalLetVisibleWithinSameTrack) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            int x = 5
+            int x = 5;
             int y = x;
         }
     )");
@@ -64,7 +64,7 @@ TEST(VariableScoping, VoiceLocalLetNotVisibleAfterVoiceInTrack) {
     // track after the voice block ends.
     const auto analyzed = analyze(R"(
         track {
-            voice { int x = 5 }
+            voice { int x = 5; }
             int y = x;
         }
     )");
@@ -75,7 +75,7 @@ TEST(VariableScoping, VoiceLocalLetVisibleWithinSameVoice) {
     const auto [prog, result] = analyze_ok(R"(
         track {
             voice {
-                int x = 5
+                int x = 5;
                 int y = x;
             }
         }
@@ -85,8 +85,8 @@ TEST(VariableScoping, VoiceLocalLetVisibleWithinSameVoice) {
 TEST(VariableScoping, VoiceLocalLetNotVisibleInSiblingVoice) {
     const auto analyzed = analyze(R"(
         track {
-            voice { int x = 5 }
-            voice { int y = x };
+            voice { int x = 5; }
+            voice { int y = x; }
         }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
@@ -97,7 +97,7 @@ TEST(VariableScoping, VoiceLocalLetNotVisibleInSiblingVoice) {
 TEST(VariableScoping, ForLoopVariableVisibleInsideBody) {
     const auto [prog, result] = analyze_ok(R"(
         track {
-            for (int i = 0; i < 4; i = i + 1) { int y = i };
+            for (int i = 0; i < 4; i = i + 1) { int y = i; }
         }
     )");
 }
@@ -117,7 +117,7 @@ TEST(VariableScoping, ForLoopVariableNotVisibleAfterLoop) {
 TEST(VariableScoping, LetNotVisibleBeforeItsDeclaration) {
     const auto analyzed = analyze(R"(
         track {
-            int y = x
+            int y = x;
             int x = 5;
         }
     )");

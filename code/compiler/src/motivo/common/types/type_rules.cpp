@@ -16,6 +16,18 @@ bool same_known_type(const TypeKind left, const TypeKind right) {
     return is_known(left) && is_known(right) && left == right;
 }
 
+bool is_assignable(const TypeKind target, const TypeKind source) {
+    if (target == source) {
+        return true;
+    }
+
+    if (target == TypeKind::Double && source == TypeKind::Int) {
+        return true;
+    }
+
+    return false;
+}
+
 TypeKind numeric_result(const TypeKind left, const TypeKind right) {
     if (!is_numeric(left) || !is_numeric(right)) {
         return TypeKind::Unknown;

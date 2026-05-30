@@ -72,7 +72,7 @@ TEST(PatternScoping, DuplicatePatternSameArityIsError) {
 
 TEST(PatternScoping, PatternParameterVisibleInsideBody) {
     const auto [prog, result] = analyze_ok(R"(
-        pattern p(int n) { int x = n }
+        pattern p(int n) { int x = n; }
         track { play p(3); }
     )");
 }
@@ -80,7 +80,7 @@ TEST(PatternScoping, PatternParameterVisibleInsideBody) {
 TEST(PatternScoping, PatternParameterNotVisibleOutsidePattern) {
     const auto analyzed = analyze(R"(
         pattern p(int n) { play A4; }
-        track { int x = n }
+        track { int x = n; }
     )");
     EXPECT_TRUE(has_semantic_error(analyzed.diagnostics));
 }

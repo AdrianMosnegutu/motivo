@@ -1,3 +1,4 @@
+#include <string>
 #include <variant>
 
 #include "motivo/common/ast/expressions.hpp"
@@ -44,10 +45,11 @@ void Traversal::visit_assign_statement(const ast::AssignStatement& assign, const
 
     const TypeKind value_type = visit_expression(*assign.value);
     if (symbol_id != INVALID_SYMBOL_ID) {
-        result_.symbols_->set_symbol_type(symbol_id, value_type);
-        if (!skip_symbol_annotation_) {
-            result_.annotations_->set_assign_target(assign, symbol_id);
+        if (is_known(value_type) && !is_assignable(symbol->type, value_type)) {
+            diagnose(location, "cannot assign value of incompatible type to '" + assign.name + "'");
         }
+
+        result_.annotations_->set_assign_target(assign, symbol_id);
     }
 }
 
@@ -96,16 +98,21 @@ void Traversal::visit_if_statement(const ast::IfStatement& if_stmt, const source
 }
 
 void Traversal::visit_var_decl_statement(const ast::VarDeclStatement& decl, const source::Location& location) {
-    (void)visit_expression(*decl.value);
+    const TypeKind value_type = visit_expression(*decl.value);
 
     if (scopes_.find_in_current_scope(decl.name)) {
         diagnose(location, "redeclaration of variable '" + decl.name + "'");
         return;
     }
 
-    const TypeKind declared_type{decl.type};
-    const void* declaration = skip_symbol_annotation_ ? nullptr : &decl;
-    (void)scopes_.add_symbol(decl.name, SymbolKind::Variable, declared_type, location, declaration);
+    const TypeKind declared_type = decl.type;
+    if (is_known(value_type) && !is_assignable(declared_type, value_type)) {
+        diagnose(location,
+                 "cannot initialize '" + decl.name + "' of type " + std::string(types::type_name(declared_type)) +
+                     " with value of type " + std::string(types::type_name(value_type)));
+    }
+
+    (void)scopes_.add_symbol(decl.name, SymbolKind::Variable, declared_type, location, &decl);
 }
 
 void Traversal::visit_play_target(const ast::PlayTarget& target) {
