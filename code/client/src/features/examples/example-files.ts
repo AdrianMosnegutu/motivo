@@ -60,7 +60,10 @@ function fileNameFromPath(path: string): string {
 }
 
 function fileNameToId(fileName: string): string {
-  return fileName.replace(/\.motivo$/i, '').replace(/_/g, '-').toLowerCase();
+  return fileName
+    .replace(/\.motivo$/i, '')
+    .replace(/_/g, '-')
+    .toLowerCase();
 }
 
 function fileNameToDisplayName(fileName: string): string {

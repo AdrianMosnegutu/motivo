@@ -65,12 +65,12 @@ describe('buildMotivoCompletionItems', () => {
     const general = buildMotivoCompletionItems(
       monaco as never,
       createModel('') as never,
-      { lineNumber: 1, column: 1 },
+      { lineNumber: 1, column: 1 } as never,
     );
     const statements = buildMotivoCompletionItems(
       monaco as never,
       createModel('    ') as never,
-      { lineNumber: 2, column: 5 },
+      { lineNumber: 2, column: 5 } as never,
     );
 
     for (const typeKeyword of MOTIVO_TYPE_KEYWORDS) {
@@ -83,7 +83,7 @@ describe('buildMotivoCompletionItems', () => {
     const suggestions = buildMotivoCompletionItems(
       monaco as never,
       createModel('pattern foo(') as never,
-      { lineNumber: 1, column: 13 },
+      { lineNumber: 1, column: 13 } as never,
     ).suggestions;
 
     expect(suggestions.map((item) => item.label)).toEqual([...MOTIVO_TYPE_KEYWORDS]);
