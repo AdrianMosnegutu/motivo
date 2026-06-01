@@ -1,0 +1,30 @@
+\section{Current Limits and Failure Behavior}\label{sec:limits}
+
+The most important current limit is the event cap in the lowerer.
+\texttt{MAX\_EVENTS} is 20,000.
+A program that generates 20,001 note events fails during lowering with the diagnostic
+\texttt{program exceeds 20000 event limit (has 20001)}.
+This is a deliberate safety boundary in the implementation.
+It prevents runaway programs from producing very large event streams, but it also means the thesis should not claim that
+Motivo currently supports arbitrarily large scores.
+
+The benchmark also revealed a language consistency issue in an old example file.
+The current parser does not accept a key-signature header, and key signatures are not part of the current language.
+The temporary benchmark copy of the example removed that unsupported line.
+The thesis therefore treats key-signature and harmonic-context support as future work, not as implemented behavior.
+
+Single-run memory checks with macOS \texttt{/usr/bin/time -l} reported maximum resident set sizes in the range of
+approximately 5.2 MB to 7.8 MB for the largest synthetic cases.
+This is useful as an informal local observation, but the time benchmark is the stronger measurement because it was run
+with repeated trials.
+The memory result should be described cautiously if used outside this chapter.
+
+\subsection{Memory Footprint}\label{detail-subsec:memory-footprint}
+
+The value-oriented design of the AST and IR ensures that the compiler's memory footprint remains minimal.
+The use of \texttt{std::variant} supports spatial locality in the CPU cache during AST traversal.
+The intermediate representation holds only the necessary atomic data (pitch, start beat, duration, velocity) packed
+tightly into \texttt{struct}s. Consequently, even a composition unrolled into large event streams within the
+configured implementation limits will consume only a few
+megabytes of RAM, allowing the compiler to run seamlessly on low-end hardware or within memory-constrained Docker
+containers.

@@ -1,0 +1,37 @@
+\section{Future Work}\label{sec:future-work}
+
+The most natural language extension is richer musical context.
+Key signatures are a good example because they would let Motivo understand scale degrees, diatonic transposition, and
+harmonic functions instead of treating all notes as independent pitch literals.
+This should be introduced carefully.
+It would require syntax, semantic rules, interactions with accidentals, and clear lowering behavior.
+Because that support is not part of the current implementation, it belongs in future work rather than in the language
+description.
+
+Another useful extension is continuous musical data.
+MIDI control changes, pitch bend, and automation curves would make Motivo more expressive for modern production
+workflows.
+Supporting them would require changes to the AST, type system, intermediate representation, MIDI backend, piano-roll
+visualizer, and playback scheduler.
+The existing separation between IR and backend makes such an extension plausible, but it is not a small addition.
+
+The compiler could also expose more evaluation and debugging data.
+For example, Motivo Studio could show the number of generated events, the longest track duration, compile time, MIDI
+file size, and event-density warnings after each compile.
+This would turn the current thesis measurements into user-facing feedback and would help users understand when a source
+program is becoming too large.
+
+Finally, the application could support project persistence and export workflows.
+Saving Motivo source files, exporting MIDI with metadata, comparing generated versions, and integrating with cloud
+storage would move Motivo Studio closer to a practical composition tool.
+Those features would not change the compiler's core idea, but they would improve the surrounding product.
+
+A standard library is another natural direction. Reusable scales, chord progressions, arpeggiators, Euclidean
+rhythms, and common drum patterns would make the language more practical without changing its core compiler
+model. Such a library should be designed after the core type system is stable, because library functions
+would depend on how Motivo represents harmonic context and pattern parameters.
+
+Alternative backends also remain possible future work. The current backend targets Standard MIDI Files, but
+the same intermediate representation could be used as the basis for JSON event export, MusicXML-oriented
+notation export, or integration with synthesis systems. Those targets would require separate mapping rules
+and should not be treated as implemented behavior in the present thesis.

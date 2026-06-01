@@ -1,0 +1,37 @@
+\section{Deployment and Runtime Configuration}\label{sec:deployment}
+
+The local production-like stack is defined by Docker Compose.
+The server image builds the C++ compiler and installs \texttt{motivoc} at \texttt{/usr/local/bin/motivoc}.
+The client image builds the Next.js application and proxies API requests to the server inside the Compose network.
+The nginx gateway terminates HTTPS with a local self-signed certificate and routes browser traffic to the client and
+API routes to the server.
+Docker is used here as a reproducibility tool: it keeps the compiler, server, and client runtime assumptions explicit
+instead of relying on an ad hoc local machine setup~\cite{Docker_2026}.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      svc/.style={rounded corners=5pt, draw=motivoInk!65, very thick, minimum width=3.8cm, minimum height=1.1cm,
+      align=center, font=\small\sffamily},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
+    ]
+    \node[svc, fill=motivoSoft] (browser) {Browser\\\texttt{motivo-studio.local}};
+    \node[svc, fill=motivoAmber!18, below=0.8cm of browser] (nginx) {nginx gateway\\ports 80 and 443};
+    \node[svc, fill=motivoBlue!13, below left=0.9cm and 0.7cm of nginx] (client) {Next.js client\\port 3000};
+    \node[svc, fill=motivoCyan!16, below right=0.9cm and 0.7cm of nginx] (server) {Express server\\port 3001};
+    \node[svc, fill=motivoGreen!16, below=0.8cm of server] (compiler) {\texttt{motivoc}\\inside server image};
+
+    \draw[arrow] (browser) -- (nginx);
+    \draw[arrow] (nginx) -- node[left, font=\scriptsize\sffamily] {page assets} (client);
+    \draw[arrow] (nginx) -- node[right, font=\scriptsize\sffamily] {\texttt{/api/*}} (server);
+    \draw[arrow] (server) -- (compiler);
+  \end{tikzpicture}
+  \caption{Docker Compose deployment topology for Motivo Studio.}\label{fig:deployment}
+\end{figure}
+
+Configuration is intentionally small.
+The server reads \texttt{PORT}, \texttt{HOSTNAME}, and \texttt{COMPILER\_BIN}.
+The client uses \texttt{API\_PROXY\_URL} for API rewrites.
+This is sufficient for the current deployment model, where the compiler is a local executable reachable by the API
+container.
+Future remote compilation would require a different trust and resource model, but that is outside the present thesis.

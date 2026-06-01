@@ -1,0 +1,84 @@
+\section{Compilation Time}\label{sec:compile-time}
+
+Table~\ref{tab:benchmark-results} shows the measured results.
+The fastest case and the realistic example are close to 2 ms.
+The largest synthetic cases are around 6 ms.
+Because these times are small, they should be interpreted as local measurements on the stated machine rather than as a
+portable performance result.
+They are still useful for the thesis because they show that the current native compiler is fast enough to support an
+interactive compile loop in this local setup.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    \textbf{Program} & \textbf{LOC} & \textbf{Note events} & \textbf{MIDI size} & \textbf{Mean ms} & \textbf{SD ms} \\
+    \midrule
+    \texttt{single\_loop\_100} & 7 & 100 & 856 B & 2.02 & 0.31 \\
+    \texttt{single\_loop\_1000} & 7 & 1,000 & 8,056 B & 2.14 & 0.31 \\
+    \texttt{single\_loop\_10000} & 7 & 10,000 & 80,056 B & 3.96 & 0.24 \\
+    \texttt{single\_loop\_20000} & 7 & 20,000 & 160,056 B & 6.03 & 0.15 \\
+    \texttt{chord\_loop\_5000} & 7 & 20,000 & 160,056 B & 5.90 & 0.17 \\
+    \texttt{drum\_groove\_500} & 18 & 10,000 & 88,053 B & 6.39 & 0.19 \\
+    \texttt{example\_copy} & 77 & 188 & 1,751 B & 2.04 & 0.18 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Local Release-build compilation benchmark.
+  Times include MIDI file writing and are based on 50 measured runs after 5 warmups.}\label{tab:benchmark-results}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        width=0.95\textwidth,
+        height=7cm,
+        ymin=0,
+        ylabel={Mean compile time (ms)},
+        symbolic x coords={100,1000,10000,20000,chord,drums,example},
+        xtick=data,
+        x tick label style={rotate=35, anchor=east, font=\scriptsize},
+        nodes near coords,
+        nodes near coords style={font=\scriptsize},
+        bar width=12pt,
+        enlarge x limits=0.08,
+        ymajorgrids=true,
+        grid style={draw=motivoInk!12}
+      ]
+      \addplot[fill=motivoBlue!70, draw=motivoBlue!90] coordinates {
+        (100,2.02)
+        (1000,2.14)
+        (10000,3.96)
+        (20000,6.03)
+        (chord,5.90)
+        (drums,6.39)
+        (example,2.04)
+      };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Mean compile times for the local benchmark corpus.}\label{fig:benchmark-time}
+\end{figure}
+
+The near-linear growth in the single-loop cases is consistent with the implementation.
+Parsing and semantic analysis see a small source program, while lowering and MIDI writing scale with the number of
+generated events.
+The backend also sorts events by tick before computing delta-times.
+The result is still small at the current safety limit, but the implementation should not be described as unbounded.
+
+\subsection{Execution Speed and Real-Time Viability}\label{detail-subsec:execution-speed-and-real-time-viability}
+
+Because the compiler is implemented as a native C++23 program without reliance on garbage collection or dynamic dispatch
+for AST traversal, the constant factors in the time complexity are small in the current measurements.
+In practice, the compiler generates compositions containing event streams up to the current implementation
+limit in a fraction of a second.
+
+These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation
+remaining quick enough for interactive use.
+The interactive playground environment (discussed in previous chapters) relies on the compiler's ability to re-compile
+the entire source file during interactive compile actions.
+Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits
+well below the latency usually noticed during ordinary editor interaction, the composer experiences
+interactive auditory and visual feedback without using an interpreted runtime during playback.

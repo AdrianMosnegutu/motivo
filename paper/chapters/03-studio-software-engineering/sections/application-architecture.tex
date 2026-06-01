@@ -1,0 +1,73 @@
+\section{Application Architecture}\label{sec:studio-architecture}
+
+Motivo Studio has three runtime services in the Docker Compose stack.
+The client is a Next.js application with React components for the editor, logs, piano-roll visualization, playback, and
+theme controls~\cite{NextJS_2026,React_2026}.
+The server is an Express API that validates compile requests with Zod and invokes the native \texttt{motivoc}
+binary~\cite{Express_2026,Zod_2026}.
+The gateway is an nginx container that exposes the composed application through HTTPS at
+\texttt{motivo-studio.local}.
+This separation keeps the C++ compiler outside the browser while still giving the frontend an interactive compile loop.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      service/.style={rounded corners=5pt, draw=motivoInk!65, very thick, minimum width=4.0cm, minimum height=1.25cm,
+      align=center, font=\small\sffamily},
+      file/.style={rounded corners=3pt, draw=motivoInk!45, thick, minimum width=2.9cm, minimum height=0.75cm,
+      align=center, font=\scriptsize\sffamily},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
+    ]
+    \node[service, fill=motivoBlue!14] (client) {Next.js client\\Monaco editor and playback};
+    \node[service, fill=motivoCyan!18, right=1.1cm of client] (server) {Express server\\compile API};
+    \node[service, fill=motivoGreen!18, right=1.1cm of server] (compiler) {Native compiler\\\texttt{motivoc}};
+
+    \node[file, fill=motivoAmber!18, below=0.65cm of client] (midi) {MIDI bytes};
+    \node[file, fill=motivoRose!12, below=0.65cm of server] (diag) {diagnostics};
+    \node[file, fill=motivoSoft, below=0.65cm of compiler] (midfile) {\texttt{.mid} file};
+
+    \draw[arrow] (client) -- node[above, font=\scriptsize\sffamily] {\texttt{POST /compile}} (server);
+    \draw[arrow] (server) -- node[above, font=\scriptsize\sffamily] {temporary source} (compiler);
+    \draw[arrow] (compiler) -- (midfile);
+    \draw[arrow] (midfile) -- (server);
+    \draw[arrow] (server) -- node[below, font=\scriptsize\sffamily] {binary or errors} (client);
+    \draw[arrow] (server) -- (diag);
+    \draw[arrow] (client) -- (midi);
+  \end{tikzpicture}
+  \caption{Motivo Studio runtime architecture.
+    The browser does not compile C++ code directly; it delegates compilation to the
+  server.}\label{fig:studio-architecture}
+\end{figure}
+
+The frontend is organized by feature directories.
+The editor feature wraps Monaco, registers Motivo language tokens, defines light and dark themes, and maps compiler
+diagnostics into Monaco markers.
+The compile feature owns the HTTP client and the response types.
+The MIDI feature parses generated binary data into browser-side structures.
+The piano-roll feature renders note rectangles on a canvas.
+The playback feature schedules browser audio and exposes controls for play, stop, progress, and MIDI download.
+This feature-oriented layout keeps UI responsibilities closer to their domain than a flat component directory would.
+
+While the core contribution of this thesis is the compiler, a web-based \textit{Playground} was developed to demonstrate
+the language's capabilities and provide an intuitive environment for composition.
+The playground integrates the C++ compiler into a modern full-stack web application.
+
+\subsection{System Architecture}\label{detail-subsec:system-architecture}
+
+The playground follows a distributed architecture:
+
+\noindent \textbf{Frontend (Next.js).} A React-based interface that provides the editor and visualization tools.
+
+\noindent \textbf{Backend (Express).} A Node.js API that acts as a bridge.
+It receives Motivo source code from the client, invokes the C++ \texttt{motivoc} binary via a sub-process, and streams
+the resulting MIDI file back to the browser.
+
+\noindent \textbf{Integration.} The system is containerized using Docker, ensuring that the C++ environment (including
+Bison/Flex runtimes) is identical across development and production.
+
+The backend is smaller but equally important.
+The Express app exposes \texttt{GET /health} and \texttt{POST /compile}.
+The compile route validates the request body with Zod, writes the source code to a temporary \texttt{.motivo} file,
+spawns \texttt{motivoc}, and returns either \texttt{audio/midi} bytes or structured diagnostics.
+The diagnostics parser normalizes compiler output into severity, stage, message, and optional source location fields so
+the browser can highlight the relevant source range.

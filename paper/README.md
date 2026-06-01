@@ -30,23 +30,38 @@ which is ignored by Git.
 ## Structure
 
 ```text
-paper.tex           Main document entrypoint; imports frontmatter and chapters
-style.sty           Thesis style package
-references.bib      Bibliography
-frontmatter/        Frontmatter files, currently the abstract
-chapters/           Chapter entrypoints and chapter section files
-scripts/            Local build, format, and lint helpers
-Makefile            Convenience targets for the local scripts
+paper.tex              Main document entrypoint; imports preamble, frontmatter, and chapters
+style.sty              Thesis style package
+references.bib         Bibliography
+preamble/              Shared setup (colors, listings, TikZ, page style)
+frontmatter/           Frontmatter files, currently the abstract
+chapters/              Chapter wrappers and per-chapter section directories
+scripts/               Local build, format, and lint helpers
+Makefile               Convenience targets for the local scripts
+build/                 Generated PDF and LaTeX intermediates (gitignored)
 ```
 
-Chapter content is split by topic:
+### Preamble
 
 ```text
-chapters/02-background/       Background sections
-chapters/03-related-work/     Related-work sections grouped by system category
-chapters/04-methodology/      DSL design and compiler methodology
-chapters/05-implementation/   Compiler implementation details
-chapters/06-evaluation/       Evaluation sections
+preamble/colors.tex           Motivo color palette (\definecolor macros)
+preamble/listings-motivo.tex  Motivo language definition for listings
+preamble/tikz-setup.tex       pgfplots/TikZ library setup
+preamble/page-style.tex       Geometry, headers, and page layout overrides
+```
+
+### Chapters
+
+Each chapter is a single file at `chapters/NN-name.tex` containing the `\chapter{}` declaration, introductory
+paragraphs, and `\input{}` calls for its sections. Section content lives in `chapters/NN-name/sections/`, one file
+per `\section{}`.
+
+```text
+chapters/01-context-motivation-related-work.tex  → 01-context-motivation-related-work/sections/  (8 files)
+chapters/02-language-compiler-design.tex       → 02-language-compiler-design/sections/       (11 files)
+chapters/03-studio-software-engineering.tex    → 03-studio-software-engineering/sections/    (5 files)
+chapters/04-evaluation.tex                     → 04-evaluation/sections/                     (7 files)
+chapters/05-conclusion-next-steps.tex          → 05-conclusion-next-steps/sections/          (4 files)
 ```
 
 ## CI

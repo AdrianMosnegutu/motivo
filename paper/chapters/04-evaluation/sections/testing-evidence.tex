@@ -1,0 +1,15 @@
+\section{Testing Evidence}\label{sec:test-evidence}
+
+The repository contains a broad test suite across compiler, server, and client components.
+The native compiler build used during earlier local inspection exposed 582 CTest-discovered tests.
+The server Vitest report in the workspace recorded 20 passing tests across 10 suites, and the client Vitest report
+recorded 54 passing tests across 38 suites.
+The same reports showed server line coverage of 97.95\% and client line coverage of 89.46\%.
+These values should be regenerated before final submission, but they provide a useful snapshot of the current testing
+discipline.
+
+Coverage is not a proof of correctness.
+It does not show whether the language is pleasant to use or whether every musical edge case has been modeled.
+It does show that the implementation is treated as a software system with repeatable checks.
+For this thesis, that matters because Motivo is evaluated both as a language design and as a full-stack engineering
+project.

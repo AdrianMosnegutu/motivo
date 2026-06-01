@@ -1,0 +1,53 @@
+\section{Digital Music as a Practical Software Domain}\label{sec:digital-music-domain}
+
+Recorded music is now a large digital ecosystem rather than a niche computing topic.
+IFPI reported that global recorded music revenues reached US\$31.7 billion in 2025, with streaming representing 69.6\%
+of total recorded music revenue and paid subscription streaming representing 52.4\% of the total
+market~\cite{IFPI_2026}.
+Spotify, reporting from the perspective of a single streaming platform, stated that it paid more than US\$11 billion to
+the music industry in 2025~\cite{Spotify_2026_Payouts}.
+BandLab's public product material describes a community of 100 million music creators using its platform
+ecosystem~\cite{BandLab_2026}.
+These figures should not be read as a direct measurement of demand for a programming language.
+They do, however, show that digital music creation, distribution, and consumption are large enough for specialized
+creative software to be a relevant engineering topic.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      fact/.style={rounded corners=4pt, draw=white, very thick, minimum width=4.2cm, minimum height=2.35cm,
+      align=center, font=\sffamily, text=white},
+      caption/.style={font=\small\sffamily, text=motivoInk, align=center}
+    ]
+    \node[fact, fill=motivoBlue] (revenue) at (0, 0) {\Huge \$31.7B\\[0.2cm]\large global recorded\\music
+    revenue\\in 2025};
+    \node[fact, fill=motivoCyan] (streaming) at (5.1, 0) {\Huge 69.6\%\\[0.2cm]\large revenue share\\from streaming};
+    \node[fact, fill=motivoViolet] (creators) at (10.2, 0) {\Huge 100M\\[0.2cm]\large BandLab music\\creators};
+
+    \node[caption, below=0.35cm of revenue] {IFPI Global Music\\Report 2026};
+    \node[caption, below=0.35cm of streaming] {IFPI format\\breakdown};
+    \node[caption, below=0.35cm of creators] {BandLab public\\platform material};
+  \end{tikzpicture}
+  \caption{Industry-scale signals motivating digital music tooling.
+    The numbers are attributed to their reporting organizations and are used as context, not as a direct evaluation of
+  Motivo.}\label{fig:industry-context}
+\end{figure}
+
+The production side of this ecosystem is heavily tool-based.
+Digital audio workstations make detailed editing possible through piano rolls, arrangement timelines, automation lanes,
+plug-ins, and MIDI routing.
+For many tasks this visual approach is the right interface.
+It is direct, immediate, and close to the way a composer hears a piece.
+At the same time, repeated symbolic structures can become awkward when they are represented only as copied note blocks.
+Changing the duration, transposition, or placement rule of a recurring phrase may require many local edits.
+The visible notes remain editable, but the reason they exist is no longer represented as a reusable rule.
+
+Algorithmic composition takes the opposite direction by describing music through formal procedures.
+Nierhaus characterizes algorithmic composition as a family of techniques in which rules, processes, or computations
+generate musical material~\cite{Nierhaus_2009}.
+Computer music systems have explored this idea for decades, ranging from symbolic generation to synthesis and live
+performance~\cite{Roads_1996}.
+Motivo adopts only one part of that tradition.
+It does not attempt to synthesize audio, model performer expression, or improvise during playback.
+It focuses on symbolic generation: a program should produce a MIDI file whose notes can then be inspected, played, or
+arranged further.

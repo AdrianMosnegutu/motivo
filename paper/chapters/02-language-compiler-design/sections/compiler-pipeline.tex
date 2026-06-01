@@ -1,0 +1,146 @@
+\section{Compiler Pipeline and Implementation Foundations}\label{sec:compiler-pipeline}
+
+The architecture of Motivo compiler is organized as a multi-pass pipeline.
+Each stage of the pipeline transforms the representation of the musical program, moving from abstract textual intent to
+a concrete binary artifact.
+By decoupling these stages, the compiler ensures that errors are caught early and that the musical structure is fully
+resolved before generation.
+
+\subsection{Information Flow and Artifacts}\label{detail-subsec:information-flow-and-artifacts}
+
+The flow of data through the compiler is illustrated in Figure~\ref{fig:compiler-pipeline}.
+Each box represents a discrete processing stage, and the annotated arrows describe the intermediate artifacts passed
+between them.
+
+\subsection{Transformation Stages}\label{detail-subsec:transformation-stages}
+
+The transformation process is organized into four stages.
+
+\noindent \textbf{Text to Tree (Frontend).} The raw source text is parsed into an \textit{Abstract Syntax Tree} (AST).
+This artifact captures the logical hierarchy of the composition (e.g., nested patterns and tracks) but contains no
+musical or temporal resolution.
+
+\noindent \textbf{Tree to Annotated Tree (Semantic Analysis).} The compiler performs symbol resolution and
+type inference.
+The resulting \textit{Annotated AST} links every identifier to its definition and ensures that all operations are
+musically valid.
+
+\noindent \textbf{Tree to Timeline (Lowering).} The hierarchical AST is ``unrolled'' into a flat \textit{Intermediate
+Representation} (IR).
+This is the most significant transformation, where recursive pattern calls and loops are replaced by a sorted list
+of concrete \texttt{NoteEvents} with absolute timestamps.
+
+\noindent \textbf{Timeline to Binary (Backend).} Finally, the IR is serialized.
+The backend converts the absolute timestamps into the delta-times required by the MIDI standard and writes the
+structured binary stream to disk.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      stage/.style={rounded corners=4pt, draw=motivoInk!65, very thick, minimum width=3.05cm, minimum height=1.0cm,
+      align=center, font=\small\sffamily},
+      artifact/.style={font=\scriptsize\sffamily, text=motivoInk!75, align=center},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
+    ]
+    \node[stage, fill=motivoSoft] (src) {Motivo source\\\texttt{.motivo}};
+    \node[stage, fill=motivoBlue!14, right=0.55cm of src] (parse) {Scanner and parser\\Flex/Bison};
+    \node[stage, fill=motivoCyan!18, right=0.55cm of parse] (sem) {Semantic analysis\\symbols and types};
+    \node[stage, fill=motivoGreen!18, below=0.85cm of sem] (low) {Lowering\\cursor execution};
+    \node[stage, fill=motivoAmber!22, left=0.55cm of low] (midi) {MIDI writer\\SMF Format 1};
+    \node[stage, fill=motivoSoft, left=0.55cm of midi] (out) {MIDI file\\\texttt{.mid}};
+
+    \draw[arrow] (src) -- node[artifact, above] {characters} (parse);
+    \draw[arrow] (parse) -- node[artifact, above] {AST} (sem);
+    \draw[arrow] (sem) -- node[artifact, right] {annotated AST} (low);
+    \draw[arrow] (low) -- node[artifact, above] {IR tracks and events} (midi);
+    \draw[arrow] (midi) -- node[artifact, above] {binary bytes} (out);
+  \end{tikzpicture}
+  \caption{Motivo compiler data flow from source text to Standard MIDI File.}\label{fig:compiler-pipeline}
+\end{figure}
+
+\subsection{Technical Foundations and Build Structure}\label{subsec:implementation-foundations}
+
+The implementation of Motivo compiler is a critical engineering effort that balances high-level musical expressiveness
+with low-level binary precision.
+The discussion details the selection of the technology stack and the structural organization of the project, providing a
+rationale for the architectural decisions that support the thesis's goals.
+
+\subsection{Language Choice: Modern C++ (C++23)}\label{detail-subsec:language-choice:-modern-c++-(c++23)}
+
+The compiler is written in modern C++, specifically targeting the C++23 standard.
+While higher-level languages such as Python or JavaScript are commonly used for domain-specific language
+development, C++ was selected for
+three primary reasons:
+
+\noindent \textbf{Deterministic Performance.} Musical temporal resolution requires high precision.
+By using C++, the compiler can perform recursive unrolling and temporal math with minimal overhead, achieving the
+fast local compilation times necessary for real-time feedback in the playground.
+
+\noindent \textbf{Robust Type System.} Modern C++ provides a wealth of tools for building type-safe compilers.
+Features such as \texttt{std::variant} and \texttt{std::optional} allow for a functional programming style that is
+ideally suited for processing tree-like structures (ASTs).
+
+\noindent \textbf{Binary Serialization.} Since the final build target is a low-level MIDI binary file, C++'s native
+support for
+bitwise operations and big-endian serialization makes it a practical choice for implementing the backend.
+
+\subsubsection{C++23 Features Used in the Architecture}
+
+The codebase leverages several advanced features to simplify compiler logic:
+
+\noindent \textbf{\texttt{std::variant} as a Sum Type:} Every AST node and IR value is represented as a variant.
+This allows the compiler to treat different musical constructs (e.g., a Note vs a Loop) as a single type while
+enforcing exhaustive handling during traversal via \texttt{std::visit}.
+
+\noindent \textbf{Value-Oriented Memory Management.} By combining \texttt{std::variant} with
+\texttt{std::unique\_ptr}, the
+compiler avoids the ``Object Soup'' anti-pattern.
+Nodes are value-like, and recursion is handled via smart pointers that support explicit ownership and reduced
+leak risk without the
+non-deterministic latency of a garbage collector.
+
+\noindent \textbf{Standard Ranges and Views.} Used extensively in the backend and lowering passes to sort musical events
+and filter diagnostic logs efficiently.
+
+\subsection{Modular Build Infrastructure (CMake)}\label{detail-subsec:modular-build-infrastructure-(cmake)}
+
+To ensure scalability and maintainability, the project is structured as a modular hierarchy managed by
+CMake~\cite{CMake_2026}.
+The source code is partitioned into discrete components, each with its own responsibilities and boundaries.
+
+\subsubsection{Library Decomposition}
+
+The compiler logic is distributed across static libraries with separate responsibilities.
+
+\noindent \textbf{\texttt{motivo\_common}:} The foundational library containing the core musical enums (\texttt{Pitch},
+\texttt{Accidental}), the \texttt{Note} structure, and the \texttt{DiagnosticsEngine}.
+It is linked by every other module.
+
+\noindent \textbf{\texttt{motivo\_frontend}:} Wraps the Flex-generated scanner and Bison-generated parser.
+It depends on \texttt{motivo\_common} for location tracking and note literals.
+
+\noindent \textbf{\texttt{motivo\_semantic}:} Contains the \texttt{Traversal} engine and symbol table logic.
+It takes a raw AST and produces an \texttt{AnalysisResult}.
+
+\noindent \textbf{\texttt{motivo\_lowerer}:} The unrolling engine.
+It transforms an \texttt{AnalysisResult} into a flat list of \texttt{NoteEvent} objects.
+
+\noindent \textbf{\texttt{motivo\_backend}:} The MIDI serialization module.
+It handles the binary translation of the linear event stream.
+
+\subsubsection{Directory Organization and Public API}
+
+The project separates public interfaces from private implementation files.
+
+\noindent \textbf{\texttt{include/motivo/}:} Contains only the public headers (e.g., \texttt{compiler.hpp}).
+This defines the interface for external consumers, such as the CLI wrapper or the playground backend.
+
+\noindent \textbf{\texttt{src/motivo/}:} Contains the private implementation details, including the recursive
+visitors and
+generated Flex/Bison sources.
+
+This separation ensures that the internal complexity of the compiler pipeline is hidden behind a simple, high-level
+API\@.
+The top-level \texttt{motivo::compile} function serves as the entry point, orchestrating the sequential flow
+of characters
+to tree, tree to timeline, and timeline to MIDI\@.

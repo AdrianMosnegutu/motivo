@@ -1,244 +1,6 @@
-% Restored and adapted detailed content from the previous introduction, background, and related-work draft.
+\section{Related Work in Music Programming and Representation}\label{sec:related-work}
 
-% Source: paper/chapters/01-introduction.tex
-
-Music composition is an inherently structural discipline.
-Classical sonata forms, jazz chord progressions,
-and electronic dance music loops all rely on the hierarchical organization of motifs, phrases, and sections.
-Despite this underlying mathematical and logical foundation, modern digital music production relies
-predominantly on linear, visual interfaces.
-While these tools excel at micro-editing, they often lack the abstractions necessary to manipulate music as structured,
-algorithmic data.
-
-\section{Motivation}\label{detail-sec:motivation}
-
-In a standard Digital Audio Workstation (DAW), the primary method of input is the ``Piano Roll''---a grid
-where notes are
-drawn manually across a timeline.
-This approach is highly intuitive but fundamentally destructive from a structural perspective.
-If a composer wishes to transpose a repeating 16-bar melody, change its rhythm, or conditionally alter its ending on the
-final repetition, they must manually select and modify hundreds of individual note events.
-The logical intent (e.g., ``repeat this phrase four times but play the snare on the off-beat during the last
-repetition'') is lost, replaced by a static collection of data points.
-
-To address this, programmers often turn to Algorithmic Composition.
-However, existing domain-specific languages for music (such as Sonic Pi or Tidal) are largely tailored toward
-\textit{live coding}.
-They prioritize real-time performance, utilizing threaded execution models and continuous audio synthesis.
-While incredibly powerful for improvisation, these environments introduce complexities related to thread
-synchronization, execution latency, and audio engine configuration, which can be overwhelming for composers whose
-primary goal is offline, deterministic arrangement.
-
-Furthermore, general-purpose programming languages equipped with MIDI libraries (e.g., Python with \texttt{mido}) offer
-offline generation but lack domain-specific abstractions.
-The composer is burdened with calculating explicit delta-times and manually constructing low-level binary messages,
-shifting the focus away from musical creativity and toward byte-level engineering.
-
-\section{Problem Statement}\label{detail-sec:problem-statement}
-
-There exists a gap in the current ecosystem of music programming tools: a lack of a domain-specific language optimized
-for \textit{offline, structural composition} that produces standard, interoperable artifacts.
-Specifically, the challenge lies in creating a system that allows composers to define musical ideas as reusable,
-parameterized algorithms while keeping the resulting temporal structure deterministic, free of real-time
-execution jitter,
-and readable by many standard production tools.
-
-\section{Proposed Solution}\label{detail-sec:proposed-solution}
-
-This thesis proposes the design and implementation of a novel, compiled Domain-Specific Language
-(domain-specific language) for musical
-composition.
-The system aims to bridge the gap between algorithmic logic and the rigid binary specifications of the MIDI protocol.
-
-The proposed solution is built upon the following core principles:
-
-\noindent \textbf{Music as a Recursive Hierarchy.} The language abstracts musical motifs into functions (patterns) that
-can be parameterized, reused, and nested, reflecting the true hierarchical nature of musical form.
-
-\noindent \textbf{C-Style Imperative Flow.} By utilizing familiar control flow structures (\texttt{for}, \texttt{loop},
-\texttt{if}), Motivo allows composers to procedurally generate variations and repetitions without learning esoteric
-functional paradigms.
-
-\noindent \textbf{Zero-Runtime Compilation.} The compiler operates strictly offline.
-It performs semantic validation and then uses a stateful lowering engine to completely unroll the composition's
-logic into a flat timeline.
-This keeps temporal resolution deterministic within the compiler pipeline without relying on an interpreter
-during playback.
-
-\noindent \textbf{MIDI as a Semantic Target.} The compiler serializes the final timeline into a Standard MIDI File
-(Format 1).
-This supports practical interoperability, allowing the generated compositions to be imported into many DAWs
-and MIDI-aware tools for
-professional orchestration and mixing.
-
-% Source: paper/chapters/02-background/music_theory.tex
-
-\section{Music Theory Primer}\label{detail-sec:background-music-theory}
-
-To understand the abstractions provided by a musical domain-specific language, it is necessary to establish a
-foundational understanding of western music theory.
-Music is organized both vertically (pitch) and horizontally (time).
-
-\subsection{Pitch, Notes, and Octaves}\label{detail-subsec:pitch-notes-and-octaves}
-
-The fundamental unit of melody and harmony is the \textit{note}, which represents a sound of a specific frequency.
-In western music, the octave is divided into twelve semitones.
-The seven natural notes are designated by the letters A through G\@.
-\textit{Accidentals} modify these natural notes: a sharp (\#) raises the pitch by one semitone, while a flat (b) lowers
-it by one semitone.
-
-An \textit{octave} is the interval between one musical pitch and another with double its frequency.
-To uniquely identify a note across the entire audible spectrum, it is denoted by its pitch class and its octave number
-(e.g., \texttt{C4}, which is often referred to as ``Middle C'').
-When two or more distinct notes are sounded simultaneously, they form a \textit{chord}, which provides the harmonic
-foundation of a composition.
-
-\subsection{Time, Rhythm, and Tempo}\label{detail-subsec:time-rhythm-and-tempo}
-
-While pitch defines the frequency of a sound, rhythm defines its placement and duration in time.
-The speed at which a piece of music is played is governed by its \textit{tempo}, typically measured in Beats Per Minute
-(BPM).
-A tempo of 120 BPM signifies that there are 120 quarter-note beats in one minute, or one beat every 0.5 seconds.
-
-Music is structurally divided into \textit{measures} (or bars) by a \textit{time signature}.
-A time signature, such as 4/4, consists of two numbers: the numerator indicates the number of beats per measure (four),
-and the denominator indicates the note value that constitutes one beat (the quarter note).
-A \textit{rest} is a period of silence that has a specific duration, functioning as a ``silent note'' that preserves the
-rhythmic alignment of the timeline.
-
-% Source: paper/chapters/02-background/midi_protocol.tex
-
-\section{The MIDI Protocol}\label{detail-sec:background-midi}
-
-The Musical Instrument Digital Interface (MIDI) is an industry-standard technical protocol developed in 1983 to enable
-electronic instruments, computers, and other related devices to communicate and synchronize with each other.
-Crucially, MIDI does not transmit digital audio (sound waves); instead, it transmits \textit{event messages} that act as
-instructions for how music should be produced by a receiving synthesizer.
-
-\subsection{Event-Based Representation}\label{detail-subsec:event-based-representation}
-
-A MIDI stream is composed of sequential commands.
-The most fundamental commands are:
-
-\noindent \textbf{Note-On.} Instructs the synthesizer to begin sounding a pitch.
-It carries two data bytes: the \textit{key number} (0--127, where 60 is typically Middle C) and the
-\textit{velocity} (0--127, representing how hard the key was struck).
-
-\noindent \textbf{Note-Off.} Instructs the synthesizer to stop sounding the pitch.
-
-\noindent \textbf{Program Change.} Changes the active instrument (or ``patch'') on a specific channel (e.g., switching
-from a piano to a violin).
-
-Because MIDI transmits events rather than waveforms, a piece of music represented in MIDI is highly editable.
-A composer can retroactively change the pitch, duration, or instrument of any note without degrading the audio quality,
-making MIDI the \textit{de facto} standard for digital composition.
-
-\subsection{Channels and General MIDI}\label{detail-subsec:channels-and-general-midi}
-
-To support polyphony across different instruments, MIDI data is transmitted across 16 independent channels.
-A synthesizer can be configured to play a bass patch on Channel 1 and a piano patch on Channel 2 simultaneously.
-The \textit{General MIDI} (GM) specification standardizes the assignment of instruments to program numbers (e.g.,
-Program 1 is Acoustic Grand Piano) and strictly reserves \textbf{Channel 10} for unpitched percussion, where individual
-key numbers trigger different drum samples (e.g., Key 36 is the Bass Drum).
-
-\subsection{Delta-Times and Standard MIDI Files (SMF)}\label{detail-subsec:delta-times-and-standard-midi-files-(smf)}
-
-When saving MIDI data to a file (a \texttt{.mid} file), the protocol utilizes \textit{delta-times}.
-Instead of recording the absolute time at which an event occurs, a Standard MIDI File records the number of ``ticks'' to
-wait after the \textit{previous} event before executing the current one.
-Ticks are subdivisions of a quarter note, defined by the file's \textit{Pulses Per Quarter-note} (PPQ) resolution (e.g.,
-480 PPQ).
-This relative timing system is highly efficient but requires careful calculation when translating from absolute musical
-beats into a serialized file format.
-
-% Source: paper/chapters/02-background/compiler_basics.tex
-
-\section{Compiler Construction Basics}\label{detail-sec:background-compilers}
-
-A compiler is a specialized software system that translates source code written in a high-level programming language
-into a lower-level representation, such as machine code, bytecode, or in the context of this thesis, a binary MIDI file.
-The compilation process is traditionally divided into several distinct phases to manage complexity and ensure
-correctness.
-
-\subsection{Lexical and Syntactic Analysis}\label{detail-subsec:lexical-and-syntactic-analysis}
-
-The first phase, \textit{Lexical Analysis} (or scanning), reads the raw character stream of the source file and groups
-characters into meaningful sequences called \textit{tokens}.
-For example, the string \texttt{tempo} might be converted into a \texttt{KEYWORD\_TEMPO} token, while \texttt{120}
-becomes an \texttt{INT\_LITERAL} token.
-This is often implemented using tools like Flex, which rely on regular expressions.
-
-The second phase, \textit{Syntactic Analysis} (or parsing), takes the stream of tokens and verifies that they form a
-valid sequence according to the formal grammar of the language.
-This phase organizes the flat token stream into a hierarchical tree structure known as an \textit{Abstract Syntax Tree}
-(AST).
-The AST captures the logical operations of the code (e.g., nesting a \texttt{play} statement inside a \texttt{loop}
-block) while discarding irrelevant textual details like whitespace and semicolons.
-
-\subsection{Semantic Analysis}\label{detail-subsec:semantic-analysis}
-
-While the parser ensures that a sentence is grammatically correct, the \textit{Semantic Analyzer} ensures that it makes
-logical sense.
-This phase traverses the AST to perform checks that cannot be captured by a context-free grammar.
-Key tasks include:
-
-\noindent \textbf{Type Checking.} Ensuring that operations are applied to compatible data types (e.g., preventing the
-addition of a boolean to a note).
-
-\noindent \textbf{Symbol Resolution.} Maintaining a \textit{Symbol Table} to ensure that variables and functions are
-declared before they are used, and that they are accessed within their valid scope.
-
-\subsection{Intermediate Representation and Code
-Generation}\label{detail-subsec:intermediate-representation-and-code-generation}
-
-After validation, the compiler often translates the AST into an \textit{Intermediate Representation} (IR).
-An IR is a lower-level, often flattened representation of the program that is easier to optimize and translate than the
-hierarchical AST\@.
-In standard compilers, this might involve generating three-address code.
-In the context of music generation, lowering to an IR involves unrolling loops and resolving relative timings into
-absolute timestamps.
-
-Finally, the \textit{Code Generation} phase translates the IR into the target output format.
-This phase handles the intricate binary serialization details, such as little/big-endian encoding and specific protocol
-constraints, yielding the final executable artifact.
-
-% Source: paper/chapters/02-background/algorithmic_composition.tex
-
-\section{Algorithmic Composition}\label{detail-sec:background-algorithmic-composition}
-
-Algorithmic composition is the technique of using algorithms---formal sets of rules or instructions---to create music.
-While this concept has roots in classical music (such as Mozart's musical dice games), the advent of computers has
-exponentially expanded its scope and capabilities.
-
-\subsection{Procedural Generation vs. Direct Input}\label{detail-subsec:procedural-generation-vs.-direct-input}
-
-Traditional digital music production relies on Direct Input.
-A composer uses a MIDI keyboard or a graphical Piano Roll in a Digital Audio Workstation (DAW) to manually input every
-note, chord, and rest.
-This process grants total control over the micro-details of a performance but can be tedious when constructing complex,
-repetitive, or mathematically structured sections.
-
-Algorithmic composition shifts the paradigm to Procedural Generation.
-Instead of writing the notes, the composer writes the \textit{rules} that generate the notes.
-For example, rather than manually copying and pasting a bassline across 32 bars while applying slight variations to the
-velocity, a composer might write a simple loop that algorithmically modifies the velocity parameter on each iteration.
-
-\subsection{Structured Abstraction}\label{detail-subsec:structured-abstraction}
-
-The true power of algorithmic composition lies in its ability to abstract musical ideas.
-A chord progression can be represented as an array of data points, and a rhythm can be defined as a mathematical
-function over time.
-This approach allows composers to experiment rapidly: changing a foundational variable (such as a root note or a time
-signature) can instantly cascade throughout the entire algorithmic structure, generating a completely new variation of
-the piece without the need for manual editing.
-Motivo proposed in this thesis aims to provide a robust, type-safe environment specifically optimized for this
-methodology of structured, algorithmic creation.
-
-% Source: paper/chapters/03-related-work/introduction.tex
-
-\section{Introduction}\label{detail-sec:introduction}
-
-This chapter surveys existing approaches to music representation and programming, focusing on systems that enable the
+This section surveys existing approaches to music representation and programming, focusing on systems that enable the
 creation, manipulation, and execution of musical structures through textual or programmatic means.
 
 The reviewed works span multiple categories, including high-level composition systems, low-level audio programming
@@ -255,13 +17,10 @@ control over sound synthesis and timing, but operate at a lower level of abstrac
 Additionally, music representation formats such as \textbf{MIDI} and \textbf{ABC notation} define how musical data can
 be encoded, stored, and transmitted, often prioritizing interoperability and readability over compositional abstraction.
 
-By analyzing these systems, this chapter identifies key design trade-offs and limitations in existing approaches,
+By analyzing these systems, this chapter identifies important design trade-offs and limitations in existing approaches,
 particularly with respect to temporal modeling, abstraction level, and compositional structure.
 These observations serve as the foundation for motivating the design of the domain-specific language proposed in
 this thesis.
-
-% Source: paper/chapters/03-related-work/high-level-musical-composition/sonic_pi.tex
-
 \subsection{Sonic Pi}\label{detail-subsec:sonic-pi}
 
 \textbf{Sonic Pi} began as a 3-month pilot project in \textit{November 2013}, funded by the \textit{Broadcom
@@ -272,12 +31,13 @@ Aaron_2016}.
 
 This language was developed to run on the \textit{Raspberry Pi}, having to work on tight hardware constraints, where
 time and memory overhead needed to be managed carefully.
-It's core architecture was designed around an earlier project called \textit{Overtone}, but which had too steep of a
-learning curve for music performers and had massive performance issues on the \textit{Raspberry Pi}~\cite{Aaron_2016}.
+Its core architecture was designed around an earlier project called \textit{Overtone}, but which had too steep of a
+learning curve for music performers and had substantial performance issues on the \textit{Raspberry
+Pi}~\cite{Aaron_2016}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 To address the tight constraints of having to be optimized to run on low end hardware such as the \textit{Raspberry Pi},
 the language was designed and embedded in \textit{Ruby}.
@@ -297,7 +57,7 @@ number as its argument, representing the time in seconds to wait until playing t
 Notes can be combined into patterns by using simple lists, and they can be played sequentially using the
 \texttt{play\_pattern} method~\cite{Aaron_Blackwell_2013}.
 
-Example snippet:
+The following excerpt illustrates the notation:
 \begin{lstlisting}[label={detail-lst:sonic-pi-1}]
   play 60;
   sleep 0.5;
@@ -330,7 +90,7 @@ UK~\cite{Aaron_2016, Aaron_Blackwell_2013}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 \textbf{Sonic Pi} functions more as an \textit{OSC} client that communicates to a subset of the \textit{SuperCollider}
 API\@.
@@ -346,18 +106,15 @@ Complex layering capabilities are sacrificed for better ease of use and mental m
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 The syntax of this language is both clean and concise, thus making it easier to map abstract concepts from musical
 theory into textual form.
-It creates the building blocks necessary to construct more complex structures, providing a good basis for Motivo's key
-syntactical model.
+It creates the building blocks necessary to construct more complex structures, providing a useful point of comparison
+for Motivo's syntactic model.
 However, the sequential execution model can make it more difficult to explicitly represent complex temporal
 relationships between independent musical structures, which motivates the timeline-based approach proposed in this
 thesis.
-
-% Source: paper/chapters/03-related-work/high-level-musical-composition/tidal.tex
-
 \subsection{Tidal}\label{detail-subsec:tidal}
 
 \textbf{Tidal} is a domain specific programming language embedded in \textit{Haskell} for encoding musical patterns,
@@ -370,15 +127,15 @@ composition}~\cite{McLean_Wiggins_2010}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 Since it is embedded in the programming language \textit{Haskell}, it inherits most of its syntax and paradigms.
-It uses Haskell's strict type system, which in term leads to stricter constraints such as static typing and pure
+It uses Haskell's strict type system, which in turn leads to stricter constraints such as static typing and pure
 function usage.
 However, it makes use of these constraints to its advantage by leveraging \textit{Haskell's} concepts of
 \textit{functors} and \textit{monads}~\cite{McLean_Wiggins_2010}.
 
-\paragraph{Pattern Composition}
+\subsubsection{Pattern Composition}
 
 Patterns can be composed of sub-patterns; this relation can go on to an arbitrary depth.
 This allows for creating complex structures from simple building blocks, creating an organized, \textit{hierarchical}
@@ -386,7 +143,7 @@ structure.
 Patterns can be concatenated, merged, or even combined by multiplying their numerical patterns, offering great control
 and extensibility through pair-wise operations~\cite{McLean_Wiggins_2010}.
 
-\paragraph{Representation and Access}
+\subsubsection{Representation and Access}
 
 Some languages represent patterns by using lazily loaded lists, where values are calculated only when they are needed,
 which allows for very long or even infinite patterns to be computed and represented.
@@ -399,7 +156,7 @@ the entire list up to that point, which is computationally expensive, especially
 This is why \textbf{Tidal} allows \textit{random access} by use of \textit{functions} mapping time values to
 events~\cite{McLean_Wiggins_2010}.
 
-\paragraph{Timing}
+\subsubsection{Timing}
 
 Rhythmic structures progress linearly, thus it is not that complex to encode these progressions and allow for periodic
 or infinite patterns, concepts that \textbf{Tidal} allows.
@@ -410,7 +167,7 @@ defining some floating point onsets as well~\cite{McLean_Wiggins_2010}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 That said, \textbf{Tidal} also comes with some limitations, such as its reliance on \textit{Haskell's} paradigms and
 structure, sacrificing syntax for a higher learning curve, but with the benefit of powerful and efficient pattern
@@ -418,22 +175,19 @@ construction.
 
 It also lacks compiling capabilities, as it is meant for outputting events and not actually synthesize sound on its own.
 Thus, it relies on \textbf{OSC} (\textit{Open Sound Control}) to stream musical events to an external synthesizer.
-This is of course due to its main target being live performances, but this in term makes music composition
+This is of course due to its main target being live performances, but this in turn makes music composition
 for bedroom-producers much harder, as they would have to rely on external hardware~\cite{McLean_Wiggins_2010}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 \textbf{Tidal} describes how to encode one of the most fundamental constructs in music theory and musical composition.
 It shows how we can make pattern declarations more consistent and concise through definitions, rather than hand-placed
 notes.
 
-These limitations, however, highlight a different design focus compared to Motivo proposed in this thesis,
+These limitations, however, highlight a different design focus compared to Motivo,
 which emphasizes deterministic composition and direct compilation to output formats.
-
-% Source: paper/chapters/03-related-work/high-level-musical-composition/hmusic.tex
-
 \subsection{HMusic}\label{detail-subsec:hmusic}
 
 \textbf{HMusic} is a domain-specific language for music programming and live coding, embedded in the Haskell functional
@@ -448,7 +202,7 @@ programmatic manipulation of musical structures~\cite{Du_Bois_Ribeiro_2019}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 \textbf{HMusic} is centered around two main abstractions: \textit{patterns} and \textit{tracks}.
 Patterns represent sequences of musical events, typically modeled as hits and rests, and are defined using
@@ -457,7 +211,7 @@ Tracks associate patterns with instruments, enabling the separation of musical s
 Multiple tracks can be combined in parallel to form multi-track compositions, while sequential composition allows
 the construction of longer musical structures from smaller components~\cite{Du_Bois_Ribeiro_2019}.
 
-Example snippet:
+The following excerpt illustrates the notation:
 
 \begin{lstlisting}[label={detail-lst:hmusic-1}]
   kick = X :| O :| O :| O
@@ -476,7 +230,7 @@ on higher-level musical abstractions~\cite{Du_Bois_Ribeiro_2019}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 Despite its expressive abstractions, \textbf{HMusic} presents several limitations.
 
@@ -496,7 +250,7 @@ manage.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 \textbf{HMusic} demonstrates an effective approach to combining intuitive musical representations with formal
 programming abstractions, particularly through its use of patterns and tracks as core compositional units.
@@ -506,14 +260,11 @@ through reusable abstractions.
 However, its reliance on pattern-based composition and external compilation to Sonic Pi contrasts with the goals of
 this thesis, which aim to provide a more explicit and flexible temporal model.
 Motivo builds upon these ideas by introducing a timeline-based approach, improved modularity, and direct
-compilation to formats such as MIDI or audio, enabling more structured and deterministic composition workflows.
-
-% Source: paper/chapters/03-related-work/real-time-audio-control-and-synthesis/chuck.tex
-
+compilation to standard symbolic formats such as MIDI, enabling more structured and deterministic composition workflows.
 \subsection{ChucK}\label{detail-subsec:chuck}
 
 \textbf{ChucK} is a strongly-timed, concurrent programming language for real-time audio synthesis, composition, and
-performance, developed by Ge Wang and Perry R. Cook~\cite{Wang_Cook_2003}.
+performance, developed by Ge Wang and Perry R. Cook~\cite{Wang_Cook_2003,Wang_2008}.
 It was designed to provide precise control over time, enabling composers to express complex audio processes with
 deterministic timing and concurrency.
 
@@ -524,7 +275,7 @@ music~\cite{Wang_Cook_2003}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 \textbf{ChucK} follows a \textit{strongly-timed execution model}, where time advances only when explicitly specified by
 the programmer.
@@ -536,7 +287,7 @@ A central feature of the language is its support for \textit{concurrency} throug
 These shreds execute in parallel and are synchronized through the same timing mechanism, allowing multiple musical
 processes to run concurrently with precise temporal alignment.
 
-Example snippet:
+The following excerpt illustrates the notation:
 
 \begin{lstlisting}[label={detail-lst:chuck-1}]
   SinOsc osc => dac;
@@ -561,7 +312,7 @@ operate at varying temporal resolutions.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 Despite its precision and flexibility, \textbf{ChucK} presents several challenges.
 
@@ -578,7 +329,7 @@ deterministic composition workflows, particularly those that require clear separ
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 \textbf{ChucK} highlights the importance of explicit time control and deterministic concurrency in music programming,
 demonstrating how precise temporal semantics can be integrated directly into a programming language.
@@ -587,15 +338,13 @@ However, its low-level and time-driven approach contrasts with the goals of this
 higher-level, structured representation of musical concepts.
 Motivo seeks to retain deterministic behavior while offering concise abstractions for composition, such
 as timeline-based structures and modular musical components.
-
-% Source: paper/chapters/03-related-work/real-time-audio-control-and-synthesis/super_collider.tex
-
 \subsection{SuperCollider}\label{detail-subsec:supercollider}
 
 \textbf{SuperCollider} is a programming language and environment for real-time audio synthesis and algorithmic
 composition, originally developed by James McCartney.
 It was designed to provide a highly expressive and flexible platform for both sound synthesis and musical structure
-definition, combining a high-level language with a powerful synthesis engine~\cite{McCartney_2002}.
+definition, combining a high-level language with a powerful synthesis
+engine~\cite{McCartney_2002,Wilson_Cottle_Collins_2011}.
 
 Unlike traditional music programming environments, \textbf{SuperCollider} was built with the goal of supporting dynamic
 and generative compositions, where musical processes can evolve over time rather than representing a fixed score.
@@ -604,7 +353,7 @@ algorithmically~\cite{McCartney_2002}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 \textbf{SuperCollider} follows an \textit{object-oriented and functional programming model}, where all
 elements are treated as objects and can be composed using high-level abstractions.
@@ -617,7 +366,7 @@ These UGens can be combined to form synthesis graphs, defining how audio signals
 Instruments are constructed functionally, meaning that a program describes how to build a network of UGens rather than
 specifying a fixed structure~\cite{McCartney_2002}.
 
-Example snippet:
+The following excerpt illustrates the notation:
 
 \begin{lstlisting}[label={detail-lst:supercollider-1}]
   {
@@ -636,17 +385,12 @@ The language is responsible for generating musical events, while the synthesis e
 Communication between the two is handled through the \textit{Open Sound Control (OSC)} protocol, enabling distributed
 and real-time control over audio processes~\cite{McCartney_2002}.
 
-This architecture allows \textbf{SuperCollider} to support:
-
-\noindent real-time audio synthesis
-
-\noindent dynamic creation and modification of sound processes
-
-\noindent distributed and network-based performance setups
+This architecture allows \textbf{SuperCollider} to support real-time audio synthesis, dynamic creation and
+modification of sound processes, and distributed or network-based performance setups.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 Despite its expressive power, \textbf{SuperCollider} presents several challenges.
 
@@ -666,7 +410,7 @@ abstract musical structures such as timelines or hierarchical compositions.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 \textbf{SuperCollider} demonstrates a powerful approach to integrating sound synthesis with a high-level
 programming language, offering extensive flexibility in defining and manipulating audio processes.
@@ -677,9 +421,6 @@ However, its focus on low-level synthesis and real-time interaction contrasts wi
 which emphasize structured composition and deterministic behavior.
 Motivo aims to provide a higher-level representation of musical concepts, enabling clearer expression of
 temporal relationships and compositional structure, while still allowing integration with synthesis backends.
-
-% Source: paper/chapters/03-related-work/musical-representation/midi.tex
-
 \subsection{MIDI}\label{detail-subsec:midi}
 
 \textbf{MIDI} (Musical Instrument Digital Interface) is a standardized protocol for transmitting musical control and
@@ -689,7 +430,7 @@ performance actions such as note onset, pitch, and control changes.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 MIDI encodes musical information as structured messages consisting of status and data bytes~\cite{Moog_1986}.
 A fundamental example is the \textit{Note-On} message, which specifies both a pitch (key number) and a velocity value
@@ -706,7 +447,7 @@ a single connection~\cite{Moog_1986}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 For the purposes of this thesis, the main limitation of MIDI is not utility, but scope.
 Its design is rooted in a keyboard-centric model of musical interaction, where music is represented as discrete note
@@ -729,7 +470,7 @@ constraints~\cite{Moog_1986}.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 MIDI highlights the strengths and weaknesses of low-level, event-based representations of music.
 While it excels at interoperability and real-time performance control, it lacks the expressive power needed to encode
@@ -741,14 +482,13 @@ representation for structured composition.
 This motivates a domain-specific language that separates compositional intent from performance encoding,
 provides richer abstractions for
 musical structure, and can ultimately compile to formats such as MIDI for execution.
-
-% Source: paper/chapters/03-related-work/musical-representation/abc_notation.tex
-
 \subsection{ABC Notation}\label{detail-subsec:abc-notation}
 
 \textbf{ABC notation} is a text-based music notation system designed to be comprehensible by both humans and computers,
 allowing musical scores to be represented using plain text characters such as letters, digits, and
 punctuation~\cite{Walshaw_2011}.
+It can be contrasted with MusicXML, which addresses score interchange between notation programs through an XML-based
+representation~\cite{Good_2001}.
 
 It was developed as a lightweight alternative to traditional staff notation, enabling easy storage, sharing, and
 processing of musical compositions in digital form.
@@ -758,7 +498,7 @@ and key, and a \textit{tune body}, which contains the actual sequence of musical
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Key Features}
+\subsubsection{Design Characteristics}
 
 A central component of \textbf{ABC notation} is its use of \textit{information fields}, which provide structured
 metadata about a musical piece.
@@ -782,7 +522,7 @@ typeset sheet music or MIDI playback, making it a versatile format for both docu
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Limitations}
+\subsubsection{Observed Limitations}
 
 For the purposes of this thesis, the main limitation of \textbf{ABC notation} is again one of scope.
 Despite its expressiveness as a notation system, \textbf{ABC notation} is not designed as a programming language and
@@ -800,85 +540,15 @@ external tools for playback and rendering.
 
 %% ---------------------------------------------------------------------------------------------------------------------
 
-\subsubsection{Relevance to Motivo}
+\subsubsection{Implications for Motivo}
 
 \textbf{ABC notation} demonstrates how musical structures can be mapped into a clear and human-readable textual format,
 providing valuable insight into the design of accessible music-oriented languages.
 Its use of structured metadata and symbolic representations offers a strong foundation for expressing musical ideas in a
 compact and interpretable way.
 
-However, \textbf{ABC notation} serves a different role from Motivo proposed in this thesis.
+However, \textbf{ABC notation} serves a different role from Motivo.
 It is effective as a notation and exchange format, but it is not intended to function as an executable, high-level
 composition language.
 This contrast helps clarify why Motivo must combine readability with abstraction, modularity, and explicit
 temporal semantics.
-
-% Source: paper/chapters/03-related-work/summary.tex
-
-\section{Summary and Research Gaps}\label{detail-sec:summary-and-research-gaps}
-
-The systems discussed in this chapter illustrate a wide spectrum of approaches to music programming and representation,
-each addressing different aspects of musical creation.
-High-level composition systems such as \textbf{Sonic Pi}, \textbf{Tidal}, and \textbf{HMusic} prioritize musical
-abstraction, expressiveness, and interactive composition workflows.
-However, they often rely on sequential or pattern-based models that can limit explicit control over complex temporal
-relationships.
-
-Systems for real-time audio control and synthesis, including \textbf{ChucK} and \textbf{SuperCollider}, provide precise
-control over timing and sound synthesis.
-While these systems offer high flexibility, they operate at a relatively low level of abstraction, requiring users to
-manage details related to signal processing, concurrency, and timing explicitly.
-
-Formats for musical representation and exchange such as \textbf{MIDI} and \textbf{ABC notation} focus on encoding
-musical information for storage, transmission, and playback\@.
-While widely adopted, these formats serve different goals from a composition-oriented domain-specific
-language\@: \textbf{MIDI} is effective
-as an interchange and playback format, and \textbf{ABC notation} is effective as a human-readable notation format.
-Neither is intended to serve as a high-level, executable model for structured composition.
-
-Table~\ref{detail-tab:related-work-comparison} summarizes the main systems and languages discussed in this chapter and
-highlights the design trade-offs that motivate Motivo\@.
-
-\begin{table}[htbp]
-  \centering
-  \footnotesize
-  \renewcommand{\arraystretch}{1.5}
-  \begin{tabular}{p{2.2cm}p{2.5cm}p{4cm}p{5cm}}
-    \toprule
-    \textbf{System / Language} & \textbf{Class} & \textbf{Temporal / structural model} & \textbf{Main gap
-    relative to this thesis} \\
-    \midrule
-    Sonic Pi & High-level composition & Sequential execution with notes, sleeps, and simple patterns &
-    Limited structural abstraction and weak support for complex temporal relationships \\
-    Tidal & High-level composition & Time-varying patterns with functional composition over discrete or
-    continuous time & Haskell-centric syntax and focus on event streaming rather than direct compilation or
-    explicit timeline structure \\
-    HMusic & High-level composition & Grid-like patterns and parallel tracks for rhythmic structure & Relies
-    on Sonic Pi, remains pattern-centric, and does not model higher-level timelines explicitly \\
-    ChucK & Real-time audio control and synthesis & Explicit time advancement and synchronized concurrent
-    shreds & Low-level time management makes high-level compositional structure harder to express \\
-    Super\-Collider & Real-time audio control and synthesis & Object-oriented and functional model with
-    UGens, patterns, and streams & Powerful but synthesis-oriented, with substantial complexity and weaker
-    support for structured high-level composition \\
-    MIDI & Musical representation & Discrete message stream of note and control events & Strong backend and
-    interchange format, but too low-level to serve as the primary model for structured composition \\
-    ABC notation & Musical representation & Declarative textual notation with implicit ordering, bars, and
-    voices & Clear notation format, but not an executable high-level composition language with explicit
-    temporal abstraction \\
-    \bottomrule
-  \end{tabular}
-  \caption{Comparison of the main systems and languages discussed in this
-  chapter.}\label{detail-tab:related-work-comparison}
-\end{table}
-
-From this analysis, several key gaps relative to the goals of this thesis emerge.
-First, many systems lack an explicit and flexible model for representing time, often relying on implicit sequencing or
-pattern repetition.
-Second, there is a gap between low-level audio programming languages and high-level compositional tools, with few
-systems providing both expressive power and structured abstraction.
-Third, existing approaches often conflate composition with execution, making it difficult to separate musical intent
-from performance details.
-
-These gaps motivate the development of the domain-specific language proposed in this thesis, which aims to
-provide a timeline-based model for music composition, support deterministic and structured representations of musical
-ideas, and enable modular and extensible compilation to multiple output formats.

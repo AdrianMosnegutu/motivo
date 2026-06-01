@@ -1,0 +1,35 @@
+\section{Contributions}\label{sec:contributions}
+
+The first contribution is the Motivo language model.
+It provides a compact set of abstractions for notes, rests, chords, sequences, patterns, tracks, voices, and control
+flow.
+These abstractions are deliberately close to symbolic musical structure and deliberately far from raw MIDI byte
+construction.
+The language is small, but it is sufficient to express repeated arrangements and parallel lines in the current
+implementation.
+
+The second contribution is the compiler architecture.
+The implementation uses a conventional staged pipeline: scanner, parser, semantic analyzer, lowerer, and backend.
+The most project-specific part is the cursor-based lowering model.
+That model lets sequential statements advance musical time, explicit offsets place events without changing the main
+cursor, voices run with isolated cursors, and pattern calls return reconstructed musical values.
+This is the core mechanism that connects source-level structure to MIDI note events.
+
+The third contribution is Motivo Studio.
+The application shows how the compiler can be made accessible through a web interface.
+The editor, diagnostics loop, MIDI parsing, piano-roll visualization, playback controls, server wrapper, Docker stack,
+and CI workflows demonstrate the software engineering side of the project.
+For a bachelor's thesis, this part is important because it shows that the work is not only theoretical.
+It is an implemented system with several interacting modules.
+
+The same contribution can also be viewed through the structural abstractions implemented by the compiler. The
+language provides constructs such as \texttt{pattern}, \texttt{track}, and \texttt{voice}, which allow
+polyphonic arrangements to be described without manually calculating absolute timestamps or delta-times. The
+deterministic lowering algorithm connects those abstractions to a static intermediate representation, while
+the semantic analyzer checks type and structural constraints before MIDI generation.
+
+The fourth contribution is the empirical evaluation.
+The local benchmark results show that Motivo can generate large symbolic event streams from compact source programs and
+compile them quickly in the tested Release configuration.
+The results are intentionally bounded by the current implementation and hardware.
+They support the practical claim that Motivo is suitable for interactive local experimentation at the current scale.

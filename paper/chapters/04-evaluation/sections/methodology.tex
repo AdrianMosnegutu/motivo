@@ -1,0 +1,46 @@
+\section{Methodology}\label{sec:evaluation-methodology}
+
+The benchmark was run locally with a Release build of \texttt{motivoc}.
+The binary was built outside the repository at \texttt{/tmp/motivo-thesis-bench-build} using CMake 4.3.2 and Apple
+clang 21.0.0.
+Measurements were taken on an Apple M3 Pro machine with 18 GB of RAM\@.
+The timing tool was \texttt{hyperfine} 1.20.0 with shell execution disabled, 5 warmup runs, and 50 measured
+runs~\cite{Hyperfine_2026}.
+Each measured command compiled one \texttt{.motivo} source file and wrote the resulting MIDI file, so the
+results include
+process startup, parsing, semantic analysis, lowering, MIDI serialization, and file output.
+
+The benchmark corpus was synthetic.
+It was built to exercise source-to-event expansion rather than to produce musically refined pieces.
+This distinction matters.
+A loop that generates 20,000 notes is useful for measuring expansion and compilation cost, but it does not prove that
+the generated score is artistically interesting.
+The benchmark therefore supports the engineering claim that Motivo can generate many symbolic events from
+compact source rules within the tested limit.
+
+A defining characteristic of the Motivo compiler is its ``zero-runtime'' architecture, which shifts the
+computational burden entirely to the compilation phase.
+To evaluate the viability of this approach, it is essential to analyze the compiler's execution speed, particularly as
+the complexity of the musical composition scales.
+
+\subsection{Theoretical Complexity}\label{detail-subsec:theoretical-complexity}
+
+The compilation pipeline is composed of several sequential passes, each with a distinct computational complexity:
+
+\noindent \textbf{Frontend and Semantic Analysis.} The complexity of parsing and type-checking is proportional to the
+number of lines of source code, $O(S)$, where $S$ is the size of the abstract syntax tree.
+Because these passes do not unroll loops or instantiate patterns multiple times, they remain extremely fast
+regardless of the composition's length.
+
+\noindent \textbf{Lowering Engine.} The unrolling process has a time complexity of $O(E)$, where $E$ is the total number
+of generated \texttt{NoteEvent}s. A simple \texttt{loop (1000)} statement will execute its body 1,000 times during
+this phase, meaning the lowering time is proportional to the density of the final timeline, not the brevity of the
+source code.
+
+\noindent \textbf{MIDI Backend.} The backend must sort the absolute events by their tick values before computing
+delta-times.
+This stable sort introduces a time complexity of $O(E \log E)$.
+Serializing the events into the binary file requires a final linear pass, $O(E)$.
+
+Therefore, the overall time complexity of the compilation process is bounded by the sorting phase in the backend:
+$O(E \log E)$.

@@ -1,0 +1,30 @@
+\section{Limitations}\label{sec:limitations}
+
+Motivo is not a complete composition environment.
+It does not provide audio synthesis inside the compiler.
+It does not model performer expression beyond the simple event fields currently present in the intermediate
+representation.
+It does not support automation curves, pitch bend, continuous controller data, microtonality, or symbolic harmonic
+analysis.
+It also does not currently support key-signature declarations.
+The language emits MIDI that can be played or imported elsewhere, but further sound design and mixing remain outside
+the compiler.
+
+The compiler also has an explicit 20,000-note-event safety limit.
+This limit is appropriate for preventing accidental runaway programs in the current implementation, but it constrains
+large generated scores.
+The benchmark results should therefore be understood within this cap.
+Future work could replace the fixed cap with configurable resource limits and better reporting, but the current thesis
+documents the implemented behavior as it exists.
+
+The evaluation is technical rather than user-centered.
+It measures compilation time, source-to-event expansion, MIDI size, and test evidence.
+It does not measure whether composers prefer Motivo, whether beginners understand the syntax more easily than other
+systems, or whether pieces written in Motivo are musically better.
+Those would require a different study design and participant data.
+This thesis avoids those claims.
+
+The current pattern system is also intentionally static. Pattern parameters accept concrete evaluated types,
+but the language does not yet support higher-order pattern manipulation, richer harmonic types, or a standard
+library of reusable musical transformations. The system is therefore expressive enough for the demonstrated
+examples, but it remains a compact language rather than a complete compositional platform.

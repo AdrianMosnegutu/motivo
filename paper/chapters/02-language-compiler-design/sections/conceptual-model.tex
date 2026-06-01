@@ -1,0 +1,72 @@
+\section{Conceptual Model: Structural Composition}\label{sec:conceptual-model}
+
+The fundamental premise of this research is that musical composition is inherently structured and hierarchical.
+In traditional music theory, a piece is not merely a sequence of notes, but a complex organization of motifs, phrases,
+sections, and movements.
+However, many modern digital tools and domain-specific languages treat music as a linear stream of events or a flat
+sequence of commands.
+This research proposes a shift toward a \textit{structural representation}, where musical ideas are treated as modular,
+reusable, and composable units.
+
+\subsection{Linear vs. Structural Representation}\label{detail-subsec:linear-vs.-structural-representation}
+
+In linear representation models, commonly found in live coding environments, the focus is on the \textit{performance}.
+Time is often modeled as a continuous thread where commands such as \texttt{play} and \texttt{sleep} are executed
+sequentially to generate sound.
+While effective for improvisation and real-time interaction, this model often sacrifices the ability to express complex
+temporal relationships and hierarchical dependencies.
+Modifying a single motif in a linear script often requires broad changes to subsequent timing logic, leading to fragile
+and non-modular code.
+
+In contrast, the proposed structural representation models music as a \textit{recursive hierarchy}.
+Under this model, a composition is built by nesting smaller musical units within larger ones.
+A single note is the base case of this hierarchy.
+Notes are grouped into motifs (patterns), motifs are sequenced into phrases, and phrases are assigned to parallel
+execution contexts (tracks).
+This approach allows for a clean separation of concerns: the musical content (the ``what'') is defined independently of
+its temporal placement (the ``when'').
+
+\subsection{Music as a Pure Function}\label{detail-subsec:music-as-a-pure-function}
+
+By treating musical structures as first-class entities, the language allows them to be manipulated using concepts
+derived from functional programming.
+A musical pattern can be viewed as a \textit{pure function}: it encapsulates a specific musical logic that produces a
+deterministic sequence of events.
+Just as a function in programming can be called multiple times with different arguments, a musical pattern in
+Motivo can be instantiated across different tracks, at different times, or with different parameters (such as
+pitch transpositions or rhythmic stretching).
+
+This functional mapping has three consequences for the language design.
+
+It supports modularity because Musical ideas can be defined once and reused throughout a composition.
+
+It supports abstraction because Complex polyphonic structures can be hidden behind simple pattern interfaces.
+
+It supports determinism because Because the language lacks a real-time runtime, every musical relationship is
+resolved at compile-time, producing a deterministic representation in the output artifact.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      level/.style={rounded corners=4pt, draw=motivoInk!60, very thick, minimum width=10.5cm, minimum height=0.95cm,
+      align=center, font=\sffamily},
+      arrow/.style={-Stealth, very thick, draw=motivoInk!70}
+    ]
+    \node[level, fill=motivoBlue!15] (program) {Motivo program: tempo, time signature, global definitions};
+    \node[level, fill=motivoCyan!18, below=0.35cm of program] (track) {Tracks: instrumental identity and MIDI
+    channel allocation};
+    \node[level, fill=motivoGreen!18, below=0.35cm of track] (voice) {Voices: parallel timeline fragments
+    inside a track};
+    \node[level, fill=motivoAmber!20, below=0.35cm of voice] (pattern) {Patterns: reusable parameterized
+    musical procedures};
+    \node[level, fill=motivoRose!14, below=0.35cm of pattern] (values) {Values: notes, rests, chords,
+    sequences, drum notes, scalars, booleans};
+
+    \draw[arrow] (program) -- (track);
+    \draw[arrow] (track) -- (voice);
+    \draw[arrow] (voice) -- (pattern);
+    \draw[arrow] (pattern) -- (values);
+  \end{tikzpicture}
+  \caption{Motivo's source-level hierarchy.
+  The compiler validates this hierarchy before lowering it into timestamped note events.}\label{fig:motivo-hierarchy}
+\end{figure}
