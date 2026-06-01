@@ -4,16 +4,16 @@ This thesis presented Motivo, a domain-specific language, native compiler, and w
 music composition.
 The project began with a practical observation: repeated musical structures are often easier to describe as rules than
 as copied note events.
-Motivo turns that observation into a compiler pipeline.
-The source program names musical values and procedures, the semantic analyzer validates the structure, the lowerer
-expands it into timestamped events, and the MIDI writer serializes the result into a Standard MIDI File.
+Motivo turns that observation into a compiler pipeline: the source program names musical values and procedures, the
+semantic analyzer validates structure under explicit static typing (version~2.0), the lowerer expands rules into
+timestamped events, and the MIDI writer serializes the result into a Standard MIDI File.
 
-The work also demonstrates that the compiler can be embedded into a larger software product.
-Motivo Studio connects the C++ compiler to a browser editor through an Express API, renders generated MIDI in a piano
-roll, supports browser playback, and is packaged through Docker and nginx.
-The project is therefore not only a small programming language experiment.
-It is also a full-stack engineering exercise with component boundaries, automated tests, CI workflows, deployment
-configuration, and a user-facing interface.
+The work also demonstrates that the compiler can be embedded in a production-oriented software product.
+Motivo Studio connects the C++ \texttt{motivoc} binary to a browser editor through an Express API, renders generated
+MIDI in a piano roll, supports browser playback, and is deployed at \texttt{motivo-studio.eu} with CI-gated Railway
+hosting and Cloudflare TLS.
+The project is therefore not only a programming-language experiment but also a full-stack engineering exercise with
+component boundaries, hundreds of automated tests, and measurable compile-time behavior on large synthetic workloads.
 
 \input{chapters/05-conclusion-next-steps/sections/contributions}
 \input{chapters/05-conclusion-next-steps/sections/limitations}

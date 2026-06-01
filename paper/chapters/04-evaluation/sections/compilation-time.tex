@@ -1,12 +1,11 @@
 \section{Compilation Time}\label{sec:compile-time}
 
-Table~\ref{tab:benchmark-results} shows the measured results.
-The fastest case and the realistic example are close to 2 ms.
-The largest synthetic cases are around 6 ms.
-Because these times are small, they should be interpreted as local measurements on the stated machine rather than as a
-portable performance result.
-They are still useful for the thesis because they show that the current native compiler is fast enough to support an
-interactive compile loop in this local setup.
+Table~\ref{tab:benchmark-wall-clock} reports end-to-end wall-clock means for the three benchmark programs on version~1.0
+and version~2.0.
+All pairs produced byte-identical MIDI output (Table~\ref{tab:benchmark-midi-size}), so the timing difference isolates
+compiler implementation changes rather than workload variation.
+Version~2.0 adds between $-0.01$~ms and $+0.14$~ms relative to version~1.0, or roughly $0$--$2\%$ overhead on these
+workloads.
 
 \begin{table}[htbp]
   \centering
@@ -14,57 +13,109 @@ interactive compile loop in this local setup.
   \renewcommand{\arraystretch}{1.25}
   \begin{tabular}{lrrrrr}
     \toprule
-    \textbf{Program} & \textbf{LOC} & \textbf{Note events} & \textbf{MIDI size} & \textbf{Mean ms} & \textbf{SD ms} \\
+    \textbf{Program} & \textbf{LOC} & \textbf{Note events} & \textbf{v1 mean ms} & \textbf{v2 mean ms} &
+    \textbf{v2/v1} \\
     \midrule
-    \texttt{single\_loop\_100} & 7 & 100 & 856 B & 2.02 & 0.31 \\
-    \texttt{single\_loop\_1000} & 7 & 1,000 & 8,056 B & 2.14 & 0.31 \\
-    \texttt{single\_loop\_10000} & 7 & 10,000 & 80,056 B & 3.96 & 0.24 \\
-    \texttt{single\_loop\_20000} & 7 & 20,000 & 160,056 B & 6.03 & 0.15 \\
-    \texttt{chord\_loop\_5000} & 7 & 20,000 & 160,056 B & 5.90 & 0.17 \\
-    \texttt{drum\_groove\_500} & 18 & 10,000 & 88,053 B & 6.39 & 0.19 \\
-    \texttt{example\_copy} & 77 & 188 & 1,751 B & 2.04 & 0.18 \\
+    B1 (\texttt{single\_loop\_20000}) & 8 & 20,000 & $7.92 \pm 0.41$ & $8.06 \pm 0.62$ & 1.017 \\
+    B2 (\texttt{chord\_loop\_5000}) & 8 & 9,980 & $5.06 \pm 0.21$ & $5.10 \pm 0.19$ & 1.008 \\
+    B3 (\texttt{pattern\_cascade}) & 12 & 20,000 & $8.07 \pm 0.21$ & $8.06 \pm 0.27$ & 0.999 \\
     \bottomrule
   \end{tabular}
-  \caption{Local Release-build compilation benchmark.
-  Times include MIDI file writing and are based on 50 measured runs after 5 warmups.}\label{tab:benchmark-results}
+  \caption{End-to-end compilation time (version~1.0 \texttt{dslrc} vs.\ version~2.0 \texttt{motivoc}).
+    Values are mean~$\pm$~$\sigma$ over 50 measured runs after 5 warmups on an Apple M3 Pro Release build.
+  Standard deviations appear in the mean column for compactness.}\label{tab:benchmark-wall-clock}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Program} & \textbf{v1 MIDI (B)} & \textbf{v2 MIDI (B)} & \textbf{Match} \\
+    \midrule
+    B1 & 180,056 & 180,056 & yes \\
+    B2 & 84,886 & 84,886 & yes \\
+    B3 & 180,056 & 180,056 & yes \\
+    \bottomrule
+  \end{tabular}
+  \caption{MIDI output size confirms semantic equivalence between compiler versions on each fixture.}%
+  \label{tab:benchmark-midi-size}
+\end{table}
+
+The largest cases finish in about 8~ms on the stated machine.
+Because these times are small, they should be interpreted as local measurements rather than as a portable performance
+result.
+They are still useful for the thesis because they show that the current native compiler is fast enough to support an
+interactive compile loop in this local setup.
+
+Table~\ref{tab:benchmark-per-stage} breaks the in-process work down by pipeline stage.
+Parsing and semantic analysis remain below $0.04$~ms regardless of program; lowering and MIDI writing dominate, which
+matches the $O(E)$ and $O(E \log E)$ expectations from Section~\ref{detail-subsec:theoretical-complexity}.
+The semantic column shows a slight increase in version~2.0 (for example B1: $0.0058$~ms $\rightarrow$ $0.0067$~ms),
+consistent with explicit type checking, but the absolute cost is negligible compared with lowering and backend I/O.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{llrrrr}
+    \toprule
+    \textbf{Program} & \textbf{Ver.} & \textbf{Parse} & \textbf{Semantic} & \textbf{Lowering} & \textbf{MIDI write} \\
+    \midrule
+    B1 & v1 & 0.032 & 0.006 & 1.655 & 2.889 \\
+    B1 & v2 & 0.034 & 0.007 & 1.665 & 2.867 \\
+    \midrule
+    B2 & v1 & 0.030 & 0.005 & 0.901 & 1.346 \\
+    B2 & v2 & 0.029 & 0.006 & 0.902 & 1.346 \\
+    \midrule
+    B3 & v1 & 0.032 & 0.006 & 2.194 & 2.759 \\
+    B3 & v2 & 0.031 & 0.006 & 2.171 & 2.736 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Mean in-process stage times (ms) with \texttt{MOTIVO\_BENCHMARK=1}.
+  Stage sums exclude process spawn and filesystem overhead present in Table~\ref{tab:benchmark-wall-clock}.}%
+  \label{tab:benchmark-per-stage}
 \end{table}
 
 \begin{figure}[htbp]
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-        ybar,
-        width=0.95\textwidth,
-        height=7cm,
+        motivo/bar,
+        width=0.92\textwidth,
+        height=6.5cm,
         ymin=0,
         ylabel={Mean compile time (ms)},
-        symbolic x coords={100,1000,10000,20000,chord,drums,example},
+        symbolic x coords={B1,B2,B3},
         xtick=data,
-        x tick label style={rotate=35, anchor=east, font=\scriptsize},
-        nodes near coords,
-        nodes near coords style={font=\scriptsize},
-        bar width=12pt,
-        enlarge x limits=0.08,
-        ymajorgrids=true,
-        grid style={draw=motivoInk!12}
+        legend style={at={(0.5,-0.16)}, anchor=north, legend columns=2, font=\scriptsize},
+        bar width=13pt,
+        enlarge x limits=0.15,
       ]
       \addplot[fill=motivoBlue!70, draw=motivoBlue!90] coordinates {
-        (100,2.02)
-        (1000,2.14)
-        (10000,3.96)
-        (20000,6.03)
-        (chord,5.90)
-        (drums,6.39)
-        (example,2.04)
+        (B1,7.92)
+        (B2,5.06)
+        (B3,8.07)
       };
+      \addplot[fill=motivoGreen!70, draw=motivoGreen!90] coordinates {
+        (B1,8.06)
+        (B2,5.10)
+        (B3,8.06)
+      };
+      \legend{Version 1.0, Version 2.0}
     \end{axis}
   \end{tikzpicture}
-  \caption{Mean compile times for the local benchmark corpus.}\label{fig:benchmark-time}
+  \caption{End-to-end wall-clock means for benchmark programs B1--B3 (version~1.0 vs.\ version~2.0).}%
+  \label{fig:benchmark-time}
 \end{figure}
 
-The near-linear growth in the single-loop cases is consistent with the implementation.
+The near-linear growth in the single-loop case (B1) is consistent with the implementation.
 Parsing and semantic analysis see a small source program, while lowering and MIDI writing scale with the number of
 generated events.
+B3 stresses nested loop structure rather than a flat iteration count; its lowering time exceeds B1 despite
+the same event
+cap because the lowering engine walks nested control-flow frames.
 The backend also sorts events by tick before computing delta-times.
 The result is still small at the current safety limit, but the implementation should not be described as unbounded.
 
@@ -72,13 +123,13 @@ The result is still small at the current safety limit, but the implementation sh
 
 Because the compiler is implemented as a native C++23 program without reliance on garbage collection or dynamic dispatch
 for AST traversal, the constant factors in the time complexity are small in the current measurements.
-In practice, the compiler generates compositions containing event streams up to the current implementation
-limit in a fraction of a second.
+In practice, the compiler generates compositions containing event streams up to the current implementation limit in a
+fraction of a second.
 
-These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation
-remaining quick enough for interactive use.
+These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation remaining
+quick enough for interactive use.
 The interactive playground environment (discussed in previous chapters) relies on the compiler's ability to re-compile
 the entire source file during interactive compile actions.
-Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits
-well below the latency usually noticed during ordinary editor interaction, the composer experiences
-interactive auditory and visual feedback without using an interpreted runtime during playback.
+Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits well below the
+latency usually noticed during ordinary editor interaction, the composer experiences interactive auditory and visual
+feedback without using an interpreted runtime during playback.

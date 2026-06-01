@@ -9,10 +9,8 @@ set -euo pipefail
 PAPER_DIR="$(project_root_from_script "${BASH_SOURCE[0]}")"
 require_cmds chktex codespell tex-fmt
 chktex_args=(-q)
-
-if [ -f "${PAPER_DIR}/.chktexrc" ]; then
-  chktex_args+=(-l "${PAPER_DIR}/.chktexrc")
-fi
+# Benign for API identifiers, ISO dates, and inline code.
+chktex_suppressions=(-n1 -n8 -n11 -n13 -n29 -n32 -n36)
 
 echo "Running tex-fmt check with 120-character wrapping on LaTeX files under ${PAPER_DIR}"
 mapfile -d '' tex_files < <(collect_files "${PAPER_DIR}" -name "*.tex")
@@ -29,7 +27,7 @@ collect_files "${PAPER_DIR}" -name "*.tex" -o -name "*.bib" -o -name "*.sty" \
 echo "Running chktex on root document and style files under ${PAPER_DIR}"
 
 # Lint the root document so chktex resolves nested \\input trees relative to paper.tex.
-chktex "${chktex_args[@]}" -I1 "${PAPER_DIR}/paper.tex"
+chktex "${chktex_args[@]}" "${chktex_suppressions[@]}" -I1 "${PAPER_DIR}/paper.tex"
 
 style_file="${PAPER_DIR}/style.sty"
 if [ -f "${style_file}" ]; then

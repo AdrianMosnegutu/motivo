@@ -1,15 +1,47 @@
 \section{Comparative Interpretation}\label{sec:comparative-interpretation}
 
-To fully evaluate the utility and positioning of Motivo, it must be contextualized within the existing
-ecosystem of music programming tools.
-This section provides a comparative analysis against two distinct paradigms: live-coding environments (exemplified by
-Sonic Pi) and low-level scripting libraries (such as Python's \texttt{mido}).
+This section interprets the benchmark and implementation evidence from two angles.
+First, it compares version~1.0 (implicit typing, \texttt{.dsl}) with version~2.0 (explicit typing, \texttt{.motivo}) on
+identical workloads.
+Second, it situates Motivo within the broader ecosystem of music programming tools.
+
+\subsection{Version 1.0 versus Version 2.0}\label{detail-subsec:version-comparison}
+
+The explicit-typing release changes the surface language and semantic pipeline without altering the lowering or MIDI
+backend architecture.
+Version~1.0 inferred variable types from initializers (\texttt{let}), resolved pattern overloads by arity alone, and ran
+a second semantic pass (\texttt{validate\_pattern\_instantiation}) after the main traversal.
+Version~2.0 requires declared types on \texttt{var} bindings, resolves patterns by parameter type signatures, and
+performs semantic analysis in a single traversal with assignability checks at declaration and assignment sites.
+
+These design changes add compile-time guarantees: ill-typed programs fail before lowering, and pattern calls cannot
+silently bind to the wrong overload when arities coincide but types differ.
+The engineering question for this thesis is whether those guarantees impose measurable cost at scale.
+
+Table~\ref{tab:benchmark-wall-clock} answers that question on the B1--B3 fixtures.
+End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$---effectively
+$0$--$2\%$ on an Apple M3 Pro Release build.
+MIDI output sizes match byte-for-byte (Table~\ref{tab:benchmark-midi-size}), confirming that both compilers lower the
+same workloads to equivalent artifacts.
+
+The per-stage breakdown (Table~\ref{tab:benchmark-per-stage}) shows where the small difference arises.
+Semantic time increases slightly in version~2.0 (for example B1: $+0.0009$~ms mean), which is expected because explicit
+type annotations and signature-based pattern lookup add work per AST node.
+That increase is dwarfed by lowering ($\sim$1.7--2.2~ms) and MIDI writing ($\sim$1.3--2.9~ms) on 20,000-event
+programs.
+Removing the second semantic pass in version~2.0 does not produce a dramatic speedup because both passes were already
+sub-millisecond on these small ASTs; the win is primarily structural simplicity and earlier error reporting rather than
+raw throughput.
+
+In summary, the move from implicit to explicit typing trades a negligible wall-clock cost for stricter static guarantees
+and a simpler semantic architecture, while preserving output equivalence on the benchmark corpus.
 
 \subsection{Comparison with Sonic Pi}\label{detail-subsec:comparison-with-sonic-pi}
 
 Sonic Pi is a highly successful live-coding language embedded in Ruby, designed primarily for performance and education.
 While both Sonic Pi and Motivo allow music to be expressed as text, their underlying design philosophies lead
-to different compositional workflows.
+to different
+compositional workflows.
 
 \subsubsection{Execution Model}
 Sonic Pi utilizes a real-time, interpreted execution model.
@@ -19,17 +51,19 @@ Time is managed explicitly by the programmer using the \texttt{sleep} function, 
 In contrast, Motivo is fully compiled and ``zero-runtime''.
 There is no concept of a thread sleeping; instead, the \texttt{play} and \texttt{rest} commands define a mathematical
 relationship on a static timeline.
-While Sonic Pi excels in improvisational settings where the code is meant to be modified while it runs,
-Motivo is oriented toward \textit{structural composition}, where the composer needs a complex arrangement to
-resolve into a consistently quantized MIDI file every time it is compiled.
+While Sonic Pi excels in improvisational settings where the code is meant to be modified while it runs, Motivo is
+oriented toward \textit{structural composition}, where the composer needs a complex arrangement to resolve into a
+consistently quantized MIDI file every time it is compiled.
 
 \subsubsection{Structural Abstraction in Practice}
 In Sonic Pi, polyphony and parallel execution are achieved by spawning new threads (e.g., using \texttt{in\_thread}).
 This can lead to synchronization issues if the composer does not meticulously manage the timing of each thread.
 Motivo resolves parallelism through the \texttt{voice} construct.
-Because voices are unrolled at compile-time by isolating the internal cursor, the compiler supports that parallel
-musical lines are aligned according to the compiler cursor model at their inception without requiring manual
-thread management or timing arithmetic from the composer.
+Because voices are unrolled at compile-time by isolating the internal cursor, the compiler supports that
+parallel musical
+lines are aligned according to the compiler cursor model at their inception without requiring manual thread
+management or
+timing arithmetic from the composer.
 
 \subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
 
@@ -50,8 +84,9 @@ Motivo's lowering engine and backend automatically handle the translation into a
 individual notes, the sorting by absolute tick, and the final variable-length delta-time encoding.
 
 \subsubsection{Boilerplate and Expressiveness}
-A simple four-beat loop of a hi-hat playing eighth notes requires a significant amount of boilerplate in Python:
-creating a file, creating a track, appending tempo metadata, and writing a loop that interleaves \texttt{Note-On} and
+A simple four-beat loop of a hi-hat playing eighth notes requires a significant amount of boilerplate in
+Python: creating
+a file, creating a track, appending tempo metadata, and writing a loop that interleaves \texttt{Note-On} and
 \texttt{Note-Off} messages with explicit delta times.
 
 Motivo achieves the same result with minimal syntax:
@@ -63,6 +98,7 @@ track using drums {
 \end{lstlisting}
 
 This contrast in verbosity illustrates Motivo's intended role as a domain-specific tool.
-By embedding musical semantics (like default durations, rest tracking, and automatic track/channel assignment) directly
-into the language design, the compiler reduces cognitive friction and allows the user to operate strictly within the
-musical domain.
+By embedding musical semantics (like default durations, rest tracking, and automatic track/channel
+assignment) directly into
+the language design, the compiler reduces cognitive friction and allows the user to operate strictly within the musical
+domain.

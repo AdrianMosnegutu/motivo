@@ -3,31 +3,39 @@
 After the frontend produces a syntactically correct Abstract Syntax Tree, the compiler enters the \textit{Semantic
 Analysis} phase.
 This stage is responsible for ensuring that the program is logically and musically sound.
-It performs three primary tasks: identifier resolution (scoping), type inference, and musical constraint validation.
+It performs three primary tasks: identifier resolution (scoping), \textit{explicit type checking} with expression
+type propagation, and musical constraint validation.
+Unlike version~1.0, the analyzer does not infer variable types from untyped \texttt{let} bindings; every variable and
+pattern parameter carries a declared \texttt{types::Type}, and mismatches are reported at the binding or call site.
 
-\subsection{Architectural Pattern: The Recursive
-Visitor}\label{detail-subsec:architectural-pattern:-the-recursive-visitor}
+\subsection{Single-Pass Traversal Architecture}\label{detail-subsec:single-pass-traversal}
 
-The semantic analyzer is implemented in the compiler's semantic traversal class.
+The semantic analyzer is implemented in the compiler's \texttt{Traversal} class.
 Because the AST uses \texttt{std::variant} for statement and expression polymorphism, the analyzer relies on a visitor
 pattern implemented with \texttt{std::visit} and a small overloaded-helper template.
 This allows the compiler to dispatch logic cleanly based on the concrete type of the AST node without relying on dynamic
 casting or virtual method tables.
 
-The traversal process follows a precise lifecycle designed to support the hierarchical nature of Motivo\@:
+\texttt{Traversal::run()} executes one coherent walk over the program:
 
-\noindent \textbf{Global Collection.} The analyzer first iterates over all top-level global items.
-It extracts all \texttt{PatternDefinition} nodes and registers them in the global scope.
-This ``pre-pass'' enables forward referencing, allowing a track at the beginning of a file to call a pattern defined
-at the end.
+\noindent \textbf{Header validation.} Tempo and time-signature literals are range-checked before any track is visited.
 
-\noindent \textbf{Track and Voice Entry.} For each \texttt{TrackDefinition}, the analyzer enters a new lexical scope.
-It performs a similar pre-pass to collect track-local patterns before traversing the body statements.
-The same logic applies when visiting a \texttt{VoiceDefinition}.
+\noindent \textbf{Global scope.} Top-level patterns are registered first (\texttt{visit\_globals}), then global
+statements and tracks are analyzed.
+Pattern collection at scope entry is not a separate compilation pass; it is the opening step of the same traversal
+that later visits bodies and expressions.
 
-\noindent \textbf{Recursive Resolution.} Expressions are evaluated bottom-up.
-A binary expression node, for instance, will recursively visit its left and right children, infer their types,
-validate their compatibility, and then determine its own resulting type.
+\noindent \textbf{Track and voice entry.} For each \texttt{TrackDefinition}, the analyzer enters a new lexical scope,
+collects track-local patterns, then traverses track items.
+The same structure applies to \texttt{VoiceDefinition} nodes.
+
+\noindent \textbf{Bottom-up expressions.} A binary expression node recursively visits its children, obtains their
+types, validates operand compatibility, and stores the computed result type in \texttt{Annotations}.
+
+Version~1.0 relied on an additional pass (\texttt{validate\_pattern\_instantiation}) that cloned scopes and re-walked
+pattern bodies at each call.
+Version~2.0 removes that pass: pattern calls are validated when \texttt{visit\_call} evaluates argument expressions and
+invokes \texttt{validate\_call} against the overload selected by type signature.
 
 \subsection{Symbol Table and Scope Management}\label{detail-subsec:symbol-table-and-scope-management}
 
@@ -38,62 +46,114 @@ environment during the AST traversal.
 \subsubsection{Hierarchical Scoping Rules}
 
 The \texttt{ScopeStack} maintains a stack of \texttt{ScopeId} references pointing to the \texttt{SymbolTable}.
-Scopes are pushed and popped as the visitor enters and exits structural nodes (Global, Track, Voice, Pattern, and
-Control Flow Blocks).
+Scopes are pushed and popped as the visitor enters and exits structural nodes (global, track, voice, pattern, and
+control-flow blocks).
 The implementation enforces strict visibility rules:
 
 \noindent \textbf{Lookup.} When an \texttt{IdentifierExpression} is encountered, the \texttt{ScopeStack} performs a
 reverse search from the current scope up to the global scope.
-If the identifier is found, its unique \texttt{SymbolId} and inferred \texttt{Type} are retrieved.
+If the identifier is found, its \texttt{SymbolId} and the \texttt{types::Type} stored on the symbol are retrieved.
 
-\noindent \textbf{Symbol Metadata.} Every registered symbol stores its \texttt{SymbolKind} (Variable,
-  Parameter, Pattern,
-Track, or Voice), its declared \texttt{Location} in the source file, and a raw pointer back to its declaration node
-in the AST\@.
+\noindent \textbf{Symbol metadata.} Every registered symbol stores its \texttt{SymbolKind} (variable, parameter,
+pattern, track, or voice), its declared \texttt{types::Type}, its \texttt{Location} in the source file, and a raw
+pointer back to its declaration node in the AST\@.
 
 \subsubsection{AST Annotation}
 
 To separate analysis from execution, the semantic pass does not mutate the original AST structure.
 Instead, it populates an \texttt{Annotations} object.
-Upon successful resolution of an identifier, the \texttt{Annotations} object maps the memory address of the
+Upon successful resolution of an identifier, \texttt{Annotations} maps the memory address of the
 \texttt{IdentifierExpression} to its resolved \texttt{SymbolId}.
-Similarly, every evaluated expression is mapped to its inferred \texttt{Type}.
-This metadata ensures that the subsequent ``Lowering'' pass does not need to perform expensive string lookups or type
-checks; it simply retrieves the cached resolution data.
+Every evaluated expression is mapped to its computed \texttt{types::Type}.
+The lowering pass reads these cached types and symbol links; it does not repeat string lookups or re-derive types.
 
 \subsection{Formal Type Rules and Constraints}\label{detail-subsec:formal-type-rules-and-constraints}
 
-The type system acts as the ``Musical Guardrail'' of the compiler, implemented in the \texttt{type\_rules.cpp} module.
+The type system acts as the musical guardrail of the compiler, implemented in \texttt{type\_rules.hpp} and
+\texttt{type\_rules.cpp}.
+All types are represented by the \texttt{motivo::types::Type} enumeration (not the legacy \texttt{TypeKind} name from
+version~1.0).
 
 \subsubsection{Type Categories}
-The analyzer categorizes types into the \texttt{TypeKind} enumeration:
 
-\noindent \textbf{Scalars.} \texttt{Int}, \texttt{Double}, \texttt{Bool}.
-These are utilized for mathematical operations, loop counts, and conditional logic.
+\noindent \textbf{Scalars.} \texttt{Int}, \texttt{Double}, \texttt{Bool} --- used for loop bounds, arithmetic, and
+conditionals.
+Only \texttt{int}, \texttt{double}, and \texttt{bool} may appear in \texttt{VarDeclStatement} and pattern parameter
+positions.
 
-\noindent \textbf{Musical Primitives.} \texttt{Note}, \texttt{Rest}, \texttt{Chord}, \texttt{Sequence}, \texttt{Drum}.
-These represent the playable entities that occupy space on the timeline.
+\noindent \textbf{Musical primitives.} \texttt{Note}, \texttt{Rest}, \texttt{Chord}, \texttt{Sequence}, \texttt{Drum}
+--- the playable or composable entities that lowering eventually flattens into \texttt{NoteEvent} records.
+Declarable variable types include \texttt{note}, \texttt{seq}, and \texttt{chord}; \texttt{rest} and drum literals are
+expression-only.
 
-\noindent \textbf{Utility Types.} \texttt{Unknown} (used during error recovery) and \texttt{Void} (for statements that
-produce no value).
+\noindent \textbf{Utility types.} \texttt{Unknown} (error recovery) and \texttt{Void} (non-value statements).
 
-\subsubsection{Constraint Validation Logic}
-The analyzer enforces critical invariants through specific validator methods within the \texttt{Traversal} class:
+\subsubsection{Strict Declarations and Assignments}
 
-\noindent \textbf{\texttt{validate\_binary\_operands}:} Ensures that arithmetic operators (\texttt{+}, \texttt{-},
-\texttt{*}, \texttt{/}, \texttt{\%}) are strictly applied to numeric scalars (\texttt{Int} or \texttt{Double}).
-For example, attempting to add two sequences (\texttt{[C4] + [D4]}) will trigger a semantic error, as musical
-concatenation is handled differently than arithmetic addition.
+The design deliberately rejects implicit widening at declaration and assignment sites.
+The function \texttt{is\_assignable(target, source)} returns true only when \texttt{target == source}.
+Thus \texttt{int x = 1.0;} is rejected even though arithmetic expressions may promote \texttt{Int} and
+\texttt{Double} operands via \texttt{numeric\_result}.
+This choice makes variable types a reliable contract for pattern parameters and for lowering's dynamic scope: the
+composer states intent explicitly, and the compiler does not silently change storage semantics.
 
-\noindent \textbf{\texttt{validate\_play\_target}:} This method verifies that the target of a \texttt{play}
-statement resolves to a valid musical primitive.
-If a composer mistakenly writes \texttt{play (i < 5);}, the analyzer intercepts the error because the target
-evaluates to a \texttt{Bool}.
+\texttt{visit\_var\_decl\_statement} evaluates the initializer, then requires \texttt{is\_assignable(declared\_type,
+value\_type)} before registering the symbol.
+Assignments to existing variables apply the same rule through the symbol's stored type.
 
-\noindent \textbf{\texttt{validate\_pattern\_instantiation}:} When a \texttt{PatternCallExpression} is visited,
-the analyzer
-performs a virtual instantiation.
-It creates a temporary scope, binds the parameter names to the types of the arguments provided at the call site, and
-recursively visits the pattern's body block.
-This allows the compiler to catch type errors \textit{inside} a pattern that only manifest when it is invoked with
-specific argument types, ensuring deep semantic validation.
+\subsubsection{Expression and Musical Validators}
+
+\noindent \textbf{Binary operators.} Arithmetic operators require numeric operands; comparisons and logical operators
+yield \texttt{Bool} via \texttt{binary\_result\_type}.
+Adding two sequences remains invalid---sequence concatenation is a structural construct, not \texttt{+}.
+
+\noindent \textbf{\texttt{play} targets.} The play visitor requires musical expression types (\texttt{Note},
+\texttt{Chord}, \texttt{Sequence}, or \texttt{Rest}) for melodic sources, and enforces drum-versus-melodic track
+consistency when an instrument is declared.
+Optional \texttt{:} duration and \texttt{from} offsets must type-check as numeric expressions.
+
+\noindent \textbf{Pattern calls and overload resolution.} When a \texttt{PatternCallExpression} is visited, argument
+expressions are typed first.
+\texttt{validate\_call} resolves \texttt{find\_pattern\_visible\_by\_signature(callee, argument\_types)}.
+Multiple patterns may share a name if their parameter type lists differ; arity alone is insufficient.
+If no signature matches, the compiler reports an undefined pattern or a ``no matching overload'' error.
+Each argument must satisfy \texttt{is\_assignable(parameter\_type, argument\_type)}.
+This replaces version~1.0's arity-only dispatch and removes the need to virtually instantiate pattern bodies in a
+second pass.
+
+\subsection{Implementation Layout and Module Structure}\label{detail-subsec:semantic-implementation-layout}
+
+Semantic analysis is compiled into \texttt{motivo\_semantic}.
+The public façade \texttt{semantic/analyze.cpp} constructs an \texttt{AnalysisResult} from the parsed program and
+runs \texttt{detail::Traversal(result, diagnostics).run(program)}.
+Implementation files partition responsibilities as follows.
+
+\noindent \textbf{\texttt{detail/traversal.cpp}.} Defines \texttt{Traversal::run}, header validation
+(\texttt{validate\_header}), and \texttt{add\_pattern\_symbol} (registers overload signatures via
+\texttt{ScopeStack::add\_symbol}).
+
+\noindent \textbf{\texttt{detail/traversal/collectors.cpp}.} Implements \texttt{collect\_global\_patterns},
+\texttt{collect\_track\_patterns}, and \texttt{collect\_voice\_patterns}, each scanning local \texttt{PatternDefinition}
+nodes before bodies are visited so calls can resolve overloads.
+
+\noindent \textbf{\texttt{detail/traversal/validators.cpp}.} Hosts \texttt{validate\_binary\_operands},
+\texttt{validate\_numeric\_operand}, and \texttt{validate\_call} (signature lookup through
+\texttt{find\_pattern\_visible\_by\_signature} plus per-argument \texttt{is\_assignable} checks).
+
+\noindent \textbf{\texttt{detail/traversal/visitors/}.} Split translation units keep compile times manageable:
+\texttt{visit\_definitions.cpp} (\texttt{visit\_globals}, \texttt{visit\_track}, \texttt{visit\_voice},
+\texttt{visit\_pattern}), \texttt{visit\_statements.cpp} (control flow, declarations, assignments, \texttt{play}),
+and \texttt{visit\_expressions.cpp} (literals, operators, sequences, chords, pattern calls).
+
+\noindent \textbf{\texttt{detail/symbol\_table.cpp} and \texttt{detail/scopes/scope\_stack.cpp}.} The symbol table
+stores \texttt{Scope} records and \texttt{Symbol} entries indexed by \texttt{SymbolId}; the scope stack pushes/pops
+lexical scopes as the visitor enters global, track, voice, pattern, and block nodes.
+Pattern overload uses \texttt{find\_in\_current\_scope\_by\_signature} rather than arity alone.
+
+\noindent \textbf{\texttt{detail/annotations.cpp}.} Maps expression pointer addresses to computed \texttt{types::Type}
+values and resolved \texttt{SymbolId}s; also records assignment targets for \texttt{AssignStatement} nodes.
+Lowering queries these maps through \texttt{AnalysisResult} accessors and never re-runs type inference.
+
+Each \texttt{visit\_*} method returns a \texttt{types::Type} for expressions or \texttt{Void} for statements, writing
+results into \texttt{Annotations} before returning so downstream siblings and enclosing expressions observe consistent
+types within the same traversal.

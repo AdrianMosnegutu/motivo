@@ -1,37 +1,40 @@
 \section{Compiler and Domain-Specific Language Foundations}\label{sec:compiler-dsl-foundations}
 
 A compiler is a specialized software system that translates source code written in a high-level programming language
-into a lower-level representation, such as machine code, bytecode, or in the context of this thesis, a binary MIDI file.
+into a lower-level representation, such as machine code, bytecode, or---in the context of this thesis---a binary MIDI
+file.
 The compilation process is traditionally divided into several distinct phases to manage complexity and support
 systematic validation~\cite{Aho_Lam_Sethi_Ullman_2006,Cooper_Torczon_2011}.
 
 \subsection{Lexical and Syntactic Analysis}\label{detail-subsec:lexical-and-syntactic-analysis}
 
-The first phase, \textit{Lexical Analysis} (or scanning), reads the raw character stream of the source file and groups
+The first phase, \textit{lexical analysis} (scanning), reads the raw character stream of the source file and groups
 characters into meaningful sequences called \textit{tokens}.
-For example, the string \texttt{tempo} might be converted into a \texttt{KEYWORD\_TEMPO} token, while \texttt{120}
-becomes an \texttt{INT\_LITERAL} token.
-This is often implemented using tools like Flex, which rely on regular expressions~\cite{Flex_2026}.
+For example, the string \texttt{tempo} might be converted into a keyword token, while \texttt{120} becomes an integer
+literal token.
+Regular expressions and finite automata provide the theoretical basis for recognizing token classes; in practice,
+scanner generators automate this phase from a token specification~\cite{Aho_Lam_Sethi_Ullman_2006}.
 
-The second phase, \textit{Syntactic Analysis} (or parsing), takes the stream of tokens and verifies that they form a
-valid sequence according to the formal grammar of the language, commonly using parser generators such as
-Bison~\cite{GNU_Bison_2026}.
-This phase organizes the flat token stream into a hierarchical tree structure known as an \textit{Abstract Syntax Tree}
+The second phase, \textit{syntactic analysis} (parsing), takes the stream of tokens and verifies that they form a
+valid sequence according to the formal grammar of the language.
+Context-free grammars and pushdown automata model this step~\cite{Aho_Lam_Sethi_Ullman_2006}.
+The parser organizes the flat token stream into a hierarchical tree structure known as an \textit{Abstract Syntax Tree}
 (AST).
 The AST captures the logical operations of the code (e.g., nesting a \texttt{play} statement inside a \texttt{loop}
 block) while discarding irrelevant textual details like whitespace and semicolons.
 
 \subsection{Semantic Analysis}\label{detail-subsec:semantic-analysis}
 
-While the parser ensures that a sentence is grammatically correct, the \textit{Semantic Analyzer} ensures that it makes
+While the parser ensures that a sentence is grammatically correct, the \textit{semantic analyzer} ensures that it makes
 logical sense.
-This phase traverses the AST to perform checks that cannot be captured by a context-free grammar.
+This phase traverses the AST to perform checks that cannot be captured by a context-free
+grammar~\cite{Cooper_Torczon_2011}.
 The semantic phase therefore centers on two responsibilities.
 
-\noindent \textbf{Type Checking.} Ensuring that operations are applied to compatible data types (e.g., preventing the
+\noindent \textbf{Type checking.} Ensuring that operations are applied to compatible data types (e.g., preventing the
 addition of a boolean to a note).
 
-\noindent \textbf{Symbol Resolution.} Maintaining a \textit{Symbol Table} to ensure that variables and functions are
+\noindent \textbf{Symbol resolution.} Maintaining a \textit{symbol table} to ensure that variables and functions are
 declared before they are used, and that they are accessed within their valid scope.
 
 \subsection{Intermediate Representation and Code
@@ -39,14 +42,31 @@ Generation}\label{detail-subsec:intermediate-representation-and-code-generation}
 
 After validation, the compiler often translates the AST into an \textit{Intermediate Representation} (IR).
 An IR is a lower-level, often flattened representation of the program that is easier to optimize and translate than the
-hierarchical AST\@.
-In standard compilers, this might involve generating three-address code.
+hierarchical AST~\cite{Cooper_Torczon_2011}.
+In standard compilers this might involve generating three-address code.
 In the context of music generation, lowering to an IR involves unrolling loops and resolving relative timings into
 absolute timestamps.
 
-Finally, the \textit{Code Generation} phase translates the IR into the target output format.
-This phase handles the intricate binary serialization details, such as little/big-endian encoding and specific protocol
-constraints, yielding the final executable artifact.
+Finally, the \textit{code generation} phase translates the IR into the target output format.
+This phase handles the intricate binary serialization details, such as endianness encoding and protocol-specific
+constraints, yielding the final artifact.
+
+\subsection{The Motivo Compilation Pipeline}\label{subsec:motivo-pipeline}
+
+Motivo follows the phased structure described above.
+The end-to-end pipeline implemented in this thesis is
+\texttt{parse} $\rightarrow$ \texttt{semantic analysis} $\rightarrow$ \texttt{lowering} $\rightarrow$
+\texttt{MIDI code generation}.
+
+Lexical and syntactic analysis produce an AST from Motivo source.
+Semantic analysis performs a single traversal that validates types, resolves pattern overloads by parameter signature,
+and attaches type annotations to expressions.
+Lowering expands control flow, pattern calls, and track structure into a flat intermediate program of
+timestamped musical
+events.
+The MIDI backend serializes that program into a Standard MIDI File.
+There is no separate optimization pass: the compiler's role is validation and deterministic expansion rather than
+runtime scheduling.
 
 Domain-specific languages are useful when a problem has stable concepts that are awkward to express directly
 in a general-purpose language. Van Deursen, Klint, and Visser describe DSLs as languages that trade
@@ -55,3 +75,41 @@ makes a similar software-engineering argument: a DSL can be worthwhile when its 
 expressed more directly than the host implementation language~\cite{Fowler_2010}. Motivo applies that
 argument to symbolic composition: the implementation is written in C++23, but the user writes musical
 structures rather than C++ vectors of binary MIDI messages.
+
+\subsection{Structure of This Thesis}\label{subsec:thesis-roadmap}
+
+The remainder of this document follows the Motivo system from motivation through evaluation.
+Table~\ref{tab:thesis-roadmap} summarizes what each chapter covers.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.4}
+  \begin{tabular}{p{1.2cm}p{4.5cm}p{7.5cm}}
+    \toprule
+    \textbf{Ch.} & \textbf{Title} & \textbf{What the reader learns} \\
+    \midrule
+    1 & Research context and theoretical foundations &
+    Digital music workflows, MIDI background, compiler theory, related musical languages, and the research gap Motivo
+    addresses \\
+    2 & Design of the Motivo language and compiler &
+    Language grammar, type system, semantic rules, compilation pipeline, and implementation of each compiler stage \\
+    3 & System architecture and software engineering &
+    Motivo Studio web application: editor, compile API, visualization, playback, deployment, testing, and CI/CD \\
+    4 & Empirical evaluation &
+    Benchmark methodology, compilation-time measurements, event-expansion behavior, test evidence, and current limits \\
+    5 & Conclusions and future directions &
+    Contributions, limitations, and directions for extending the language and toolchain \\
+    \bottomrule
+  \end{tabular}
+  \caption{Roadmap of the thesis chapters.}\label{tab:thesis-roadmap}
+\end{table}
+
+Chapter~\ref{ch:language-compiler} is the technical core: it explains both the language design and the compiler
+implementation in detail.
+Chapter~\ref{ch:studio-engineering} treats the web studio as an integral engineering artifact rather than a demo
+wrapper.
+Chapter~\ref{ch:evaluation} evaluates properties that can be measured from the implementation---compilation speed,
+event expansion, and automated test coverage---without claiming to assess musical creativity.
+Chapter~\ref{ch:conclusion} summarizes contributions honestly, including known limitations of the current language and
+toolchain.

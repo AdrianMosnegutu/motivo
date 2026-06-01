@@ -1,114 +1,107 @@
 \section{Testing and Continuous Integration}\label{sec:testing-ci}
 
-The project uses separate CI workflows for the paper, compiler, server, and client through GitHub Actions
-workflows~\cite{GitHub_Actions_2026}.
-The paper workflow checks LaTeX formatting, spelling, linting, and PDF build.
-The compiler workflow checks formatting, builds the native compiler, runs CTest with GoogleTest, publishes test reports,
-and summarizes coverage through gcovr.
-The server and client workflows run ESLint, TypeScript type checks, Prettier checks, Vitest tests with coverage, builds,
-and Docker image packaging.
+Quality for Motivo Studio is enforced at four boundaries: the C++ compiler (CTest/GoogleTest), the Express API
+(Vitest with optional Postgres integration), the Next.js client (Vitest and Testing Library), and this thesis PDF
+(GitHub Actions on \texttt{paper/}).
+Counts below were collected on 2026-06-01 at monorepo commit \texttt{7e8a55fb} unless noted.
 
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[
-      job/.style={rounded corners=4pt, draw=motivoInk!60, very thick, minimum width=2.05cm, minimum height=0.82cm,
-      align=center, font=\small\sffamily},
-      arrow/.style={-Stealth, thick, draw=motivoInk!70}
-    ]
-    \node[job, fill=motivoBlue!14] (format) {format};
-    \node[job, fill=motivoCyan!14, right=0.28cm of format] (lint) {lint};
-    \node[job, fill=motivoGreen!14, right=0.28cm of lint] (types) {types};
-    \node[job, fill=motivoAmber!20, right=0.28cm of types] (test) {tests};
-    \node[job, fill=motivoRose!12, right=0.28cm of test] (build) {build};
-    \node[job, fill=motivoViolet!13, right=0.28cm of build] (package) {package};
-
-    \draw[arrow] (format) -- (lint);
-    \draw[arrow] (lint) -- (types);
-    \draw[arrow] (types) -- (test);
-    \draw[arrow] (test) -- (build);
-    \draw[arrow] (build) -- (package);
-  \end{tikzpicture}
-  \caption{Common CI progression used across the project, adapted per component.}\label{fig:ci-flow}
-\end{figure}
-
-The test suites cover different failure modes.
-Compiler unit tests use GoogleTest and exercise note mapping, parsing, semantic rules, lowering expressions, cursor
-behavior, pattern calls, voice parallelism, and MIDI writing~\cite{GoogleTest_2026}.
-Golden tests check representative success and error fixtures.
-Server and client tests use Vitest to cover request validation, controller behavior, compiler process integration,
-diagnostics parsing, editor setup, MIDI parsing, playback utilities, piano-roll rendering, shared UI components, and IDE
-workflow hooks~\cite{Vitest_2026}.
-This distribution is appropriate for a full-stack compiler tool because failures can happen at several
-boundaries: language semantics, binary serialization, process execution, HTTP transport, browser parsing, and
-UI rendering.
-
-To ensure the correctness of the compilation pipeline and the validity of the generated MIDI artifacts, a comprehensive
-testing suite was implemented using the \textit{Google Test} framework.
-The testing strategy follows a tiered approach, covering individual units, module boundaries, and end-to-end
-integration.
-
-\subsection{Unit Testing}\label{detail-subsec:unit-testing}
-
-Unit tests focus on the smallest verifiable components of the compiler.
-This is particularly important for the musical domain logic, where small errors in calculation can lead to significant
-musical dissonance.
-The test cases cover several error-prone responsibilities.
-
-\noindent \textbf{Pitch Math.} Verifying that pitch literals (e.g., \texttt{A4}) map correctly to MIDI note
-numbers (e.g.,
-69) and that octave offsets are handled according to the standard.
-
-\noindent \textbf{Diagnostic Reporting.} Ensuring that the \texttt{DiagnosticsEngine} correctly captures and formats
-errors across different stages of the pipeline.
-
-\noindent \textbf{Lexer Accuracy.} Stress-testing the Flex regex patterns with edge cases, such as multiple consecutive
-accidentals or varying whitespace.
-
-\subsection{Integration and Regression Testing}\label{detail-subsec:integration-and-regression-testing}
-
-Integration tests verify that the different stages of the compiler work together seamlessly.
-These tests utilize a ``Golden File'' methodology:
-
-\noindent A set of representative Motivo source files (located in \texttt{tests/data/}) is compiled.
-
-\noindent The resulting IR is checked for temporal consistency (e.g., ensuring no notes overlap unless explicitly
-requested).
-
-\noindent The final MIDI binary is compared against a previously validated ``golden'' version to detect
-unexpected changes
-in behavior.
-
-Regression tests were instrumental during the refactoring process (e.g., when decomposing the monolithic lowerer).
-By maintaining a suite of complex compositions---such as the \texttt{fur\_elise.motivo} example---the compiler's
-output could be
-verified for byte-level consistency after every architectural change.
-
-\subsection{Integration in the Development Lifecycle}\label{detail-subsec:integration-in-the-development-lifecycle}
-
-The testing suite is integrated into the build system via CMake's \texttt{CTest} module.
-This allows for one-command verification of the entire system (\texttt{make test}).
-By enforcing a high level of test coverage, particularly in the lowering and backend stages, the implementation provides
-repeatable evidence that the generated compositions are mathematically and musically accurate.
-This verification process supports the thesis by treating the creative tool as a repeatable software system.
+\subsection{Verified test inventory}\label{subsec:test-inventory}
 
 \begin{table}[htbp]
   \centering
   \renewcommand{\arraystretch}{1.3}
-  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{3.2cm}X}
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{2.4cm}X}
     \toprule
-    \textbf{Subsystem} & \textbf{Primary tools} & \textbf{What the tests protect} \\
+    \textbf{Subsystem} & \textbf{Tooling} & \textbf{Counts} & \textbf{Coverage / notes} \\
     \midrule
-    Compiler & CTest and GoogleTest & Grammar behavior, semantic diagnostics, lowering, MIDI writer, golden fixtures. \\
-    Server & Vitest and Supertest & Request validation, compile route behavior, fake compiler integration,
-    diagnostics parsing. \\
-    Client & Vitest and Testing Library & Editor wiring, MIDI parsing, piano-roll rendering, playback hooks,
-    IDE components. \\
-    Paper & latexmk, tex-fmt, lint, codespell & Formatting, spelling, LaTeX warnings, and reproducible PDF
-    generation. \\
+    Compiler & CTest, GoogleTest & 53 test translation units; \textbf{635} registered CTest cases; 4 golden
+    \texttt{.motivo} fixtures in \texttt{tests/golden/fixtures/} & Local Debug run: \textbf{635/635 passed} after
+    correcting \texttt{lowering\_errors.motivo} (division semantics no longer triggers lowering-stage errors).
+    CI runs \texttt{make ci-test} with gcovr coverage enabled. \\
+    Server & Vitest, Supertest & 7 test files; \textbf{31} test cases (\textbf{20} unit without DB; \textbf{11}
+    integration skipped locally without Postgres) & Local unit coverage: \textbf{34.6\%} statements,
+    \textbf{34.4\%} lines. CI uses Postgres~16 service container and \texttt{npm run test:ci}. \\
+    Client & Vitest, Testing Library & 26 test files; \textbf{79} tests (all passed locally) & Local coverage:
+    \textbf{49.7\%} statements, \textbf{51.4\%} lines. CI runs \texttt{npm run test:ci}. \\
+    Paper & latexmk, tex-fmt, chktex, codespell & 4 jobs on \texttt{paper/**} pushes & Reproducible PDF artifact; no
+    coverage metric. \\
     \bottomrule
   \end{tabularx}
-  \caption{Testing responsibilities by subsystem.}\label{tab:testing-matrix}
+  \caption{Test and coverage baseline for thesis claims (2026-06-01).}\label{tab:test-counts}
 \end{table}
 
-This engineering chapter completes the description of the implemented system.
-The next chapter evaluates Motivo through local measurements and source-to-output comparisons.
+Compiler unit suites exercise parsing, explicit type rules, lowering, MIDI writing, and integration through
+\texttt{motivo::compile()}.
+Golden tests compile fixture sources (\texttt{happy\_path.motivo}, \texttt{parse\_errors.motivo},
+\texttt{semantic\_errors.motivo}, \texttt{lowering\_errors.motivo}) and assert MIDI shape or collected diagnostics per
+stage---not byte-identical comparison to a checked-in \texttt{fur\_elise} binary (that composition ships as a studio
+example only).
+
+Server tests cover Zod validation, compile controller success and failure paths with fake \texttt{motivoc}
+executables, stderr diagnostic parsing, auth session cookies, and file CRUD against Postgres when available.
+Client tests cover compile hooks, marker mapping, MIDI parsing, piano-roll layout hooks, playback utilities, auth
+context, file workspace/autosave scheduling, and IDE shortcuts.
+
+\subsection{Monorepo CI workflows}\label{subsec:ci-workflows}
+
+GitHub Actions workflows live at the monorepo root (paths under \texttt{code/} and \texttt{paper/}).
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.2cm}X}
+    \toprule
+    \textbf{Workflow} & \textbf{Trigger paths} & \textbf{Job progression} \\
+    \midrule
+    \texttt{compiler.yml} & \texttt{code/compiler/**} & static (clang-format) $\rightarrow$ build (CMake/Ninja)
+    $\rightarrow$ test (CTest + gcovr report) $\rightarrow$ package (Docker/build artifacts). \\
+    \texttt{server.yml} & \texttt{code/server/**} & lint (ESLint) $\rightarrow$ typecheck $\rightarrow$ format-check
+    $\rightarrow$ test (Vitest + Postgres) $\rightarrow$ build $\rightarrow$ package. \\
+    \texttt{client.yml} & \texttt{code/client/**} & lint $\rightarrow$ typecheck $\rightarrow$ format-check
+    $\rightarrow$
+    test $\rightarrow$ build $\rightarrow$ package. \\
+    \texttt{paper.yml} & \texttt{paper/**} (excludes \texttt{notes/}, \texttt{scripts/}) & format-check (tex-fmt)
+    $\rightarrow$ lint-check (chktex) $\rightarrow$ spell-check (codespell) $\rightarrow$ build-paper (TeX Live PDF). \\
+    \bottomrule
+  \end{tabularx}
+  \caption{CI workflows and their primary stages.}\label{tab:ci-workflows}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        job/.style={motivo/mod, minimum width=1.7cm, minimum height=0.72cm},
+        arrow/.style={-Stealth, thick, draw=motivoInk!70}
+      ]
+      \node[job, fill=motivoBlue!14] (format) {static / lint};
+      \node[job, fill=motivoCyan!14, right=0.18cm of format] (lint) {format};
+      \node[job, fill=motivoGreen!14, right=0.18cm of lint] (types) {build};
+      \node[job, fill=motivoAmber!20, right=0.18cm of types] (test) {test};
+      \node[job, fill=motivoRose!12, right=0.18cm of test] (package) {package};
+
+      \draw[arrow] (format) -- (lint);
+      \draw[arrow] (lint) -- (types);
+      \draw[arrow] (types) -- (test);
+      \draw[arrow] (test) -- (package);
+    \end{tikzpicture}%
+  }
+  \caption{Typical CI progression per module (exact job names vary slightly between compiler and web workflows).}%
+  \label{fig:ci-flow}
+\end{figure}
+
+Each workflow supports \texttt{workflow\_dispatch} for manual reruns and uses path filters so unrelated modules do not
+rebuild on every commit.
+Concurrency groups cancel superseded runs on the same branch.
+
+\subsection{Deploy gate and responsibilities}\label{subsec:deploy-gate}
+
+Production deploys on Railway are gated on successful GitHub CI for \texttt{main} (author-confirmed integration).
+This chapter's deployment topology (Section~\ref{sec:deployment}) describes how passing pipelines promote Docker images
+to Amsterdam-region services and how database migrations run before server rollout.
+
+The distribution of tests matches the failure modes of a full-stack language tool: semantics and MIDI correctness in
+C++; process and HTTP contracts on the server; parsing, rendering, and UX on the client; typographic and build integrity
+on the paper.
+Together with the architecture and feature sections above, this completes the engineering description of the
+implemented system before the evaluation chapter measures compiler behavior quantitatively.

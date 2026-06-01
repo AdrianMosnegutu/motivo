@@ -2,7 +2,7 @@
 
 The Musical Instrument Digital Interface (MIDI) is an industry-standard technical protocol developed in 1983
 to enable electronic instruments, computers, and related devices to communicate and synchronize with each
-other~\cite{MIDI_Association_2026_Core,Moog_1986}.
+other~\cite{Moog_1986}.
 Crucially, MIDI does not transmit digital audio (sound waves); instead, it transmits \textit{event messages} that act as
 instructions for how music should be produced by a receiving synthesizer.
 
@@ -22,7 +22,7 @@ from a piano to a violin).
 
 Because MIDI transmits events rather than waveforms, a piece of music represented in MIDI is highly editable.
 A composer can retroactively change the pitch, duration, or instrument of any note without degrading the audio quality,
-making MIDI the \textit{de facto} standard for digital composition.
+making MIDI the \textit{de facto} standard for digital composition~\cite{Moog_1986}.
 
 \subsection{Channels and General MIDI}\label{detail-subsec:channels-and-general-midi}
 
@@ -35,10 +35,10 @@ key numbers trigger different drum samples (e.g., Key 36 is the Bass Drum).
 \subsection{Delta-Times and Standard MIDI Files (SMF)}\label{detail-subsec:delta-times-and-standard-midi-files-(smf)}
 
 When saving MIDI data to a file (a \texttt{.mid} file), the Standard MIDI File format uses
-\textit{delta-times}~\cite{MIDI_Association_2026_SMF}.
+\textit{delta-times}~\cite{Moog_1986,Moore_1988}.
 Instead of recording the absolute time at which an event occurs, a Standard MIDI File records the number of ``ticks'' to
 wait after the \textit{previous} event before executing the current one.
 Ticks are subdivisions of a quarter note, defined by the file's \textit{Pulses Per Quarter-note} (PPQ) resolution (e.g.,
 480 PPQ).
-This relative timing system is highly efficient but requires careful calculation when translating from absolute musical
-beats into a serialized file format.
+This relative timing system is efficient for serialization but requires careful calculation when translating from
+absolute musical beats into a binary file format---a task Motivo's MIDI backend performs during code generation.

@@ -1,37 +1,50 @@
 \section{Future Work}\label{sec:future-work}
 
-The most natural language extension is richer musical context.
-Key signatures are a good example because they would let Motivo understand scale degrees, diatonic transposition, and
-harmonic functions instead of treating all notes as independent pitch literals.
-This should be introduced carefully.
-It would require syntax, semantic rules, interactions with accidentals, and clear lowering behavior.
-Because that support is not part of the current implementation, it belongs in future work rather than in the language
-description.
+The limitations in Section~\ref{sec:limitations} suggest a natural roadmap.
+Each item below extends Motivo without contradicting the offline, MIDI-first design, but none is implemented in the
+present thesis.
 
-Another useful extension is continuous musical data.
-MIDI control changes, pitch bend, and automation curves would make Motivo more expressive for modern production
-workflows.
-Supporting them would require changes to the AST, type system, intermediate representation, MIDI backend, piano-roll
-visualizer, and playback scheduler.
-The existing separation between IR and backend makes such an extension plausible, but it is not a small addition.
+\subsection{Richer MIDI expression}\label{subsec:fw-midi-expression}
 
-The compiler could also expose more evaluation and debugging data.
-For example, Motivo Studio could show the number of generated events, the longest track duration, compile time, MIDI
-file size, and event-density warnings after each compile.
-This would turn the current thesis measurements into user-facing feedback and would help users understand when a source
-program is becoming too large.
+The most direct gap relative to modern production workflows is expressive control at the note and track level.
+Per-note velocity syntax, velocity curves driven by loops or pattern parameters, and MIDI continuous controllers
+(including volume and filter-related CC data) would require AST and type-system extensions, IR fields beyond the
+current four-tuple model, backend serialization changes, and corresponding updates to the piano-roll visualizer and
+Tone.js playback scheduler.
+Pitch bend and automation-style envelopes would follow the same pipeline.
+The existing separation between IR and backend makes such extensions architecturally plausible, but they remain
+substantial cross-cutting work.
 
-Finally, the application could support project persistence and export workflows.
-Saving Motivo source files, exporting MIDI with metadata, comparing generated versions, and integrating with cloud
-storage would move Motivo Studio closer to a practical composition tool.
-Those features would not change the compiler's core idea, but they would improve the surrounding product.
+\subsection{Modularity, instruments, and libraries}\label{subsec:fw-modularity}
 
-A standard library is another natural direction. Reusable scales, chord progressions, arpeggiators, Euclidean
-rhythms, and common drum patterns would make the language more practical without changing its core compiler
-model. Such a library should be designed after the core type system is stable, because library functions
-would depend on how Motivo represents harmonic context and pattern parameters.
+Cross-file \texttt{import} or module boundaries would let composers share pattern libraries across projects without
+copying source text.
+That feature touches parsing (multi-unit compilation), semantic visibility rules, Studio file relationships, and
+possibly a package or namespace convention.
+In parallel, a less rigid instrument model---custom GM program numbers, named sound presets, or project-level
+instrument tables---would reduce dependence on the current keyword enum.
+A standard library of reusable scales, chord voicings, arpeggiators, Euclidean rhythms, and drum templates could sit
+atop either extension once harmonic context and module boundaries are defined.
 
-Alternative backends also remain possible future work. The current backend targets Standard MIDI Files, but
-the same intermediate representation could be used as the basis for JSON event export, MusicXML-oriented
-notation export, or integration with synthesis systems. Those targets would require separate mapping rules
-and should not be treated as implemented behavior in the present thesis.
+\subsection{Harmonic context}\label{subsec:fw-harmonic-context}
+
+Key-signature declarations would let Motivo reason about scale degrees, diatonic transposition, and chord functions
+instead of treating every pitch as an independent literal.
+Introducing them carefully requires syntax, semantic interactions with accidentals, and explicit lowering rules so
+that deterministic MIDI output remains predictable.
+Because key signatures are not part of the current implementation, they belong here rather than in the language
+description chapters.
+
+\subsection{Studio product and evaluation depth}\label{subsec:fw-studio-eval}
+
+On the application side, deeper project workflows---multi-file workspaces, version comparison, richer export metadata,
+and compile feedback surfaced in the UI (event counts, compile time, density warnings)---would address friction noted
+in Section~\ref{subsec:lim-daw-workflow} without changing the compiler's core model.
+Alternative backends (JSON event streams, MusicXML-oriented export, or direct synthesis targets) could reuse
+the same IR.
+
+Evaluation could grow beyond synthetic throughput benchmarks.
+Configurable resource limits replacing the fixed 20,000-event cap, multi-machine performance studies, and user-centered
+experiments comparing Motivo to DAW note entry for specific task types would strengthen claims about workflow fit.
+A third compiler generation benchmark deferred by the author until a new language feature lands would complement the
+existing version~1.0 versus version~2.0 comparison.

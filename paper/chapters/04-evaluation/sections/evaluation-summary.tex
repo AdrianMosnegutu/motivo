@@ -1,15 +1,13 @@
 \section{Evaluation Summary}\label{sec:evaluation-summary}
 
 The evaluation supports three bounded conclusions.
-First, Motivo's compiler can expand compact source rules into much larger MIDI event streams, as shown by the synthetic
-source-to-event benchmarks.
-Second, the current Release build compiles the tested programs quickly on the local machine, with the largest benchmark
-cases finishing around 6 ms.
-Third, the implemented system includes testing and CI coverage across compiler, API, client, and paper workflows.
+First, Motivo's compiler can expand compact source rules into much larger MIDI event streams, as shown by fixtures B1
+(20,000 events from 8 lines), B2 (9,980 events from 8 lines), and B3 (20,000 events from 12 nested loops).
+Second, version~1.0 and version~2.0 both compile these programs in about 5--8~ms end-to-end on a local Apple M3 Pro
+Release build, with version~2.0 imposing roughly $0$--$2\%$ wall-clock overhead while producing identical MIDI output.
+Third, the implemented system includes testing and CI coverage across compiler (635 CTest cases), server, client, and
+paper workflows.
 
-The evaluation also establishes limits.
-The benchmark corpus is synthetic, the hardware is a single Apple M3 Pro machine, the compiler has a 20,000-note-event
-safety cap, and no user study was performed.
-These limits do not weaken the thesis; they make the claims more precise.
-The project demonstrates a working compiler-centered music tool and measures its current behavior without claiming more
-than the implementation can support.
+The benchmark corpus is synthetic, the hardware is a single machine, the compiler enforces a 20,000-note-event safety
+cap, and no user study was performed.
+These boundaries scope the claims made here; broader limitations and future work are deferred to the conclusion chapter.

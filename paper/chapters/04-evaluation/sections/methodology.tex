@@ -1,25 +1,35 @@
 \section{Methodology}\label{sec:evaluation-methodology}
 
-The benchmark was run locally with a Release build of \texttt{motivoc}.
-The binary was built outside the repository at \texttt{/tmp/motivo-thesis-bench-build} using CMake 4.3.2 and Apple
-clang 21.0.0.
-Measurements were taken on an Apple M3 Pro machine with 18 GB of RAM\@.
-The timing tool was \texttt{hyperfine} 1.20.0 with shell execution disabled, 5 warmup runs, and 50 measured
-runs~\cite{Hyperfine_2026}.
-Each measured command compiled one \texttt{.motivo} source file and wrote the resulting MIDI file, so the
-results include
-process startup, parsing, semantic analysis, lowering, MIDI serialization, and file output.
+The evaluation compares two tagged compiler releases on identical synthetic workloads.
+Version~1.0 corresponds to git tag \texttt{v1.0.0-base} and the \texttt{dslrc} CLI over \texttt{.dsl} sources;
+version~2.0 corresponds to \texttt{v2.0.0-explicit-types} and the \texttt{motivoc} CLI over \texttt{.motivo} sources.
+Both binaries were built from the monorepo root in separate Release directories
+(\texttt{build/bench-v1} and \texttt{build/bench-v2}) with \texttt{-DCMAKE\_BUILD\_TYPE=Release} and
+\texttt{-DBUILD\_TESTING=OFF}, then benchmarked on the same machine without checkout thrashing between runs.
 
-The benchmark corpus was synthetic.
-It was built to exercise source-to-event expansion rather than to produce musically refined pieces.
-This distinction matters.
+Measurements were taken on an Apple M3 Pro (arm64, macOS~26.5) with 18~GB of RAM.
+Wall-clock times were recorded by the thesis harness script \texttt{run-benchmark.sh}, which wraps each compiler
+invocation in Python's \texttt{time.perf\_counter}, performs 5 warmup runs, and averages 50 measured runs.
+Each measured command compiles one source file and writes a \texttt{.mid} file beside the input, so the timer includes
+process startup, parsing, semantic analysis, lowering, MIDI serialization, and file I/O.
+
+Per-stage breakdowns use in-process \texttt{std::chrono} timers gated by \texttt{MOTIVO\_BENCHMARK=1} in a small
+patch applied to \texttt{compiler.cpp} on both tagged worktrees.
+These timers report parse, semantic, lowering, and MIDI-write means independently of subprocess overhead; their sum is
+therefore smaller than the end-to-end wall-clock total.
+Aggregated JSON results and the reproduction procedure are documented under
+\texttt{paper/.specs-fire/context/benchmarks/}.
+
+The benchmark corpus is synthetic.
+It was built to exercise source-to-event expansion and compiler throughput at the current 20,000-event safety limit
+rather than to produce musically refined pieces.
 A loop that generates 20,000 notes is useful for measuring expansion and compilation cost, but it does not prove that
 the generated score is artistically interesting.
-The benchmark therefore supports the engineering claim that Motivo can generate many symbolic events from
-compact source rules within the tested limit.
+The benchmark therefore supports the engineering claim that Motivo can generate many symbolic events from compact
+source rules within the tested limit.
 
-A defining characteristic of the Motivo compiler is its ``zero-runtime'' architecture, which shifts the
-computational burden entirely to the compilation phase.
+A defining characteristic of the Motivo compiler is its ``zero-runtime'' architecture, which shifts the computational
+burden entirely to the compilation phase.
 To evaluate the viability of this approach, it is essential to analyze the compiler's execution speed, particularly as
 the complexity of the musical composition scales.
 
@@ -29,13 +39,15 @@ The compilation pipeline is composed of several sequential passes, each with a d
 
 \noindent \textbf{Frontend and Semantic Analysis.} The complexity of parsing and type-checking is proportional to the
 number of lines of source code, $O(S)$, where $S$ is the size of the abstract syntax tree.
-Because these passes do not unroll loops or instantiate patterns multiple times, they remain extremely fast
-regardless of the composition's length.
+Because these passes do not unroll loops or instantiate patterns multiple times, they remain extremely fast regardless
+of the composition's length.
+Version~2.0 adds explicit type annotations and signature-based pattern resolution, but the traversal still visits each
+AST node a constant number of times; the semantic pass was simplified from two traversals in version~1.0 to one.
 
 \noindent \textbf{Lowering Engine.} The unrolling process has a time complexity of $O(E)$, where $E$ is the total number
-of generated \texttt{NoteEvent}s. A simple \texttt{loop (1000)} statement will execute its body 1,000 times during
-this phase, meaning the lowering time is proportional to the density of the final timeline, not the brevity of the
-source code.
+of generated \texttt{NoteEvent}s.
+A simple \texttt{loop (1000)} statement will execute its body 1,000 times during this phase, meaning the lowering time
+is proportional to the density of the final timeline, not the brevity of the source code.
 
 \noindent \textbf{MIDI Backend.} The backend must sort the absolute events by their tick values before computing
 delta-times.

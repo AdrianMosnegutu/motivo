@@ -3,9 +3,12 @@
 Motivo is built around one design decision: the source program describes musical structure, and the compiler
 resolves that structure before playback. The language therefore separates the composer's symbolic intent from
 the MIDI event stream that eventually stores the piece. This chapter follows that separation from the
-source-level model to the implementation details of the compiler. It also states an important boundary of the
-current implementation: key-signature declarations are not part of the language. Motivo currently accepts
-tempo and time-signature metadata, while harmonic context remains a future extension.
+source-level model to the implementation details of the compiler.
+The language description reflects \textit{version~2.0}, with explicit static types on variables and pattern parameters;
+version~1.0's untyped \texttt{let} bindings and arity-only pattern overloading are summarized only where the evolution
+narrative requires contrast.
+It also states an important boundary of the current implementation: key-signature declarations are not part of the
+language. Motivo currently accepts tempo and time-signature metadata, while harmonic context remains a future extension.
 
 \input{chapters/02-language-compiler-design/sections/conceptual-model}
 \input{chapters/02-language-compiler-design/sections/source-grammar}

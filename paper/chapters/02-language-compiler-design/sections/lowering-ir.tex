@@ -58,7 +58,8 @@ These values can be scalars (\texttt{int}, \texttt{double}, \texttt{bool}) or mu
 
 The \texttt{LowererContext} maintains a \textit{Dynamic Scope Stack}: a vector of hash maps from identifier names to
 \texttt{ir::Value} entries.
-When a \texttt{let} or assignment statement is encountered, the evaluated \texttt{ir::Value} is bound to the identifier.
+When a \texttt{VarDeclStatement} or assignment statement is encountered, the evaluated \texttt{ir::Value} is bound to
+the identifier (types were already validated during semantic analysis).
 This allows for dynamic algorithmic generation, where loop indices or accumulator variables can be used as multipliers
 for note durations or offsets.
 
@@ -111,3 +112,50 @@ voice block, the
 
 This isolation keeps the parent track and sibling voices aligned according to the compiler cursor model at
 their starting beats, without requiring the author to calculate the intervening offsets manually.
+
+\subsection{Implementation Layout and Control Flow}\label{detail-subsec:lowering-implementation-layout}
+
+Lowering is implemented in \texttt{motivo\_lowering}.
+The entry function \texttt{lowering/lower.cpp} destructures \texttt{analysis.program()} into header, globals, and
+tracks, initializes an empty \texttt{ir::Program}, and constructs a \texttt{detail::LowererContext} bound to the
+\texttt{AnalysisResult} and shared \texttt{DiagnosticsEngine}.
+
+\noindent \textbf{Global initialization.} \texttt{lower\_header} copies tempo and time-signature fields into the IR
+header.
+\texttt{context.collect\_patterns(globals)} registers pattern symbols for global definitions; global
+\texttt{VarDeclStatement} nodes are lowered inside a \texttt{LowererScopeGuard} so bindings exist before tracks run.
+
+\noindent \textbf{Per-track lowering.} Each \texttt{TrackDefinition} is passed to \texttt{lower\_track\_definition}
+(\texttt{detail/ast\_lowerers/lower\_definitions.cpp}), which collects track-local patterns, optionally validates
+instrument constraints, and unrolls track items into an \texttt{ir::Track} with sorted \texttt{NoteEvent}s.
+
+\noindent \textbf{Statement dispatch.} \texttt{detail/ast\_lowerers/lower\_statement.cpp} uses \texttt{std::visit} over
+\texttt{StatementKind} to delegate to focused lowerers: \texttt{lower\_play\_statement.cpp},
+\texttt{lower\_control\_flow\_statements.cpp} (\texttt{for}, \texttt{loop}, \texttt{if}), and
+\texttt{lower\_declarative\_statements.cpp} (bindings and assignments).
+\texttt{lower\_block} wraps each block in a \texttt{LowererScopeGuard} and concatenates emitted events.
+
+\subsubsection{Expression Evaluation}
+
+\texttt{detail/expression\_evaluator.cpp} dispatches on \texttt{ExpressionKind} via a C++20 \texttt{Literal} concept
+for scalar and note literals.
+Individual evaluators live under \texttt{detail/expression\_evaluators/}:
+\texttt{evaluate\_identifier\_expression} resolves symbols through \texttt{LowererContext::lookup} using
+\texttt{SymbolId} keys from semantic annotations;
+\texttt{evaluate\_binary\_expression} and \texttt{evaluate\_unary\_expression} mirror runtime arithmetic;
+\texttt{evaluate\_pattern\_call\_expression} snapshots the cursor, binds parameters in a fresh scope, executes the
+pattern body through \texttt{execute\_block}, and reconstructs a \texttt{SequenceValue} preserving internal rests;
+\texttt{evaluate\_sequence\_expression} and \texttt{evaluate\_chord\_expression} build composite \texttt{ir::Value}
+structures.
+
+\subsubsection{Value Flattening and Safety Limits}
+
+\texttt{detail/value\_flattener.cpp} exposes \texttt{flatten\_value}, \texttt{flatten\_chord\_value}, and
+\texttt{flatten\_sequence\_value}.
+Chords emit parallel \texttt{NoteEvent}s at a shared \texttt{start\_beat}; sequences advance an internal cursor by each
+item's effective duration (\texttt{get\_duration} handles notes, rests, and chords).
+
+\texttt{LowererContext} enforces a hard cap of \texttt{MAX\_EVENTS = 20000} total emitted notes across the program via
+\texttt{register\_events}; exceeding the limit reports a lowering error rather than producing an unusably large MIDI
+file.
+This guard complements the semantic phase, which validates structure but does not bound runtime unrolling depth.

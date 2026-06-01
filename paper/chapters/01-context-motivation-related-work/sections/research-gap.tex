@@ -1,26 +1,18 @@
 \section{Research Gap and Positioning of Motivo}\label{sec:motivo-position}
 
-The systems discussed in this chapter illustrate a wide spectrum of approaches to music programming and representation,
-each addressing different aspects of musical creation.
-High-level composition systems such as \textbf{Sonic Pi}, \textbf{Tidal}, and \textbf{HMusic} prioritize musical
-abstraction, expressiveness, and interactive composition workflows.
-However, they often rely on sequential or pattern-based models that can limit explicit control over complex temporal
-relationships.
+The systems discussed in this chapter illustrate a wide spectrum of approaches to music programming and representation.
+Live-coding languages such as Sonic Pi, Tidal, Strudel, and HMusic prioritize interactive performance and pattern
+transformation, typically streaming events to a synthesis backend rather than producing a self-contained offline
+artifact~\cite{Aaron_2016,McLean_Wiggins_2010,Roos_McLean_2023,Du_Bois_Ribeiro_2019}.
+Real-time audio languages including ChucK and SuperCollider provide precise control over synthesis and timing, but at a
+level of abstraction oriented toward signal graphs and concurrent processes rather than hierarchical song
+structure~\cite{Wang_Cook_2003,McCartney_2002}.
+Interchange formats such as MIDI and ABC notation encode musical information for playback or typesetting, yet neither
+provides the executable abstractions---typed patterns, loops, and conditional generation---that Motivo offers at the
+source level~\cite{Moog_1986,Walshaw_2011,Moore_1988}.
 
-Systems for real-time audio control and synthesis, including \textbf{ChucK} and \textbf{SuperCollider}, provide precise
-control over timing and sound synthesis.
-While these systems offer high flexibility, they operate at a relatively low level of abstraction, requiring users to
-manage details related to signal processing, concurrency, and timing explicitly.
-
-Formats for musical representation and exchange such as \textbf{MIDI} and \textbf{ABC notation} focus on encoding
-musical information for storage, transmission, and playback\@.
-While widely adopted, these formats serve different goals from a composition-oriented domain-specific
-language\@: \textbf{MIDI} is effective
-as an interchange and playback format, and \textbf{ABC notation} is effective as a human-readable notation format.
-Neither is intended to serve as a high-level, executable model for structured composition.
-
-Table~\ref{tab:related-work-comparison} summarizes the main systems and languages discussed in this chapter and
-highlights the design trade-offs that motivate Motivo\@.
+Table~\ref{tab:related-work-comparison} summarizes the main systems and highlights the design trade-offs that motivate
+Motivo.
 
 \begin{table}[htbp]
   \centering
@@ -31,40 +23,38 @@ highlights the design trade-offs that motivate Motivo\@.
     \textbf{System / Language} & \textbf{Class} & \textbf{Temporal / structural model} & \textbf{Main gap
     relative to this thesis} \\
     \midrule
-    Sonic Pi & High-level composition & Sequential execution with notes, sleeps, and simple patterns &
-    Limited structural abstraction and weak support for complex temporal relationships \\
-    Tidal & High-level composition & Time-varying patterns with functional composition over discrete or
-    continuous time & Haskell-centric syntax and focus on event streaming rather than direct compilation or
-    explicit timeline structure \\
-    HMusic & High-level composition & Grid-like patterns and parallel tracks for rhythmic structure & Relies
-    on Sonic Pi, remains pattern-centric, and does not model higher-level timelines explicitly \\
-    ChucK & Real-time audio control and synthesis & Explicit time advancement and synchronized concurrent
-    shreds & Low-level time management makes high-level compositional structure harder to express \\
-    Super\-Collider & Real-time audio control and synthesis & Object-oriented and functional model with
-    UGens, patterns, and streams & Powerful but synthesis-oriented, with substantial complexity and weaker
-    support for structured high-level composition \\
-    MIDI & Musical representation & Discrete message stream of note and control events & Strong backend and
-    interchange format, but too low-level to serve as the primary model for structured composition \\
-    ABC notation & Musical representation & Declarative textual notation with implicit ordering, bars, and
-    voices & Clear notation format, but not an executable high-level composition language with explicit
-    temporal abstraction \\
+    Sonic Pi & Live coding & Sequential execution with notes, sleeps, and simple patterns &
+    Live synthesis target; limited structural abstraction for offline MIDI compilation \\
+    Tidal / Strudel & Live coding & Time-varying patterns with functional composition &
+    Event streaming to external backends; no deterministic offline MIDI as primary artifact \\
+    HMusic & Live coding & Grid-like patterns and parallel tracks & Compiles to Sonic Pi; remains performance-coupled \\
+    ChucK & Real-time synthesis & Explicit time advancement and synchronized concurrent shreds &
+    Low-level time management; weak high-level compositional structure \\
+    Super\-Collider & Real-time synthesis & UGens, patterns, and streams over OSC &
+    Synthesis-oriented; composition and execution not separated \\
+    MIDI & Interchange format & Discrete message stream of note and control events &
+    Strong backend format, too low-level for structured source-level composition \\
+    ABC notation & Notation format & Declarative textual score with implicit ordering &
+    Not an executable language; no patterns or control flow \\
     \bottomrule
   \end{tabular}
   \caption{Comparison of the main systems and languages discussed in this
   chapter.}\label{tab:related-work-comparison}
 \end{table}
 
-From this analysis, several gaps relative to the goals of this thesis emerge.
-First, many systems lack an explicit and flexible model for representing time, often relying on implicit sequencing or
-pattern repetition.
-Second, there is a gap between low-level audio programming languages and high-level compositional tools, with few
-systems providing both expressive power and structured abstraction.
+From this analysis, three gaps relative to the goals of this thesis emerge.
+First, most musical programming languages target live performance or synthesis, leaving offline deterministic MIDI
+compilation underexplored as a primary design goal.
+Second, there is a gap between low-level audio programming languages and high-level compositional tools: few systems
+provide both expressive procedural structure and a zero-runtime compilation model.
 Third, existing approaches often conflate composition with execution, making it difficult to separate musical intent
-from performance details.
+from performance-time scheduling.
 
-These gaps motivate the development of Motivo, which aims to
-provide a timeline-based model for music composition, support deterministic and structured representations of musical
-ideas, and enable modular and extensible compilation to multiple output formats.
+Motivo addresses these gaps by providing a typed, imperative source language for offline symbolic composition;
+a compiler that validates structure and expands it deterministically into a flat event timeline; and a Standard MIDI
+File as the portable output artifact.
+Patterns and loops compress repetitive structure in the source program while the lowering stage materializes the full
+event stream---the compression argument introduced in Section~\ref{sec:algorithmic-composition}.
 
 The next chapter moves from the surrounding ecosystem to the design of Motivo itself. It explains the
 language model, the compiler architecture, and the lowering process that turns recursive musical structure

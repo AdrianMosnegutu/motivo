@@ -6,11 +6,8 @@ out="$(mktemp)"
 trap 'rm -f "${out}"' EXIT
 
 chktex_args=(-q -f $'%k|%f|%l|%c|%m\n')
+chktex_suppressions=(-n1 -n8 -n11 -n13 -n29 -n32 -n36)
 root_file="${PAPER_DIR}/${PAPER_ROOT_FILE}"
-
-if [ -f "${PAPER_DIR}/.chktexrc" ]; then
-  chktex_args+=(-l "${PAPER_DIR}/.chktexrc")
-fi
 
 if [ ! -f "${root_file}" ]; then
   echo "Configured root file not found for linting: ${root_file}." >> "${GITHUB_STEP_SUMMARY}"
@@ -23,7 +20,7 @@ while IFS= read -r -d '' style_file; do
 done < <(find "${PAPER_DIR}" -type f -name "*.sty" -print0 | sort -z)
 
 set +e
-chktex "${chktex_args[@]}" -I1 "${files[@]}" 2>&1 | tee "${out}"
+chktex "${chktex_args[@]}" "${chktex_suppressions[@]}" -I1 "${files[@]}" 2>&1 | tee "${out}"
 set -e
 
 errors="$(grep -c '^Error|' "${out}" || true)"

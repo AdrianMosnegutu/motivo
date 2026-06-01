@@ -1,73 +1,120 @@
 \section{Application Architecture}\label{sec:studio-architecture}
 
-Motivo Studio has three runtime services in the Docker Compose stack.
-The client is a Next.js application with React components for the editor, logs, piano-roll visualization, playback, and
-theme controls~\cite{NextJS_2026,React_2026}.
-The server is an Express API that validates compile requests with Zod and invokes the native \texttt{motivoc}
-binary~\cite{Express_2026,Zod_2026}.
-The gateway is an nginx container that exposes the composed application through HTTPS at
+Motivo Studio is a browser-hosted IDE for the Motivo language.
+The user edits \texttt{.motivo} source, compiles it through a backend API, inspects compiler diagnostics in the
+editor, visualizes the resulting MIDI on a piano roll, and auditions the output with in-browser synthesis.
+Version~2.0 extends this playground with account-based persistence: PostgreSQL stores users, sessions, and saved
+source files; authenticated users get a file explorer, debounced autosave, and per-user document tabs alongside
+bundled example compositions.
+
+\subsection{Runtime topology}\label{subsec:studio-runtime-topology}
+
+\textbf{Production} (author-confirmed deployment; see Section~\ref{sec:deployment}) runs three Railway services in
+Amsterdam---Next.js client, Express server with embedded \texttt{motivoc}, and managed PostgreSQL---fronted by
+Cloudflare on \texttt{motivo-studio.eu}.
+The browser talks only to the client origin; Next.js rewrites \texttt{/api/*} to the private Express API, mirroring
+the local proxy pattern.
+There is no nginx gateway in production.
+
+\textbf{Local development} uses Docker Compose with four application services plus PostgreSQL: database,
+Express server (runs migrations then the API), Next.js client, and an nginx HTTPS gateway at
 \texttt{motivo-studio.local}.
-This separation keeps the C++ compiler outside the browser while still giving the frontend an interactive compile loop.
+The gateway terminates TLS with a self-signed certificate, forwards page traffic to the client, and proxies
+\texttt{/api/*} to the server with the \texttt{/api} prefix stripped---the same URL shape the production client
+exposes through Next.js rewrites.
 
 \begin{figure}[htbp]
   \centering
-  \begin{tikzpicture}[
-      service/.style={rounded corners=5pt, draw=motivoInk!65, very thick, minimum width=4.0cm, minimum height=1.25cm,
-      align=center, font=\small\sffamily},
-      file/.style={rounded corners=3pt, draw=motivoInk!45, thick, minimum width=2.9cm, minimum height=0.75cm,
-      align=center, font=\scriptsize\sffamily},
-      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
-    ]
-    \node[service, fill=motivoBlue!14] (client) {Next.js client\\Monaco editor and playback};
-    \node[service, fill=motivoCyan!18, right=1.1cm of client] (server) {Express server\\compile API};
-    \node[service, fill=motivoGreen!18, right=1.1cm of server] (compiler) {Native compiler\\\texttt{motivoc}};
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        service/.style={motivo/service, minimum width=3.2cm, minimum height=1.05cm},
+        store/.style={rounded corners=4pt, draw=motivoInk!50, thick, minimum width=3.0cm, minimum height=0.85cm,
+        align=center, font=\scriptsize\sffamily},
+        arrow/.style={motivo/arrow}
+      ]
+      \node[service, fill=motivoBlue!14] (browser) {Browser\\HTTPS};
+      \node[service, fill=motivoBlue!12, below=0.75cm of browser] (client) {Next.js client\\Monaco, piano
+      roll, auth UI};
+      \node[service, fill=motivoCyan!16, below left=0.85cm and 0.15cm of client] (server) {Express
+      API\\compile, auth, files};
+      \node[service, fill=motivoGreen!16, below right=0.85cm and 0.15cm of server] (compiler)
+      {\texttt{motivoc}\\subprocess};
+      \node[store, fill=motivoSoft, below=0.7cm of server] (db) {PostgreSQL\\users, sessions, files};
 
-    \node[file, fill=motivoAmber!18, below=0.65cm of client] (midi) {MIDI bytes};
-    \node[file, fill=motivoRose!12, below=0.65cm of server] (diag) {diagnostics};
-    \node[file, fill=motivoSoft, below=0.65cm of compiler] (midfile) {\texttt{.mid} file};
-
-    \draw[arrow] (client) -- node[above, font=\scriptsize\sffamily] {\texttt{POST /compile}} (server);
-    \draw[arrow] (server) -- node[above, font=\scriptsize\sffamily] {temporary source} (compiler);
-    \draw[arrow] (compiler) -- (midfile);
-    \draw[arrow] (midfile) -- (server);
-    \draw[arrow] (server) -- node[below, font=\scriptsize\sffamily] {binary or errors} (client);
-    \draw[arrow] (server) -- (diag);
-    \draw[arrow] (client) -- (midi);
-  \end{tikzpicture}
-  \caption{Motivo Studio runtime architecture.
-    The browser does not compile C++ code directly; it delegates compilation to the
-  server.}\label{fig:studio-architecture}
+      \draw[arrow] (browser) -- node[right, font=\scriptsize\sffamily, align=left] {pages +\\\texttt{/api/*}} (client);
+      \draw[arrow] (client) -- node[above, font=\scriptsize\sffamily] {\texttt{/api/*} proxy} (server);
+      \draw[arrow] (server) -- (compiler);
+      \draw[arrow] (server) -- (db);
+    \end{tikzpicture}%
+  }
+  \caption{Logical Motivo Studio topology shared by local Docker Compose and production Railway.
+    The C++ compiler is not linked into the browser; the server spawns \texttt{motivoc} as a subprocess and reads
+  temporary \texttt{.mid} output.}\label{fig:studio-architecture}
 \end{figure}
 
-The frontend is organized by feature directories.
-The editor feature wraps Monaco, registers Motivo language tokens, defines light and dark themes, and maps compiler
-diagnostics into Monaco markers.
-The compile feature owns the HTTP client and the response types.
-The MIDI feature parses generated binary data into browser-side structures.
-The piano-roll feature renders note rectangles on a canvas.
-The playback feature schedules browser audio and exposes controls for play, stop, progress, and MIDI download.
-This feature-oriented layout keeps UI responsibilities closer to their domain than a flat component directory would.
+The compile path deliberately keeps a narrow boundary: TypeScript in the client and server, C++ only inside
+\texttt{motivoc}.
+The server validates compile bodies with Zod, writes source to a temporary \texttt{.motivo} file, invokes
+\texttt{execFile} on \texttt{COMPILER\_BIN} (default \texttt{/usr/local/bin/motivoc} in the server image), and returns
+either \texttt{audio/midi} bytes or JSON diagnostics parsed from stderr.
+File and auth routes live on the same Express app but require a valid session cookie.
 
-While the core contribution of this thesis is the compiler, a web-based \textit{Playground} was developed to demonstrate
-the language's capabilities and provide an intuitive environment for composition.
-The playground integrates the C++ compiler into a modern full-stack web application.
+\subsection{Backend API surface}\label{subsec:studio-api-surface}
 
-\subsection{System Architecture}\label{detail-subsec:system-architecture}
+Routes are mounted at the server root; the client always calls them under the \texttt{/api} prefix.
 
-The playground follows a distributed architecture:
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm}X}
+    \toprule
+    \textbf{Route group} & \textbf{Endpoints and behavior} \\
+    \midrule
+    Health & \texttt{GET /health} --- liveness for orchestration. \\
+    Compile & \texttt{POST /compile} --- body \texttt{\{ source \}}; success returns MIDI; failure returns structured
+    diagnostics (severity, stage, message, optional line/column). \\
+    Auth & \texttt{POST /auth/register}, \texttt{POST /auth/login}, \texttt{POST /auth/logout}, \texttt{GET /auth/me}
+    --- email/password credentials; HTTP-only session cookie (name from \texttt{SESSION\_COOKIE\_NAME}, secure flag
+    enabled in production). \\
+    Files & \texttt{GET /files}, \texttt{POST /files}, \texttt{GET /files/:id}, \texttt{PATCH /files/:id},
+    \texttt{DELETE /files/:id}, \texttt{GET /files/:id/download} --- all require authentication; store Motivo source
+    per user in PostgreSQL. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Express API groups implemented in the Motivo Studio server.}\label{tab:studio-api}
+\end{table}
 
-\noindent \textbf{Frontend (Next.js).} A React-based interface that provides the editor and visualization tools.
+\subsection{Client feature modules}\label{subsec:studio-client-modules}
 
-\noindent \textbf{Backend (Express).} A Node.js API that acts as a bridge.
-It receives Motivo source code from the client, invokes the C++ \texttt{motivoc} binary via a sub-process, and streams
-the resulting MIDI file back to the browser.
+The Next.js client is organized by feature directories rather than a flat component tree.
 
-\noindent \textbf{Integration.} The system is containerized using Docker, ensuring that the C++ environment (including
-Bison/Flex runtimes) is identical across development and production.
+\noindent\textbf{Editor} (\texttt{features/editor}): Monaco with a registered Motivo language id, Monarch tokenizer
+(keywords, types, instruments, drum notes, literals), light/dark themes, snippet completions, and marker mapping from
+compiler diagnostics.
 
-The backend is smaller but equally important.
-The Express app exposes \texttt{GET /health} and \texttt{POST /compile}.
-The compile route validates the request body with Zod, writes the source code to a temporary \texttt{.motivo} file,
-spawns \texttt{motivoc}, and returns either \texttt{audio/midi} bytes or structured diagnostics.
-The diagnostics parser normalizes compiler output into severity, stage, message, and optional source location fields so
-the browser can highlight the relevant source range.
+\noindent\textbf{Compile} (\texttt{features/compile}): Axios client posting to \texttt{/api/compile} with
+\texttt{arraybuffer} responses; distinguishes MIDI success from JSON diagnostic payloads.
+
+\noindent\textbf{MIDI and piano roll} (\texttt{features/midi}, \texttt{features/piano-roll}): parse binary MIDI into
+note events; canvas piano-roll with pitch scale, time axis, and playhead synchronization.
+
+\noindent\textbf{Playback} (\texttt{features/playback}): Tone.js scheduling with SoundFont-based General MIDI
+instruments; transport bar for play, stop, progress, and MIDI download.
+
+\noindent\textbf{IDE shell} (\texttt{features/ide}): workspace layout (editor pane, visualizer, logs, header);
+\texttt{useIdeCompile} ties compile actions to editor markers and MIDI context; keyboard shortcuts for compile, save,
+playback, and log panel focus.
+
+\noindent\textbf{Auth} (\texttt{features/auth}): React context for register, login, logout, and session refresh via
+\texttt{/api/auth/*}.
+
+\noindent\textbf{Files} (\texttt{features/files}): file explorer, multi-tab documents (scratch buffer, bundled
+examples, user files), manual save and \textbf{debounced autosave} (500\,ms after edits when authenticated),
+download of \texttt{.motivo} sources, create/rename/delete for owned files.
+
+\noindent\textbf{Examples} (\texttt{features/examples}): shipped \texttt{.motivo} sources
+(e.g.\ \texttt{example.motivo},
+\texttt{fur\_elise.motivo}) readable without login; opening an example does not require persistence.
+
+Unauthenticated users can still compile from the scratch editor and examples; persistence and autosave activate only
+after login.

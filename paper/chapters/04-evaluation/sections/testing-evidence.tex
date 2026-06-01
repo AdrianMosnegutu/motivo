@@ -1,15 +1,39 @@
 \section{Testing Evidence}\label{sec:test-evidence}
 
-The repository contains a broad test suite across compiler, server, and client components.
-The native compiler build used during earlier local inspection exposed 582 CTest-discovered tests.
-The server Vitest report in the workspace recorded 20 passing tests across 10 suites, and the client Vitest report
-recorded 54 passing tests across 38 suites.
-The same reports showed server line coverage of 97.95\% and client line coverage of 89.46\%.
-These values should be regenerated before final submission, but they provide a useful snapshot of the current testing
-discipline.
+Quantitative testing claims in this chapter rest on the metrics baseline collected on 2026-06-01 at monorepo commit
+\texttt{7e8a55fb}.
+Section~\ref{sec:testing-ci} documents the full CI matrix; here we summarize the numbers most relevant to evaluation
+claims.
 
-Coverage is not a proof of correctness.
-It does not show whether the language is pleasant to use or whether every musical edge case has been modeled.
-It does show that the implementation is treated as a software system with repeatable checks.
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.4cm}rr>{\raggedright\arraybackslash}X}
+    \toprule
+    \textbf{Subsystem} & \textbf{Tests} & \textbf{Pass (local)} & \textbf{Coverage (where verified)} \\
+    \midrule
+    Compiler (CTest) & 635 registered & 635 / 635 & gcovr in CI; local \texttt{lcov} unavailable \\
+    Server (Vitest) & 31 cases & 20 unit (no Postgres); 11 integration skipped locally & 34.4\% lines (unit-only) \\
+    Client (Vitest) & 79 cases & 79 / 79 & 51.4\% lines \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Verified test inventory for evaluation claims (2026-06-01).}\label{tab:evaluation-test-counts}
+\end{table}
+
+The compiler suite spans parsing, explicit type rules, lowering, MIDI writing, integration through
+\texttt{motivo::compile()}, and four golden \texttt{.motivo} fixtures that assert stage-specific diagnostics or MIDI
+shape.
+During baseline collection, the golden test \texttt{Golden.LoweringErrorsAreCollectedAcrossTracks} initially failed
+because \texttt{lowering\_errors.motivo} relied on integer division semantics that changed when \texttt{/} began
+promoting to \texttt{double}.
+The fixture was corrected to trigger lowering errors via invalid loop bounds; the full suite now passes at \textbf{635 /
+635}.
+
+Coverage percentages are not a proof of correctness.
+They do not show whether the language is pleasant to use or whether every musical edge case has been modeled.
+They do show that the implementation is treated as a software system with repeatable checks at compiler, API,
+client, and
+paper boundaries.
 For this thesis, that matters because Motivo is evaluated both as a language design and as a full-stack engineering
 project.

@@ -1,12 +1,13 @@
 \section{Closing Remarks}\label{sec:closing}
 
 Motivo demonstrates that compiler design can be applied to a creative symbolic domain in a concrete and measurable way.
-The language gives repeated musical ideas a compact textual form, and the implementation turns that text into MIDI
-events through a staged compiler.
-The Studio application then places the compiler inside a broader engineering system with editing, feedback,
-visualization, playback, deployment, and tests.
+The language gives repeated musical ideas a compact textual form; the version~2.0 compiler validates that form with
+explicit static typing and expands it into MIDI events through a staged pipeline; Motivo Studio places the result inside
+a deployable product with editing, feedback, visualization, playback, automated tests, and production hosting.
 
-The result is not a replacement for existing music tools.
-It is a focused bridge between algorithmic thinking and standard MIDI-based production workflows.
-That focus is the main strength of the project: it keeps the language small enough to implement and evaluate, while
-still showing how software engineering can support structured musical composition.
+The system is not a replacement for DAWs, live-coding environments, or synthesis platforms.
+It is a focused bridge between algorithmic structure and Standard MIDI-based production workflows---strong where rules
+and repetition dominate, weaker where hand-placed micro-editing, expressive MIDI, and real-time manipulation matter
+most.
+That bounded scope is both a limitation and a strength: it kept the language implementable, the compiler evaluable, and
+the engineering story coherent within a bachelor's thesis.

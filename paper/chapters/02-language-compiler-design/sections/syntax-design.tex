@@ -38,12 +38,22 @@ Definition}\label{detail-subsec:algorithmic-variation-vs.-static-definition}
 
 Traditional MIDI editing is inherently static; a motif is a series of fixed events.
 The imperative syntax of Motivo allows motifs to be defined \textit{algorithmically}.
-By combining control flow with variables (\texttt{let}), a composer can write code that generates variations of a theme
-without manually copying and pasting events.
+By combining control flow with explicitly typed variables (e.g.\ \texttt{int i = 0}), a composer can write code that
+generates variations of a theme without manually copying and pasting events.
 This methodology reinforces the idea that music is not just a sequence of data points, but a series of logical
 instructions that can be computed.
 Since the compiler unrolls these instructions at compile-time, the composer enjoys the power of algorithmic generation
 without the overhead or latency of a real-time interpreter.
+
+\subsection{Explicit Types in Imperative Programs}\label{detail-subsec:explicit-types-syntax}
+
+Version~2.0 requires a type keyword on every new binding (\texttt{int}, \texttt{double}, \texttt{bool},
+\texttt{note}, \texttt{seq}, or \texttt{chord}) and on each pattern parameter.
+This mirrors mainstream statically typed languages and aligns the surface syntax with the compiler's
+\texttt{types::Type} enum, so IDE completion and semantic diagnostics can reference the same type names the author
+writes.
+The small syntactic cost buys unambiguous pattern overloading and eliminates the deferred errors that version~1.0's
+second semantic pass was introduced to catch.
 
 The following compact example shows the intended relationship between imperative notation and musical
 structure. The source program contains no MIDI status bytes and no delta-time calculations. It expresses a
@@ -55,7 +65,7 @@ signature 4/4;
 
 track percussion using drums {
     pattern bar() {
-        for (let i = 0; i < 16; i = i + 1) {
+        for (int i = 0; i < 16; i = i + 1) {
             play hihat from i;
             if (i % 8 == 0) { play kick from i; }
             if (i % 8 == 4) { play snare from i; }

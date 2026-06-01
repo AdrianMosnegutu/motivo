@@ -20,9 +20,9 @@ This architecture provides several benefits:
 \noindent \textbf{High Performance.} The output artifact is extremely lightweight, as all logical overhead has been
 removed.
 
-\noindent \textbf{Offline Validation.} Semantic errors---such as variable shadowing, type mismatches, or
-invalid rhythmic
-math---are caught during the compilation phase, providing immediate feedback to the composer.
+\noindent \textbf{Offline Validation.} Semantic errors---such as variable shadowing, strict type mismatches at
+declarations and pattern calls, or invalid rhythmic math---are caught during a single semantic pass, providing
+immediate feedback to the composer before any MIDI bytes are written.
 
 \noindent \textbf{Portability.} The resulting IR can be easily serialized into formats beyond MIDI in future extensions
 without requiring a specialized interpreter to read it.
@@ -45,27 +45,42 @@ ensuring notes are within the MIDI pitch range of 0--127) and that the structura
 This validation is intended to ensure that the final MIDI artifact is not only syntactically correct but also musically
 meaningful and interoperable with MIDI-aware tools.
 
+\subsection{Design Rationale: Strict Types and Single-Pass Analysis}\label{detail-subsec:strict-types-rationale}
+
+Two version~2.0 decisions reinforce the zero-runtime mandate.
+First, \textit{strict declaration typing} (\texttt{is\_assignable} requires exact type equality) keeps variables and
+pattern parameters predictable for lowering: the dynamic scope stack stores \texttt{ir::Value} variants whose shapes
+match the composer's declared types.
+Numeric promotion applies only inside expression operators via \texttt{numeric\_result}, not by silently widening
+stored variables from \texttt{int} to \texttt{double}.
+Second, \textit{single-pass semantic analysis} reduces compiler complexity and diagnostic latency: symbol collection,
+expression typing, and pattern overload resolution occur in one walk, avoiding the duplicated tree traversals of
+version~1.0.
+Together, these choices favor determinism and auditability over brevity of source text---a trade appropriate for a
+compiled DSL whose output is a fixed event timeline rather than an interpreted performance script.
+
 \begin{figure}[htbp]
   \centering
-  \begin{tikzpicture}[
-      box/.style={rounded corners=4pt, draw=motivoInk!60, very thick, minimum width=2.75cm, minimum height=0.95cm,
-      align=center, font=\footnotesize\sffamily},
-      arrow/.style={-Stealth, very thick, draw=motivoInk!75}
-    ]
-    \node[box, fill=motivoBlue!14] (ast) {AST statement\\\texttt{loop (500)}};
-    \node[box, fill=motivoCyan!18, right=0.55cm of ast] (exec) {Lowering pass\\evaluate loop body};
-    \node[box, fill=motivoGreen!18, right=0.55cm of exec] (ir) {IR events\\absolute beats};
-    \node[box, fill=motivoAmber!20, right=0.55cm of ir] (smf) {SMF events\\delta-times};
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        box/.style={motivo/box, minimum width=2.55cm, minimum height=0.9cm, font=\footnotesize\sffamily},
+        arrow/.style={motivo/arrow, line width=1.3pt}
+      ]
+      \node[box, fill=motivoBlue!14] (ast) {AST statement\\\texttt{loop (500)}};
+      \node[box, fill=motivoCyan!18, right=0.45cm of ast] (exec) {Lowering pass\\evaluate loop body};
+      \node[box, fill=motivoGreen!18, right=0.45cm of exec] (ir) {IR events\\absolute beats};
+      \node[box, fill=motivoAmber!20, right=0.45cm of ir] (smf) {SMF events\\delta-times};
 
-    \draw[arrow] (ast) -- node[above, font=\scriptsize\sffamily] {control flow} (exec);
-    \draw[arrow] (exec) -- node[above, font=\scriptsize\sffamily] {note events} (ir);
-    \draw[arrow] (ir) -- node[above, font=\scriptsize\sffamily] {serialization} (smf);
+      \draw[arrow] (ast) -- node[above, font=\scriptsize\sffamily] {control flow} (exec);
+      \draw[arrow] (exec) -- node[above, font=\scriptsize\sffamily] {note events} (ir);
+      \draw[arrow] (ir) -- node[above, font=\scriptsize\sffamily] {serialization} (smf);
 
-    \node[below=0.55cm of exec, align=center, font=\small\sffamily, text=motivoInk] {
-      The output no longer contains \texttt{loop}, \texttt{for}, or \texttt{if}.\\
-      It contains timestamped note events that the MIDI writer can sort and encode.
-    };
-  \end{tikzpicture}
+      \node[below=0.5cm of exec, align=center, font=\scriptsize\sffamily, text=motivoInk] {
+        The output no longer contains \texttt{loop}, \texttt{for}, or \texttt{if}.\\
+        It contains timestamped note events that the MIDI writer can sort and encode.
+      };
+    \end{tikzpicture}%
+  }
   \caption{Lowering removes source-level control flow by expanding it into concrete musical
   events.}\label{fig:ast-to-ir}
 \end{figure}

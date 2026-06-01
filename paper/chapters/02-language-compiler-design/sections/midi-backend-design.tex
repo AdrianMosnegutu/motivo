@@ -2,9 +2,9 @@
 
 A primary objective of the implementation is to bridge the gap between high-level musical notation and the low-level
 binary encoding required by the MIDI standard.
-This section details the mathematical formulas and mapping strategies implemented in the
-\texttt{motivo\_music} module to
-ensure that the compiler's output is musically accurate.
+Pitch and instrument enums are defined in \texttt{motivo\_music}; binary serialization is implemented solely in
+\texttt{midi/write\_midi.cpp} within the \texttt{motivo\_midi} CMake target, which depends on \texttt{motivo\_lowering}
+for \texttt{ir::Program} and track data.
 
 \subsection{Note to MIDI Pitch Mapping}\label{detail-subsec:note-to-midi-pitch-mapping}
 
@@ -85,10 +85,31 @@ This explicit mapping aligns drum output with the General MIDI percussion conven
   \caption{Mapping from Motivo source concepts to MIDI backend artifacts.}\label{tab:motivo-midi-mapping}
 \end{table}
 
+\subsection{Backend Entry Point and Helper Structure}\label{detail-subsec:midi-write-entry}
+
+The public function \texttt{midi::write\_midi(const ir::Program\&, const std::string\& output\_path)} opens the output
+file in binary mode, writes the \texttt{MThd} header, then serializes one tempo/meta track followed by one \texttt{MTrk}
+chunk per Motivo track.
+Internal helpers in an anonymous namespace partition the logic:
+
+\noindent \textbf{\texttt{build\_tempo\_track}.} Emits tempo (\texttt{0xFF 0x51 0x03}) and time-signature
+(\texttt{0xFF 0x58 0x04}) meta-events at tick~0, then an end-of-track marker.
+
+\noindent \textbf{\texttt{build\_motivo\_track}.} Selects MIDI channel~9 (zero-based index~9, conventionally displayed
+as channel~10) for drum tracks and skips Program Change; melodic tracks emit \texttt{0xC0 | channel} at tick~0 with the
+\texttt{music::Instrument} program number, then convert each \texttt{ir::NoteEvent} into paired Note-On/Note-Off
+messages.
+
+\noindent \textbf{\texttt{write\_track}.} Stable-sorts \texttt{MidiEvent} records by absolute tick, converts to
+delta-times against a running \texttt{prev\_tick}, pre-computes chunk length including VLQ sizes, and writes the
+\texttt{MTrk} header plus event bytes.
+
+Channel allocation in \texttt{write\_midi} skips index~9 when assigning melodic channels so percussion and melody remain
+separated per the General MIDI convention.
+
 \subsection{Binary Serialization of Standard MIDI Files}\label{subsec:midi-binary-serialization}
 
-The final stage of the compilation pipeline translates the flat list of linear \texttt{NoteEvent}s (the IR) into a
-Standard MIDI File (SMF) Format 1 binary artifact.
+The final stage translates the flat \texttt{ir::Program} into a Standard MIDI File (SMF) Format~1 artifact.
 This process requires careful management of binary structures, delta-time calculations, and variable-length encodings.
 
 \subsection{SMF Format 1 Structure}\label{detail-subsec:smf-format-1-structure}
