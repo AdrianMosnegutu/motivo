@@ -58,10 +58,12 @@ per `\section{}`.
 
 ```text
 chapters/01-context-motivation-related-work.tex  → 01-context-motivation-related-work/sections/  (8 files)
-chapters/02-language-compiler-design.tex       → 02-language-compiler-design/sections/       (11 files)
-chapters/03-studio-software-engineering.tex    → 03-studio-software-engineering/sections/    (5 files)
-chapters/04-evaluation.tex                     → 04-evaluation/sections/                     (7 files)
-chapters/05-conclusion-next-steps.tex          → 05-conclusion-next-steps/sections/          (4 files)
+chapters/02-motivo-language-design.tex         → 02-motivo-language-design/sections/         (7 files)
+chapters/03-compiler-implementation.tex        → 03-compiler-implementation/sections/        (5 files)
+chapters/04-motivo-studio-editor.tex           → 04-motivo-studio-editor/sections/           (3 files)
+chapters/05-deployment-testing-ci.tex          → 05-deployment-testing-ci/sections/          (2 files)
+chapters/06-evaluation.tex                     → 06-evaluation/sections/                     (7 files)
+chapters/07-conclusion-next-steps.tex          → 07-conclusion-next-steps/sections/          (4 files)
 ```
 
 ## CI

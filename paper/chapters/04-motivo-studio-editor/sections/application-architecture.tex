@@ -9,7 +9,7 @@ bundled example compositions.
 
 \subsection{Runtime topology}\label{subsec:studio-runtime-topology}
 
-\textbf{Production} (author-confirmed deployment; see Section~\ref{sec:deployment}) runs three Railway services in
+\textbf{Production} (author-confirmed deployment; see Chapter~\ref{ch:deployment-ci}) runs three Railway services in
 Amsterdam---Next.js client, Express server with embedded \texttt{motivoc}, and managed PostgreSQL---fronted by
 Cloudflare on \texttt{motivo-studio.eu}.
 The browser talks only to the client origin; Next.js rewrites \texttt{/api/*} to the private Express API, mirroring

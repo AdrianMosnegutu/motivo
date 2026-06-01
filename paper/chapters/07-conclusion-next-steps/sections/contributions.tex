@@ -10,7 +10,8 @@ The first contribution is the Motivo source language for deterministic, structur
 It maps musical entities---notes, rests, chords, sequences, patterns, tracks, and voices---to typed programming
 constructs rather than to raw MIDI byte construction.
 Patterns with typed parameters compress repetitive structure in the source program; the lowering stage materializes the
-full event timeline described in Chapters~\ref{ch:language-compiler} and~\ref{ch:evaluation}.
+full event timeline described in Chapters~\ref{ch:language-design},~\ref{ch:compiler-implementation},
+and~\ref{ch:evaluation}.
 The language targets Standard MIDI Files as a portable artifact, separating compositional intent from playback-time
 synthesis or live scheduling.
 
@@ -24,16 +25,18 @@ Between version~1.0 and version~2.0 the surface language and semantic pipeline w
 \texttt{let}-based typing and arity-only pattern overload gave way to explicit \texttt{var} declarations,
 signature-based
 pattern resolution, and single-pass semantic analysis with assignability checks.
-Chapter~\ref{ch:language-compiler} documents this evolution; Chapter~\ref{ch:evaluation} shows that the stricter model
+Chapters~\ref{ch:language-design} and~\ref{ch:compiler-implementation} document this evolution;
+Chapter~\ref{ch:evaluation} shows that the stricter model
 imposes roughly $0$--$2\%$ end-to-end wall-clock overhead on large synthetic workloads while producing byte-identical
 MIDI output.
 
 \paragraph{Motivo Studio, testing, and deployment.}
-The third contribution is Motivo Studio, which embeds the compiler in a full-stack product.
+The third contribution is Motivo Studio, which embeds the compiler in a full-stack product
+(Chapter~\ref{ch:studio-editor}).
 A Next.js client provides editing, diagnostics, piano-roll visualization, and browser playback; an Express API wraps
 the \texttt{motivoc} binary; PostgreSQL backs authenticated file storage.
 The monorepo enforces quality at four boundaries---635 CTest cases for the compiler, 31 server tests, 79 client tests,
-and paper CI workflows (Section~\ref{sec:testing-ci}).
+and paper CI workflows (Chapter~\ref{ch:deployment-ci}, Section~\ref{sec:testing-ci}).
 Production deployment on Railway with Cloudflare DNS and TLS at \texttt{motivo-studio.eu} demonstrates that the thesis
 work extends beyond a local prototype to a deployable engineering system with private database networking and
 CI-gated promotion.

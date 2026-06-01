@@ -92,23 +92,27 @@ Table~\ref{tab:thesis-roadmap} summarizes what each chapter covers.
     1 & Research context and theoretical foundations &
     Digital music workflows, MIDI background, compiler theory, related musical languages, and the research gap Motivo
     addresses \\
-    2 & Design of the Motivo language and compiler &
-    Language grammar, type system, semantic rules, compilation pipeline, and implementation of each compiler stage \\
-    3 & System architecture and software engineering &
-    Motivo Studio web application: editor, compile API, visualization, playback, deployment, testing, and CI/CD \\
-    4 & Empirical evaluation &
+    2 & Design of the Motivo language &
+    Grammar, type system, semantic rules, temporal model, and compilation strategy at specification level \\
+    3 & Implementation of the Motivo compiler &
+    Pipeline architecture, frontend, semantic pass, lowering, and MIDI backend in C++ \\
+    4 & Motivo Studio: web editor and client &
+    Application architecture, compile API flow, Monaco editor, piano roll, playback, auth, and files \\
+    5 & Deployment, testing, and CI/CD &
+    Docker and Railway deployment, Cloudflare TLS, automated tests, and CI-gated promotion \\
+    6 & Empirical evaluation &
     Benchmark methodology, compilation-time measurements, event-expansion behavior, test evidence, and current limits \\
-    5 & Conclusions and future directions &
+    7 & Conclusions and future directions &
     Contributions, limitations, and directions for extending the language and toolchain \\
     \bottomrule
   \end{tabular}
   \caption{Roadmap of the thesis chapters.}\label{tab:thesis-roadmap}
 \end{table}
 
-Chapter~\ref{ch:language-compiler} is the technical core: it explains both the language design and the compiler
-implementation in detail.
-Chapter~\ref{ch:studio-engineering} treats the web studio as an integral engineering artifact rather than a demo
-wrapper.
+Chapters~\ref{ch:language-design} and~\ref{ch:compiler-implementation} form the technical core: the former specifies
+what Motivo is; the latter explains how \texttt{motivoc} is built.
+Chapter~\ref{ch:studio-editor} treats the web editor as an integral product artifact; Chapter~\ref{ch:deployment-ci}
+documents testing, deployment, and operations.
 Chapter~\ref{ch:evaluation} evaluates properties that can be measured from the implementation---compilation speed,
 event expansion, and automated test coverage---without claiming to assess musical creativity.
 Chapter~\ref{ch:conclusion} summarizes contributions honestly, including known limitations of the current language and
