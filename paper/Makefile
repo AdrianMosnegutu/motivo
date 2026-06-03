@@ -10,4 +10,4 @@ lint:
 	bash scripts/lint.sh
 
 clean:
-	rm -rf build/ out/
+	rm -rf build/ out/ *.aux *.log *.out *.toc *.bbl *.blg *.fls *.fdb_latexmk *.gz
