@@ -11,9 +11,11 @@ require_cmds latexmk
 
 cd "${PAPER_DIR}"
 
+paper_name="Design and Implementation of a Domain-Specific Language for Music Composition"
+
 mkdir -p build
-latexmk -pdf -output-directory=build paper.tex
+latexmk -pdf -jobname="$paper_name" -output-directory=build paper.tex
 
 if command -v open >/dev/null 2>&1; then
-  open build/paper.pdf
+  open build/"$paper_name".pdf
 fi
