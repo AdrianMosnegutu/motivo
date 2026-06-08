@@ -1,19 +1,6 @@
 \chapter{Conclusions and Future Directions}\label{ch:conclusion}
 
-This thesis presented Motivo, a domain-specific language, native compiler, and web-based studio for offline symbolic
-music composition.
-The project began with a practical observation: repeated musical structures are often easier to describe as rules than
-as copied note events.
-Motivo turns that observation into a compiler pipeline: the source program names musical values and procedures, the
-semantic analyzer validates structure under explicit static typing (version~2.0), the lowerer expands rules into
-timestamped events, and the MIDI writer serializes the result into a Standard MIDI File.
-
-The work also demonstrates that the compiler can be embedded in a production-oriented software product.
-Motivo Studio connects the C++ \texttt{motivoc} binary to a browser editor through an Express API, renders generated
-MIDI in a piano roll, supports browser playback, and is deployed at \texttt{motivo-studio.eu} with CI-gated Railway
-hosting and Cloudflare TLS.
-The project is therefore not only a programming-language experiment but also a full-stack engineering exercise with
-component boundaries, hundreds of automated tests, and measurable compile-time behavior on large synthetic workloads.
+This chapter summarizes what was delivered, states what Motivo does not claim, and sketches natural extensions.
 
 \input{chapters/07-conclusion-next-steps/contributions}
 \input{chapters/07-conclusion-next-steps/limitations}

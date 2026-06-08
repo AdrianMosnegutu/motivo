@@ -1,59 +1,21 @@
 \section{Limitations}\label{sec:limitations}
 
-Motivo occupies a deliberate niche: offline, rule-based expansion into Standard MIDI Files.
-That focus enables determinism and a compact implementation, but it also defines what the system does \emph{not} do.
-The limitations below are stated honestly so that the contributions in Section~\ref{sec:contributions} are not read as
-claims about a general-purpose digital audio workstation or live performance environment.
+Motivo deliberately targets offline, rule-based expansion into Standard MIDI Files.
+That focus enables determinism and a compact implementation, but it also bounds what the system claims to replace.
 
-\subsection{Expressive MIDI and sound design}\label{subsec:lim-expressive-midi}
+\topic{Expressive and structural scope.}
+The intermediate representation stores pitch, start beat, duration, and a fixed default velocity.
+Per-note dynamics, continuous controllers, pitch bend, and synthesis parameters are not part of the source language.
+Instruments are a closed keyword set mapped to General MIDI; compositions must live in a single file with no
+\texttt{import} mechanism.
+The lowerer caps output at 20,000 note events.
 
-The intermediate representation stores pitch, start beat, duration, and a fixed default velocity for each note event.
-The source language does not expose per-note velocity literals, continuous controllers, pitch bend, or filter-related
-MIDI data.
-Composers cannot shape dynamics, timbral sweeps, or synthesizer filter parameters from Motivo source code; those
-decisions remain downstream in a DAW or sampler.
-Motivo emits straight note-on and note-off messages on General MIDI program assignments rather than driving a synthesis
-graph, an audio engine, or effect chains.
-The Studio playback layer uses SoundFont rendering for auditioning, but that path is separate from the compiler output
-and does not extend the language's expressive range.
+\topic{Workflow fit.}
+Piano-roll editing is fast for exploratory scratch work but brittle for repetition; Motivo inverts that trade-off.
+It rewards composers who think in rules, loops, and variation, while hand-placed micro-editing, mixing, and real-time
+manipulation remain downstream in a DAW.
 
-\subsection{Rigid instruments and single-file scope}\label{subsec:lim-instruments-modularity}
-
-Instrument identity is fixed at compile time through a small closed set of keywords (\texttt{piano}, \texttt{guitar},
-\texttt{bass}, \texttt{violin}, \texttt{drums}) mapped to General MIDI program numbers or the percussion channel.
-There is no user-defined instrument registry, custom sound-font binding, or per-project timbre configuration in the
-language.
-All declarations for a composition must live in one source file: Motivo has no \texttt{import} or module mechanism,
-no cross-file pattern libraries, and no project-level packaging beyond what Motivo Studio stores as individual
-documents.
-Reusable ideas are limited to patterns defined within the same translation unit, which constrains large-scale
-modularity compared with multi-file software projects or DAW session hierarchies.
-
-\subsection{Workflow fit versus DAW note entry}\label{subsec:lim-daw-workflow}
-
-For exploratory scratch composition---placing a few notes, nudging timing by ear, or sketching a harmonic idea on a
-piano roll---a conventional DAW remains faster and more direct.
-Motivo requires the composer to think in terms of rules, loops, and typed declarations before hearing a result, and
-each edit passes through compile diagnostics rather than immediate grid manipulation.
-The language is therefore better suited to algorithmically structured repetition and variation than to freehand
-micro-editing of individual events.
-This is an event-placement and compile-time model, not an active music-production workflow with real-time manipulation,
-automation lanes, mixing, or arrangement editing on a timeline.
-
-\subsection{Language coverage and evaluation scope}\label{subsec:lim-language-eval}
-
-Several features common in production-oriented tools are absent or only partially modeled.
-Key-signature declarations and harmonic context are not part of the current grammar; accidentals are written as
-literal pitches.
-The pattern system is static: parameters accept concrete evaluated types, but there is no higher-order pattern
-algebra or shipped standard library of musical transformations.
-The lowerer enforces a hard cap of 20,000 note events to prevent runaway programs, which bounds the largest scores the
-implementation can emit today.
-
-The evaluation in Chapter~\ref{ch:evaluation} is technical rather than user-centered.
-It reports compilation time, source-to-event expansion, MIDI size, and automated test counts on synthetic fixtures and
-a single development machine.
-It does not measure whether composers prefer Motivo over a DAW, whether beginners learn the syntax quickly, or whether
-pieces written in Motivo are musically stronger.
-Those questions would require a different study design with participants and qualitative instruments; this thesis does
-not claim them.
+\topic{Evaluation scope.}
+The evaluation reports compilation time, source-to-event expansion, and automated test coverage---not whether composers
+prefer Motivo over a DAW or learn the syntax quickly.
+Those questions would require a separate user study; this thesis does not claim them.

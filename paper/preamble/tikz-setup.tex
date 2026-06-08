@@ -26,6 +26,18 @@
   \resizebox{\linewidth}{!}{#1}%
 }
 
+% Compact scale for small inline pipeline rows (CI workflows, etc.).
+\newcommand{\motivosmallfig}[1]{%
+  \resizebox{0.62\linewidth}{!}{#1}%
+}
+
+\tikzset{
+  motivo/ci/job/.style={motivo/mod, minimum width=0.95cm, minimum height=0.44cm, inner sep=1.5pt,
+  font=\tiny\sffamily},
+  motivo/ci/label/.style={font=\tiny\sffamily\bfseries, text=motivoInk, anchor=east},
+  motivo/ci/arrow/.style={-Stealth, semithick, draw=motivoInk!65},
+}
+
 \pgfplotsset{
   motivo/bar/.style={
     ymajorgrids=true,

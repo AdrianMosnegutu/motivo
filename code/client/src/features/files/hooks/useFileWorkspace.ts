@@ -19,12 +19,13 @@ import {
   getDocumentKey,
   toExampleDocument,
   toUserDocument,
+  sortUserFiles,
   upsertUserFileSummary,
 } from '../lib/documents';
 import { downloadBlob, downloadSource } from '../lib/download-source';
 import type { ActiveDocument, OpenDocumentTab, UserFileSummary } from '../types';
 
-import { useDebouncedAutosave } from './useDebouncedAutosave';
+type ManualSaveStatus = 'idle' | 'saving' | 'error';
 
 const SCRATCH_KEY = 'scratch:scratch';
 
@@ -69,6 +70,7 @@ export function useFileWorkspace() {
   const [openTabs, setOpenTabs] = useState<ActiveDocument[]>([]);
   const [activeTabKey, setActiveTabKey] = useState('');
   const [dirtyUserFileIds, setDirtyUserFileIds] = useState<Record<string, true>>({});
+  const [manualSaveStatus, setManualSaveStatus] = useState<ManualSaveStatus>('idle');
   const dirtyUserFileIdsRef = useRef(dirtyUserFileIds);
   const activeDocument = useMemo(() => {
     if (!activeTabKey) return null;
@@ -153,58 +155,23 @@ export function useFileWorkspace() {
     [clearUserFileDirty],
   );
 
-  const {
-    scheduleSave,
-    flushPendingSave,
-    status: autosaveStatus,
-  } = useDebouncedAutosave({
-    authenticated,
-    fileId: activeDocument?.kind === 'user' ? activeDocument.id : null,
-    readOnly: activeDocument?.readOnly ?? true,
-    save: saveSource,
-    onError: (error) => setOperationError(getFileErrorMessage(error)),
-  });
-
-  const activateTab = useCallback(
-    async (key: string) => {
-      if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
-
-      const current = activeDocumentRef.current;
-      if (current?.kind === 'user' && getDocumentKey(current) !== key) {
-        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
-        if (isDirty) {
-          await flushPendingSave();
-        }
-      }
-
-      setActiveTabKey(key);
-      return true;
-    },
-    [flushPendingSave],
-  );
+  const activateTab = useCallback((key: string) => {
+    if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
+    setActiveTabKey(key);
+    return true;
+  }, []);
 
   const focusExistingTab = useCallback((key: string) => activateTab(key), [activateTab]);
 
-  const openDocumentInTab = useCallback(
-    async (document: ActiveDocument) => {
-      const current = activeDocumentRef.current;
-      if (current?.kind === 'user') {
-        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
-        if (isDirty) {
-          await flushPendingSave();
-        }
-      }
-
-      const key = getDocumentKey(document);
-      setOpenTabs((tabs) => {
-        const base =
-          document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
-        return upsertOpenTab(base, document);
-      });
-      setActiveTabKey(key);
-    },
-    [flushPendingSave],
-  );
+  const openDocumentInTab = useCallback((document: ActiveDocument) => {
+    const key = getDocumentKey(document);
+    setOpenTabs((tabs) => {
+      const base =
+        document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
+      return upsertOpenTab(base, document);
+    });
+    setActiveTabKey(key);
+  }, []);
 
   const openDocumentInTabRef = useRef(openDocumentInTab);
 
@@ -218,7 +185,7 @@ export function useFileWorkspace() {
 
     try {
       const files = await listFiles();
-      setUserFiles(files);
+      setUserFiles(sortUserFiles(files));
 
       if (preferredFileId && files.some((file) => file.id === preferredFileId)) {
         const file = await readFile(preferredFileId);
@@ -280,7 +247,7 @@ export function useFileWorkspace() {
       try {
         const files = await listFiles();
         if (cancelled) return;
-        setUserFiles(files);
+        setUserFiles(sortUserFiles(files));
         filesListedForUserIdRef.current = userId;
 
         const lastOpenedFileId = authUserRef.current?.lastOpenedFileId;
@@ -547,14 +514,21 @@ export function useFileWorkspace() {
     const document = activeDocumentRef.current;
     if (!document || document.kind !== 'user') return false;
 
+    setManualSaveStatus('saving');
     try {
       await saveSource(document.id, document.source);
+      setManualSaveStatus('idle');
       return true;
     } catch (error) {
+      setManualSaveStatus('error');
       setOperationError(getFileErrorMessage(error));
       return false;
     }
   }, [saveSource]);
+
+  useEffect(() => {
+    setManualSaveStatus('idle');
+  }, [activeTabKey]);
 
   const focusTab = useCallback((key: string) => focusExistingTab(key), [focusExistingTab]);
 
@@ -583,9 +557,8 @@ export function useFileWorkspace() {
           getDocumentKey(document) === key ? { ...document, source } : document,
         ),
       );
-      scheduleSave(source);
     },
-    [markUserFileDirty, scheduleSave],
+    [markUserFileDirty],
   );
 
   const openDocumentTabs = useMemo<OpenDocumentTab[]>(() => {
@@ -619,9 +592,9 @@ export function useFileWorkspace() {
       const isDirty = Boolean(dirtyUserFileIds[document.id]);
       const isActive = key === activeTabKey;
       const syncState =
-        isActive && autosaveStatus === 'saving'
+        isActive && manualSaveStatus === 'saving'
           ? 'saving'
-          : isDirty || (isActive && (autosaveStatus === 'pending' || autosaveStatus === 'error'))
+          : isDirty || (isActive && manualSaveStatus === 'error')
             ? 'out-of-sync'
             : 'synced';
 
@@ -635,14 +608,13 @@ export function useFileWorkspace() {
         syncState,
       };
     });
-  }, [activeTabKey, autosaveStatus, dirtyUserFileIds, openTabs]);
+  }, [activeTabKey, dirtyUserFileIds, manualSaveStatus, openTabs]);
 
   return {
     activeDocument,
     activeTabKey,
     authLoading,
     authenticated,
-    autosaveStatus,
     forceCloseTab,
     saveAndCloseTab,
     saveActiveDocument,

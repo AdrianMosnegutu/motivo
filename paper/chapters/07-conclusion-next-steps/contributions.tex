@@ -1,51 +1,24 @@
 \section{Contributions}\label{sec:contributions}
 
-This thesis delivers an end-to-end system rather than an isolated language prototype.
-The contributions span language design, compiler engineering, a production web application, automated quality
-enforcement, and quantitative evaluation.
-They are summarized below in the order a reader encounters them in the preceding chapters.
+The thesis asked whether a small compiled language can keep compositional structure explicit while emitting a standard
+MIDI file.
+We delivered that pipeline end to end.
 
-\paragraph{Motivo as an offline composition language.}
-The first contribution is the Motivo source language for deterministic, structural music composition.
-It maps musical entities---notes, rests, chords, sequences, patterns, tracks, and voices---to typed programming
-constructs rather than to raw MIDI byte construction.
-Patterns with typed parameters compress repetitive structure in the source program; the lowering stage materializes the
-full event timeline described in Chapters~\ref{ch:language-design},~\ref{ch:compiler-implementation},
-and~\ref{ch:evaluation}.
-The language targets Standard MIDI Files as a portable artifact, separating compositional intent from playback-time
-synthesis or live scheduling.
+\topic{Language and compiler.}
+Motivo maps notes, patterns, tracks, and voices to a closed type system and a staged native compiler.
+Lowering treats sequential statements, parallel voices, and typed pattern calls as a temporal expansion problem rather
+than as raw byte assembly.
+Version~2.0 replaced implicit \texttt{let} typing with explicit declarations and signature-based overload resolution;
+evaluation shows roughly $0$--$2\%$ end-to-end overhead on large fixtures with byte-identical MIDI.
 
-\paragraph{Compiler architecture and the version~1.0 to version~2.0 evolution.}
-The second contribution is a staged native compiler: scanner, parser, semantic analyzer, cursor-based lowerer, and
-MIDI backend.
-The project-specific core is the lowering model, in which sequential statements advance musical time, explicit offsets
-place events without moving the main cursor, voices maintain isolated cursors, and pattern calls return reconstructed
-musical values.
-Between version~1.0 and version~2.0 the surface language and semantic pipeline were revised deliberately: implicit
-\texttt{let}-based typing and arity-only pattern overload gave way to explicit \texttt{var} declarations,
-signature-based
-pattern resolution, and single-pass semantic analysis with assignability checks.
-Chapters~\ref{ch:language-design} and~\ref{ch:compiler-implementation} document this evolution;
-Chapter~\ref{ch:evaluation} shows that the stricter model
-imposes roughly $0$--$2\%$ end-to-end wall-clock overhead on large synthetic workloads while producing byte-identical
-MIDI output.
+\topic{Motivo Studio and engineering.}
+Motivo Studio wraps \texttt{motivoc} in a Next.js editor with diagnostics, piano-roll preview, browser playback, and
+authenticated file storage.
+The monorepo enforces quality at four boundaries---635 CTest cases, server and client Vitest suites, and paper
+CI---and deploys to \texttt{motivo-studio.eu} as a maintainable product rather than a one-off prototype.
 
-\paragraph{Motivo Studio, testing, and deployment.}
-The third contribution is Motivo Studio, which embeds the compiler in a full-stack product
-(Chapter~\ref{ch:studio-editor}).
-A Next.js client provides editing, diagnostics, piano-roll visualization, and browser playback; an Express API wraps
-the \texttt{motivoc} binary; PostgreSQL backs authenticated file storage.
-The monorepo enforces quality at four boundaries---635 CTest cases for the compiler, 31 server tests, 79 client tests,
-and paper CI workflows (Chapter~\ref{ch:deployment-ci}, Section~\ref{sec:testing-ci}).
-Production deployment on Railway with Cloudflare DNS and TLS at \texttt{motivo-studio.eu} demonstrates that the thesis
-work extends beyond a local prototype to a deployable engineering system with private database networking and
-CI-gated promotion.
-
-\paragraph{Empirical evaluation.}
-The fourth contribution is bounded quantitative evidence.
-Synthetic benchmarks expand compact programs into up to 20,000 note events and compile them in about 5--8~ms on a local
-Apple M3 Pro Release build.
-Per-stage timing confirms that semantic analysis is a small fraction of total cost relative to lowering and MIDI
-serialization.
-Together with the test inventory, these results support the claim that Motivo is suitable for interactive local
-experimentation at the current scale, without overstating musical or user-experience superiority.
+\topic{Evaluation.}
+Synthetic benchmarks compile up to 20,000 events in about 5--8~ms on a local Release build; lowering and MIDI
+serialization dominate per-stage cost.
+Together with the test inventory, this supports offline batch composition, teaching with immediate feedback, and motif
+prototyping before DAW polish---without claiming superiority over established production tools.

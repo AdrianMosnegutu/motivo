@@ -1,0 +1,70 @@
+\section{Compilation Request Flow}\label{sec:request-flow}
+
+The compile loop is the central integration contract between the Monaco editor, the Express API, and the native
+compiler.
+It is intentionally narrow: the client sends UTF-8 source text; the server returns either MIDI bytes or a JSON array
+of diagnostics; the compiler remains a CLI subprocess with a stable interface.
+
+\subsection{End-to-end sequence}\label{subsec:compile-sequence}
+
+\begin{figure}[htbp]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        actor/.style={motivo/actor, minimum width=2.2cm, minimum height=0.65cm},
+        msg/.style={motivo/msg},
+        arrow/.style={motivo/arrow}
+      ]
+      \node[actor, fill=motivoBlue!12] (editor) at (0,0) {Editor};
+      \node[actor, fill=motivoBlue!10] (client) at (2.9,0) {Compile client};
+      \node[actor, fill=motivoCyan!15] (api) at (5.8,0) {Express};
+      \node[actor, fill=motivoGreen!15] (bin) at (8.7,0) {\texttt{motivoc}};
+      \node[actor, fill=motivoAmber!18] (ui) at (11.6,0) {Visualizer};
+
+      \foreach \x in {0,2.9,5.8,8.7,11.6} {
+        \draw[draw=motivoInk!30] (\x,-0.45) -- (\x,-4.9);
+      }
+
+      \draw[arrow] (0,-0.85) -- node[msg, above] {source text} (2.9,-0.85);
+      \draw[arrow] (2.9,-1.45) -- node[msg, above] {\texttt{POST /api/compile}} (5.8,-1.45);
+      \draw[arrow] (5.8,-2.05) -- node[msg, above] {temp \texttt{.motivo}} (8.7,-2.05);
+      \draw[arrow] (8.7,-2.65) -- node[msg, above] {stderr or \texttt{.mid}} (5.8,-2.65);
+      \draw[arrow] (5.8,-3.25) -- node[msg, above] {MIDI or JSON} (2.9,-3.25);
+      \draw[arrow] (2.9,-3.85) -- node[msg, above] {bytes / diagnostics} (0,-3.85);
+      \draw[arrow] (0,-4.45) -- node[msg, above] {markers + notes} (11.6,-4.45);
+    \end{tikzpicture}%
+  }
+  \caption{Compile request sequence from editor action through \texttt{/api/compile} to visualization.
+  Next.js rewrites \texttt{/api/compile} to the Express \texttt{POST /compile} handler.}\label{fig:compile-sequence}
+\end{figure}
+
+When the user triggers compile (toolbar control or shortcut), \texttt{useIdeCompile} reads the current editor buffer
+and calls \texttt{compileSource}.
+The HTTP client posts \texttt{\{ source \}} to \texttt{/api/compile} with \texttt{responseType: arraybuffer} so a
+successful compile can return raw MIDI without an extra download step.
+
+On the server, Zod validates the body, then the compiler service writes \texttt{motivo-\{uuid\}.motivo} and
+\texttt{motivo-\{uuid\}.mid} under the system temporary directory, runs \texttt{motivoc} with the source path
+as its sole
+argument, and deletes both files in a \texttt{finally} block.
+Non-zero exit codes with stderr content are parsed line-by-line into diagnostics (lexical, syntax, semantic, lowering,
+output stages) using a regex that strips ANSI color codes and optional \texttt{line:column} locations; each parsed
+record exposes a \texttt{type} field in the JSON API (the compiler stderr labels name the pipeline stage).
+Infrastructure failures (missing binary, I/O errors, missing output file) map to HTTP~500 responses with stable error
+codes for the client.
+
+On success, the controller sets \texttt{Content-Type: audio/midi} and sends the file bytes.
+On semantic or syntax failure, the controller responds with HTTP~400 and a JSON body \texttt{\{ kind: 'error',
+diagnostics: [...] \}}.
+
+The client clears previous MIDI and editor markers, then either loads bytes into \texttt{MidiContext} for piano-roll
+rendering and playback, or converts diagnostics to Monaco markers via \texttt{setError} and \texttt{jumpTo} on the first
+error, while mirroring the full list in the logs panel.
+
+\subsection{Testability of the contract}\label{subsec:compile-contract-tests}
+
+This boundary is tested at three levels without always building C++.
+Server Vitest suites inject fake compiler executables to assert success paths, stderr parsing, and infrastructure
+errors.
+Client tests cover diagnostic mapping, compile hooks, and UI wiring without spawning \texttt{motivoc}.
+Compiler CTest and golden fixtures own language correctness end-to-end.

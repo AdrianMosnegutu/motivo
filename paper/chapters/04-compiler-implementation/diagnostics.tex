@@ -1,0 +1,136 @@
+\section{Diagnostics and Compiler Invariants}\label{sec:compiler-diagnostics}
+
+This section documents how errors are collected across pipeline stages and the hard limits the implementation enforces
+to keep compilation predictable.
+
+\subsection{Shared Diagnostics Object and Stage Gating}\label{detail-subsec:diagnostics-architecture}
+
+Diagnostics are centralized in the \texttt{motivo\_diagnostics} library
+(\texttt{common/diagnostics/diagnostics\_engine.cpp}).
+\texttt{motivo::compile} constructs one \texttt{DiagnosticsEngine} on the stack and passes a non-owning reference into
+\texttt{parsing::parse\_stream}, \texttt{semantic::analyze}, \texttt{lowering::lower}, and the \texttt{write\_midi}
+exception handler.
+The engine appends \texttt{Diagnostic} records to an internal vector; no stage clones or replaces the object, so a
+single compilation accumulates all messages in emission order.
+
+Each \texttt{Diagnostic} carries a \texttt{DiagnosticStage} (\texttt{Parsing}, \texttt{Semantic}, \texttt{Lowering},
+\texttt{Output}), a \texttt{DiagnosticSeverity}, an optional stringified \texttt{source::Location}, and a free-form
+message.
+The public formatter \texttt{format\_diagnostic} renders compiler-native output as
+\texttt{error: \textless stage\textgreater: \textless location\textgreater: \textless message\textgreater}, where
+stage strings are \texttt{parse}, \texttt{semantic}, \texttt{lowering}, and \texttt{output}.
+Motivo Studio's compile API serializes the same records into JSON with a \texttt{type} field mirroring the stage enum;
+the thesis uses the string form below because it matches unit-test assertions and CLI stderr.
+
+\topic{Stage gating in \texttt{compiler.cpp}.}
+Compilation is strictly sequential; later stages never run on input that failed an earlier gate:
+
+\begin{enumerate}
+  \item \textbf{Parsing.} If \texttt{ParseResult::ok()} is false, \texttt{compile} returns immediately with accumulated
+    parse diagnostics. Semantic analysis does not run on a null program.
+  \item \textbf{Semantic.} If \texttt{diagnostics.has\_errors(DiagnosticStage::Semantic)}, lowering is skipped even when
+    the AST is structurally complete.
+  \item \textbf{Lowering.} If \texttt{LowerResult::ok()} is false, MIDI serialization is skipped.
+  \item \textbf{Output.} \texttt{write\_midi} exceptions are caught and reported as \texttt{DiagnosticStage::Output}
+    errors; prior stage diagnostics are retained.
+\end{enumerate}
+
+\topic{Lexical error collection.}
+The Flex scanner (\texttt{scanner.l}) calls \texttt{report\_lexical}, which forwards to
+\texttt{DiagnosticsEngine::report} when a diagnostics pointer is installed.
+Lexical errors do not abort tokenization immediately---the scanner continues so multiple invalid characters or
+unterminated comments can be reported in one pass.
+
+\topic{Parser error recovery.}
+Bison is configured with \texttt{\%define parse.error detailed} and \texttt{\%define parse.lac full}.
+Statement-level productions include an \texttt{error} alternative that synchronizes on the next statement terminator
+(\texttt{;}), discards the erroneous fragment, and calls
+\texttt{yyerrok}, and resumes at the next statement boundary.
+This allows the parser to collect more than one syntax diagnostic per file while still returning a null
+\texttt{ParseResult} when the overall parse fails.
+
+\topic{Semantic and lowering collection.}
+Semantic errors flow through \texttt{Traversal::diagnose}; the traversal does not short-circuit on the first error, so
+independent violations (e.g., two incompatible assignments in separate tracks) surface together.
+Lowering catches \texttt{LoweringFailure} exceptions, converts them to
+\texttt{DiagnosticStage::Lowering} entries, and uses \texttt{register\_events} to enforce the global event cap before
+MIDI generation.
+
+\subsection{Diagnostic Taxonomy and Sample Messages}\label{detail-subsec:diagnostic-taxonomy}
+
+Table~\ref{tab:diagnostic-taxonomy} groups the most common diagnostic families.
+Listing~\ref{lst:diagnostic-samples} shows verbatim messages exercised by the Google Test suite.
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\textwidth}{@{}M{1.8cm} M{3.6cm} >{\raggedright\arraybackslash\hspace{0pt}}X@{}}
+    \toprule
+    \textbf{Stage} & \textbf{Origin} & \textbf{Typical trigger} \\
+    \midrule
+    Parsing & Flex \texttt{report\_lexical} & Invalid character, unterminated block comment \\
+    Parsing & Bison \texttt{parse.error detailed} & Missing semicolon, malformed header, duplicate \texttt{tempo} \\
+    Semantic & \texttt{validate\_header} & Tempo or time signature outside allowed range \\
+    Semantic & \texttt{validate\_call} & Undefined pattern, overload mismatch, incompatible argument type \\
+    Semantic & \texttt{validate\_binary\_operands} & Non-numeric arithmetic, non-boolean logic, invalid \texttt{==} \\
+    Semantic & \texttt{visit\_*} visitors & Undeclared variable, illegal outer-scope assignment, drum/melody mismatch \\
+    Lowering & \texttt{LoweringFailure} & Division or modulo by zero at runtime \\
+    Lowering & \texttt{register\_events} & Total emitted \texttt{NoteEvent}s exceed \texttt{MAX\_EVENTS} \\
+    Output & \texttt{write\_midi} catch & File open failure, I/O error during binary write \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Diagnostic taxonomy by pipeline stage and reporting site.}\label{tab:diagnostic-taxonomy}
+\end{table}
+
+\begin{lstlisting}[caption={Representative compiler diagnostic messages (format and wording from unit tests).},
+label={lst:diagnostic-samples}]
+error: semantic: <test>:1:7: tempo must be between 1 and 1000, got 1001
+error: semantic: <test>:1:11: time signature denominator must be a power of two between 1 and 32, got 3
+error: semantic: <test>:2:14: undefined variable 'x'
+error: semantic: <test>:3:9: left operand must be numeric
+error: semantic: <test>:4:5: '&&' requires boolean operands
+error: semantic: <test>:5:12: no matching overload of pattern 'motif'
+error: lowering: division by zero
+error: lowering: modulo by zero
+error: lowering: program exceeds 20000 event limit (has 20002)
+\end{lstlisting}
+
+\subsection{Compiler Invariants}\label{detail-subsec:compiler-invariants}
+
+Beyond type rules, the implementation enforces several numeric and resource invariants.
+Semantic checks catch invalid metadata before any note is emitted; lowering checks catch runtime failures and bound
+unrolling cost.
+
+\topic{Tempo range (semantic).}
+\texttt{Traversal::validate\_header} requires \texttt{tempo} declarations to satisfy $1 \leq \mathrm{BPM} \leq 1000$.
+The grammar already restricts tempo operands to positive integer literals, so only zero and values above the cap reach
+semantic validation.
+The upper bound prevents absurd MIDI tempo meta-events ($uspb = 60{,}000{,}000 / \mathrm{BPM}$ would underflow or
+quantize poorly for extreme values) and matches the range covered by \texttt{metadata\_test.cpp}.
+
+\topic{Time signature rules (semantic).}
+When a \texttt{signature} declaration is present, the numerator must satisfy $1 \leq n \leq 32$ and the denominator
+must be a power of two in the same range.
+Non-power-of-two denominators (e.g., \texttt{4/3}) are rejected because MIDI time-signature meta-events encode the
+denominator as $\log_2 d$ in \texttt{build\_tempo\_track}; values that are not powers of two cannot be represented
+faithfully.
+
+\topic{Division and modulo by zero (lowering).}
+Integer and floating-point division in \texttt{evaluate\_binary\_expression.cpp} throw \texttt{LoweringFailure} when
+the divisor evaluates to zero.
+Modulo applies the same guard for integer operands.
+These cases are not semantic errors because divisors may be variables whose value is unknown until unrolling; the test
+suite confirms both literal (\texttt{1 / 0}) and variable (\texttt{4 / d}) paths.
+
+\topic{Event cap \texttt{MAX\_EVENTS = 20000} (lowering).}
+\texttt{LowererContext::register\_events} increments a program-wide counter each time notes are emitted.
+Exceeding \texttt{MAX\_EVENTS} aborts lowering with a diagnostic naming the limit and the actual count.
+The cap serves two purposes: it bounds memory and MIDI file size for pathological loops (including \texttt{for (;;)}),
+and it provides a practical termination guarantee where the language has no compile-time iteration bound.
+Exactly 20{,}000 events across one or more tracks is valid; 20{,}001 triggers an error.
+
+\topic{What is not statically bounded.}
+The semantic phase does not limit loop iteration counts or pattern recursion depth.
+A finite loop within the event cap succeeds; an infinite \texttt{for (;;)} terminates only when the event cap is hit.
+This trade-off keeps the semantic pass single-pass and defers cost analysis to lowering, where emitted events are the
+measurable unit of work.

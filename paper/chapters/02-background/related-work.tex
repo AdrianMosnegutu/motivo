@@ -1,0 +1,24 @@
+\section{Related Work in Music Programming}\label{sec:related-work}
+
+Existing music programming systems differ in whether they target live performance or offline artefacts, whether
+composition is separated from synthesis, and how temporal structure is expressed.
+This section surveys representative languages; the research-gap section below synthesizes how Motivo differs.
+
+\topic{Sonic Pi.} Embeds Ruby for education and live performance~\cite{Aaron_Blackwell_2013,Aaron_2016}, wrapping
+SuperCollider with sequential \texttt{play} and \texttt{sleep}.
+It excels in classrooms but couples composition to a running synthesizer rather than to a portable MIDI file.
+
+\topic{TidalCycles.} Represents music as time-varying patterns composed functionally~\cite{McLean_Wiggins_2010};
+\topic{Strudel.} Ports that model to JavaScript with WebAudio, OSC, and optional MIDI~\cite{Roos_McLean_2023}.
+Both stream events to external backends during performance.
+\topic{HMusic.} Offers a grid-like track model in Haskell but compiles to Sonic Pi for
+playback~\cite{Du_Bois_Ribeiro_2019}.
+
+\topic{ChucK.} Treats time and concurrency as first-class for real-time synthesis~\cite{Wang_Cook_2003,Wang_2008};
+\topic{SuperCollider.} Separates a language front end from a synthesis server over OSC~\cite{McCartney_2002,
+Wilson_Cottle_Collins_2011}.
+These systems prioritize signal graphs and live control over compiling hierarchical song structure into a finished
+symbolic file.
+
+Across the surveyed languages, composition and execution tend to be intertwined.
+Motivo instead compiles source to a self-contained Format~1 MIDI file with no Motivo runtime at playback time.

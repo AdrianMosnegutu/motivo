@@ -279,18 +279,23 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
   }, [clearScheduleTimer, parsedMidi, clearScheduledVoices]);
 
   useEffect(() => {
+    if (playState !== 'playing') {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+
     const tick = (timestamp: number) => {
       const current = Tone.getTransport().seconds;
 
-      if (
-        playStateRef.current === 'playing' &&
-        timestamp - lastDisplayRefreshRef.current >= DISPLAY_REFRESH_MS
-      ) {
+      if (timestamp - lastDisplayRefreshRef.current >= DISPLAY_REFRESH_MS) {
         lastDisplayRefreshRef.current = timestamp;
         setDisplaySeconds(current);
       }
 
-      if (playStateRef.current === 'playing' && parsedMidi && current >= parsedMidi.duration) {
+      if (parsedMidi && current >= parsedMidi.duration) {
         if (loopRef.current) {
           restartFromStart();
         } else {
@@ -303,9 +308,12 @@ export function useMidiPlayback(parsedMidi: ParsedMidi | null) {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-  }, [parsedMidi, restartFromStart, stopAll]);
+  }, [parsedMidi, playState, restartFromStart, stopAll]);
 
   useEffect(() => () => stopAll(), [stopAll]);
 

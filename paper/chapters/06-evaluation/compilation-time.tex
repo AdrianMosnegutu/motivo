@@ -11,7 +11,7 @@ workloads.
   \centering
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{lrrrrr}
+  \begin{tabular}{M{2.8cm}rrrrr}
     \toprule
     \textbf{Program} & \textbf{LOC} & \textbf{Note events} & \textbf{v1 mean ms} & \textbf{v2 mean ms} &
     \textbf{v2/v1} \\
@@ -51,7 +51,7 @@ interactive compile loop in this local setup.
 
 Table~\ref{tab:benchmark-per-stage} breaks the in-process work down by pipeline stage.
 Parsing and semantic analysis remain below $0.04$~ms regardless of program; lowering and MIDI writing dominate, which
-matches the $O(E)$ and $O(E \log E)$ expectations from Section~\ref{detail-subsec:theoretical-complexity}.
+matches the expected $O(E)$ lowering cost and $O(E \log E)$ MIDI serialization cost.
 The semantic column shows a slight increase in version~2.0 (for example B1: $0.0058$~ms $\rightarrow$ $0.0067$~ms),
 consistent with explicit type checking, but the absolute cost is negligible compared with lowering and backend I/O.
 
@@ -128,7 +128,7 @@ fraction of a second.
 
 These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation remaining
 quick enough for interactive use.
-The interactive playground environment (discussed in previous chapters) relies on the compiler's ability to re-compile
+Motivo Studio relies on the compiler's ability to re-compile
 the entire source file during interactive compile actions.
 Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits well below the
 latency usually noticed during ordinary editor interaction, the composer experiences interactive auditory and visual

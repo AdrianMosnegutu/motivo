@@ -4,10 +4,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMidiPlayback } from '@/features/playback/hooks/useMidiPlayback';
 
 const transport = {
-  pause: vi.fn(),
+  pause: vi.fn(() => {
+    transport.state = 'paused';
+  }),
   seconds: 0,
-  start: vi.fn(),
-  stop: vi.fn(),
+  start: vi.fn(() => {
+    transport.state = 'started';
+  }),
+  state: 'stopped' as 'paused' | 'started' | 'stopped',
+  stop: vi.fn(() => {
+    transport.state = 'stopped';
+  }),
 };
 const toneStart = vi.fn();
 const loadPlaybackInstrument = vi.fn();
@@ -56,6 +63,7 @@ describe('useMidiPlayback', () => {
   beforeEach(() => {
     transport.pause.mockClear();
     transport.seconds = 0;
+    transport.state = 'stopped';
     transport.start.mockClear();
     transport.stop.mockClear();
     toneStart.mockResolvedValue(undefined);

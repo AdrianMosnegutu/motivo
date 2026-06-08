@@ -11,7 +11,8 @@ The explicit-typing release changes the surface language and semantic pipeline w
 backend architecture.
 Version~1.0 inferred variable types from initializers (\texttt{let}), resolved pattern overloads by arity alone, and ran
 a second semantic pass (\texttt{validate\_pattern\_instantiation}) after the main traversal.
-Version~2.0 requires declared types on \texttt{var} bindings, resolves patterns by parameter type signatures, and
+Version~2.0 requires explicit type annotations on variable declarations (\texttt{<type> IDENT = expr}), resolves
+patterns by parameter type signatures, and
 performs semantic analysis in a single traversal with assignability checks at declaration and assignment sites.
 
 These design changes add compile-time guarantees: ill-typed programs fail before lowering, and pattern calls cannot
@@ -36,34 +37,34 @@ raw throughput.
 In summary, the move from implicit to explicit typing trades a negligible wall-clock cost for stricter static guarantees
 and a simpler semantic architecture, while preserving output equivalence on the benchmark corpus.
 
-\subsection{Comparison with Sonic Pi}\label{detail-subsec:comparison-with-sonic-pi}
+\subsection{Positioning within the Music Programming Landscape}\label{detail-subsec:positioning-dsl-ecosystem}
 
-Sonic Pi is a highly successful live-coding language embedded in Ruby, designed primarily for performance and education.
-While both Sonic Pi and Motivo allow music to be expressed as text, their underlying design philosophies lead
-to different
-compositional workflows.
+Representative music programming systems differ along three axes that also frame this evaluation: live performance
+versus offline artifacts, composition separated from synthesis, and explicit temporal structure versus implicit
+sequencing (Table~\ref{tab:related-work-comparison}).
+Live-coding languages such as Sonic Pi, Tidal, Strudel, and HMusic prioritize interactive pattern manipulation and
+stream events to external synthesis backends.
+Real-time audio languages including ChucK and SuperCollider expose fine-grained timing and concurrent processes at the
+cost of managing signal graphs and performance-time scheduling directly.
+Notation and interchange formats such as ABC and MIDI encode musical information for typesetting or playback but lack
+Motivo's combination of typed variables, parameterized patterns, and imperative control flow at the source level.
 
-\subsubsection{Execution Model}
-Sonic Pi utilizes a real-time, interpreted execution model.
-The musician writes scripts that trigger sounds ``on the fly'' through the SuperCollider synthesis engine.
-Time is managed explicitly by the programmer using the \texttt{sleep} function, which halts the execution thread.
+The benchmark evidence in this chapter does not reproduce those qualitative comparisons quantitatively.
+It instead confirms the engineering side of Motivo's positioning: a zero-runtime compiler can expand compact structural
+rules into thousands of MIDI events within the \texttt{MAX\_EVENTS} safety cap while incurring negligible overhead for
+explicit typing in version~2.0.
+Where Sonic Pi advances time through \texttt{sleep} and parallel \texttt{in\_thread} blocks during performance, and
+Tidal and Strudel transform time-varying patterns at live-coding time, Motivo resolves voices and loops entirely at
+compile time into a portable Standard MIDI File---the trade-off already summarized in
+Table~\ref{tab:related-work-comparison} rather than re-derived here.
+The B1--B3 fixtures stress that offline model through nested loops, chord flattening, and flat 20,000-event expansion
+at the compiler cap.
 
-In contrast, Motivo is fully compiled and ``zero-runtime''.
-There is no concept of a thread sleeping; instead, the \texttt{play} and \texttt{rest} commands define a mathematical
-relationship on a static timeline.
-While Sonic Pi excels in improvisational settings where the code is meant to be modified while it runs, Motivo is
-oriented toward \textit{structural composition}, where the composer needs a complex arrangement to resolve into a
-consistently quantized MIDI file every time it is compiled.
-
-\subsubsection{Structural Abstraction in Practice}
-In Sonic Pi, polyphony and parallel execution are achieved by spawning new threads (e.g., using \texttt{in\_thread}).
-This can lead to synchronization issues if the composer does not meticulously manage the timing of each thread.
-Motivo resolves parallelism through the \texttt{voice} construct.
-Because voices are unrolled at compile-time by isolating the internal cursor, the compiler supports that
-parallel musical
-lines are aligned according to the compiler cursor model at their inception without requiring manual thread
-management or
-timing arithmetic from the composer.
+Unlike raw MIDI scripting, Motivo keeps compositional
+intent at the level of beats, patterns, and tracks; unlike ABC notation, the source is executable and procedurally
+generative.
+These distinctions motivated the language design; the measurements above show that pursuing them did not sacrifice
+compile-time throughput on the tested workloads.
 
 \subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
 
@@ -71,7 +72,7 @@ For offline composition, many developers use general-purpose programming languag
 Python's \texttt{mido} or C++'s \texttt{RtMidi}.
 While these tools offer absolute control over the output, they operate at an exceptionally low level of abstraction.
 
-\subsubsection{Event Placement and Musical Intent}
+\topic{Event Placement and Musical Intent.}
 When using a library like \texttt{mido}, the composer must manually construct \texttt{Note-On} and \texttt{Note-Off}
 messages.
 Crucially, because the MIDI file format relies on delta-times, the composer is forced to manually calculate the tick
@@ -83,7 +84,7 @@ C-Major triad for two beats.
 Motivo's lowering engine and backend automatically handle the translation into absolute beats, the flattening into
 individual notes, the sorting by absolute tick, and the final variable-length delta-time encoding.
 
-\subsubsection{Boilerplate and Expressiveness}
+\topic{Boilerplate and Expressiveness.}
 A simple four-beat loop of a hi-hat playing eighth notes requires a significant amount of boilerplate in
 Python: creating
 a file, creating a track, appending tempo metadata, and writing a loop that interleaves \texttt{Note-On} and

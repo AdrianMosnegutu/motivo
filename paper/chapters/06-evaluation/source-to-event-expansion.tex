@@ -65,9 +65,11 @@ B1 stresses linear lowering expansion; B2 adds chord flattening; B3 adds structu
 loops rather than
 a flat counter.
 
-\paragraph{Pattern-in-loop limitation.}
-During fixture design, \texttt{play pattern(...)} inside an outer \texttt{loop (N)} near the 20,000-event cap failed
-with a fixed diagnostic count of 20,100 events regardless of~$N$.
+\topic{Pattern-in-loop limitation.}
+During fixture design, \texttt{play pattern(...)} inside an outer \texttt{loop (N)} near the compiler's
+\texttt{MAX\_EVENTS = 20000} safety cap (\texttt{lowerer\_context.hpp}) triggered a lowering diagnostic once the
+expanded event count exceeded the limit, regardless of modest changes to~$N$.
+The reported total reflects actual emitted notes, not a separate hard-coded threshold.
 B3 therefore uses nested loops instead of nested pattern calls.
 This is a known lowering interaction, not a benchmark artifact; it does not affect the B1--B3 timing results but limits
 how pattern abstraction can be stressed at the safety cap.

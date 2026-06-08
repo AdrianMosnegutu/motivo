@@ -1,0 +1,23 @@
+\section{Algorithmic Composition}\label{sec:algorithmic-composition}
+
+Algorithmic composition uses formal rules to generate music rather than placing every note by hand.
+Computer-assisted approaches date to the \textit{MUSIC} programs at Bell Labs~\cite{Roads_1996}; Nierhaus surveys
+rule- and process-driven generation more broadly~\cite{Nierhaus_2009}.
+MIDI (1983) later standardized symbolic event exchange~\cite{Moog_1986}, while live-coding languages such as
+TidalCycles and Sonic Pi emphasized real-time performance over offline artefacts~\cite{McLean_Wiggins_2010,Aaron_2016}.
+
+The practical advantage for this thesis is \textit{source-level compression}: a pattern invoked inside a loop
+describes repetition declaratively, and the compiler expands it into a flat event timeline at build time.
+Listing~\ref{lst:compression-example} sketches the idea; later material specifies and implements the mechanism in full.
+
+\begin{lstlisting}[label={lst:compression-example},caption={Compact source that lowering expands into many MIDI events.}]
+pattern motif(int dur) {
+    play A4 :dur;
+    play rest :dur;
+    play C5 :dur;
+}
+
+track melody using piano {
+    loop (256) { play motif(1); }
+}
+\end{lstlisting}

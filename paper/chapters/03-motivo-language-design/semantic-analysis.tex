@@ -1,0 +1,39 @@
+\section{Semantic Analysis}\label{sec:semantic-rules}
+
+The semantic pass validates scoping, types, and musical constraints on the parser's AST.
+It performs a single traversal: validate tempo and signature headers, register patterns when each scope opens,
+then check statements and expressions, attaching symbol links and expression types that lowering reads without
+re-analysis.
+\topic{Scoping and writable boundaries.}
+Symbols live in a stack of lexical environments (global, track, voice, pattern, control-flow block).
+Lookup walks outward from the current scope for reads; writes are governed by a \textit{writable boundary} that
+reflects whether an inner scope executes sequentially inside its parent or in parallel with it.
+
+Sequential inner scopes inherit the parent's writable boundary.
+Statements in a track body, patterns defined inside that track, and control-flow blocks such as \texttt{for},
+\texttt{loop}, and \texttt{if} may therefore read and assign variables declared in the enclosing track (or
+global scope when the boundary permits).
+They execute in source order on the same timeline, so mutating a shared counter or motif parameter in the track
+scope is well defined.
+
+Parallel inner scopes receive a new writable boundary at their own scope.
+A \texttt{voice} inside a track may \textit{read} track-level variables when building its part, but assignments
+to those outer variables are rejected---the diagnostic reports a read-only outer binding.
+Voices lower to parallel cursors on the same MIDI channel; allowing them to mutate the parent track's state would
+conflate timelines that the language intentionally keeps independent.
+Variables declared inside the voice remain fully writable within that voice.
+
+Global patterns establish the writable boundary at pattern scope, so they cannot assign globals or track state
+unless nested inside a track that has already set a wider boundary.
+\topic{Types.}
+Declarable types are \texttt{int}, \texttt{double}, \texttt{bool}, \texttt{note}, \texttt{seq}, and
+\texttt{chord}.
+Declarations and assignments require exact type equality: \texttt{int x = 1.0;} is rejected even though
+arithmetic expressions may promote numeric operands.
+Binary operators enforce numeric or boolean rules; sequences cannot be added with \texttt{+}.
+
+\topic{Patterns and \texttt{play}.}
+Pattern calls type-check arguments, then select the overload whose parameter types match.
+\texttt{play} requires musical expression types on melodic tracks and drum literals on drum tracks; optional
+\texttt{:duration} and \texttt{from} operands must be numeric.
+These rules replace version~1.0's arity-only dispatch and second-pass pattern simulation.

@@ -1,50 +1,19 @@
 \section{Future Work}\label{sec:future-work}
 
-The limitations in Section~\ref{sec:limitations} suggest a natural roadmap.
-Each item below extends Motivo without contradicting the offline, MIDI-first design, but none is implemented in the
-present thesis.
+The items below extend Motivo without abandoning the offline, MIDI-first design.
 
-\subsection{Richer MIDI expression}\label{subsec:fw-midi-expression}
+\topic{Richer output and reuse.}
+Per-note velocity, controllers, and additional IR fields would widen expressive range while reusing the existing
+backend split.
+Cross-file modules, custom instrument tables, and a shipped pattern library would ease reuse beyond single-document
+projects.
 
-The most direct gap relative to modern production workflows is expressive control at the note and track level.
-Per-note velocity syntax, velocity curves driven by loops or pattern parameters, and MIDI continuous controllers
-(including volume and filter-related CC data) would require AST and type-system extensions, IR fields beyond the
-current four-tuple model, backend serialization changes, and corresponding updates to the piano-roll visualizer and
-Tone.js playback scheduler.
-Pitch bend and automation-style envelopes would follow the same pipeline.
-The existing separation between IR and backend makes such extensions architecturally plausible, but they remain
-substantial cross-cutting work.
+\topic{Language depth.}
+Key-signature context, higher-order transforms over \texttt{seq} values, and patterns that return composable sequences
+would support pipeline-style algorithmic composition atop the current typed overload model.
 
-\subsection{Modularity, instruments, and libraries}\label{subsec:fw-modularity}
-
-Cross-file \texttt{import} or module boundaries would let composers share pattern libraries across projects without
-copying source text.
-That feature touches parsing (multi-unit compilation), semantic visibility rules, Studio file relationships, and
-possibly a package or namespace convention.
-In parallel, a less rigid instrument model---custom GM program numbers, named sound presets, or project-level
-instrument tables---would reduce dependence on the current keyword enum.
-A standard library of reusable scales, chord voicings, arpeggiators, Euclidean rhythms, and drum templates could sit
-atop either extension once harmonic context and module boundaries are defined.
-
-\subsection{Harmonic context}\label{subsec:fw-harmonic-context}
-
-Key-signature declarations would let Motivo reason about scale degrees, diatonic transposition, and chord functions
-instead of treating every pitch as an independent literal.
-Introducing them carefully requires syntax, semantic interactions with accidentals, and explicit lowering rules so
-that deterministic MIDI output remains predictable.
-Because key signatures are not part of the current implementation, they belong here rather than in the language
-description chapters.
-
-\subsection{Studio product and evaluation depth}\label{subsec:fw-studio-eval}
-
-On the application side, deeper project workflows---multi-file workspaces, version comparison, richer export metadata,
-and compile feedback surfaced in the UI (event counts, compile time, density warnings)---would address friction noted
-in Section~\ref{subsec:lim-daw-workflow} without changing the compiler's core model.
-Alternative backends (JSON event streams, MusicXML-oriented export, or direct synthesis targets) could reuse
-the same IR.
-
-Evaluation could grow beyond synthetic throughput benchmarks.
-Configurable resource limits replacing the fixed 20,000-event cap, multi-machine performance studies, and user-centered
-experiments comparing Motivo to DAW note entry for specific task types would strengthen claims about workflow fit.
-A third compiler generation benchmark deferred by the author until a new language feature lands would complement the
-existing version~1.0 versus version~2.0 comparison.
+\topic{Studio and empirical depth.}
+Multi-file workspaces, compile metrics in the UI, and alternative exporters (MusicXML, JSON event streams) could broaden
+Motivo Studio without changing the core compiler contract.
+User-centered comparisons to DAW note entry and configurable resource limits would strengthen workflow claims beyond
+synthetic throughput benchmarks.

@@ -48,22 +48,22 @@ preamble/colors.tex           Motivo color palette (\definecolor macros)
 preamble/listings-motivo.tex  Motivo language definition for listings
 preamble/tikz-setup.tex       pgfplots/TikZ library setup
 preamble/page-style.tex       Geometry, headers, and page layout overrides
+preamble/headings.tex         \topic{} run-in labels for short titled blocks
+preamble/monospace.tex        Breakable \texttt{} and table column helpers
 ```
 
 ### Chapters
 
-Each chapter is a single file at `chapters/NN-name.tex` containing the `\chapter{}` declaration, introductory
-paragraphs, and `\input{}` calls for its sections. Section content lives in `chapters/NN-name/sections/`, one file
-per `\section{}`.
+Each chapter is a wrapper at `chapters/NN-name.tex` with a matching `chapters/NN-name/` directory of section files.
 
 ```text
-chapters/01-context-motivation-related-work.tex  → 01-context-motivation-related-work/sections/  (8 files)
-chapters/02-motivo-language-design.tex         → 02-motivo-language-design/sections/         (7 files)
-chapters/03-compiler-implementation.tex        → 03-compiler-implementation/sections/        (5 files)
-chapters/04-motivo-studio-editor.tex           → 04-motivo-studio-editor/sections/           (3 files)
-chapters/05-deployment-testing-ci.tex          → 05-deployment-testing-ci/sections/          (2 files)
-chapters/06-evaluation.tex                     → 06-evaluation/sections/                     (7 files)
-chapters/07-conclusion-next-steps.tex          → 07-conclusion-next-steps/sections/          (4 files)
+chapters/01-introduction.tex              → 01-introduction/              (4 files)
+chapters/02-background.tex                → 02-background/                (7 files)
+chapters/03-motivo-language-design.tex    → 03-motivo-language-design/    (7 files)
+chapters/04-compiler-implementation.tex   → 04-compiler-implementation/   (6 files)
+chapters/05-motivo-studio-engineering.tex → 05-motivo-studio-engineering/ (5 files)
+chapters/06-evaluation.tex              → 06-evaluation/                (7 files)
+chapters/07-conclusion-next-steps.tex   → 07-conclusion-next-steps/     (4 files)
 ```
 
 ## CI

@@ -1,0 +1,34 @@
+\section{Types and Compositional Constructs}\label{sec:musical-primitives}
+
+Motivo maps musical entities to a closed type system used by semantic analysis and lowering.
+
+\topic{Notes.} Literals such as \texttt{C4}, \texttt{F\#2}) denote pitch class and octave.
+\topic{Chords.} Group simultaneous pitches with optional per-note durations.
+\topic{Sequences.} Bracketed lists such as \texttt{[C4, D4:2, rest]}) order notes, chords, or rests into cells or bars.
+\topic{Rests and drum hits.} Named literals such as \texttt{kick} and \texttt{snare} are expression-only constants: they
+schedule silence or percussion but cannot be bound to variables, because they behave like fixed symbolic tokens
+rather than stored musical values.
+Scalars \texttt{int}, \texttt{double}, and \texttt{bool} support loop bounds, arithmetic, and conditionals.
+
+Three constructs organize the hierarchy (Figure~\ref{fig:motivo-hierarchy}).
+
+\topic{Patterns.} Typed procedures invoked only through \texttt{play}.
+They may be declared globally, inside a track, or inside a voice; inner declarations shadow outer names
+lexically.
+Overload resolution uses the full parameter type list, so \texttt{fill(bool)} and \texttt{fill(seq)} may
+coexist.
+Arguments are evaluated in the caller's scope before parameters bind.
+A pattern's body may contain declarations, control flow, and nested \texttt{play} calls; when used as a
+\texttt{play} target, the caller's cursor advances by the pattern's total rhythmic footprint.
+
+\topic{Tracks.} Provide the main sequential timeline for one performer and map to one MIDI channel in the
+output.
+An optional name aids diagnostics; \texttt{using piano} or \texttt{using drums} sets instrument identity and
+enables drum-versus-melodic checks on every \texttt{play} in that track.
+Tracks cannot nest inside patterns or voices.
+
+\topic{Voices.} Add parallel horizontal lines within a track.
+A voice inherits the track cursor unless \texttt{from} supplies an entry beat; thereafter it maintains an
+isolated cursor that does not advance the outer track timeline.
+Sibling voices can weave independent rhythms on the same channel; variables declared in a voice are not
+visible outside it.

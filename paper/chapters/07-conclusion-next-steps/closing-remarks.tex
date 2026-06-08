@@ -1,13 +1,11 @@
 \section{Closing Remarks}\label{sec:closing}
 
-Motivo demonstrates that compiler design can be applied to a creative symbolic domain in a concrete and measurable way.
-The language gives repeated musical ideas a compact textual form; the version~2.0 compiler validates that form with
-explicit static typing and expands it into MIDI events through a staged pipeline; Motivo Studio places the result inside
-a deployable product with editing, feedback, visualization, playback, automated tests, and production hosting.
+Flat event editing loses algorithmic intent; live-coding systems recover structure but couple composition to a running
+synthesizer.
+Motivo sits between those poles: structure stays in typed source, expansion is deterministic, and the artefact is a
+Format~1 MIDI file importable into any host.
 
-The system is not a replacement for DAWs, live-coding environments, or synthesis platforms.
-It is a focused bridge between algorithmic structure and Standard MIDI-based production workflows---strong where rules
-and repetition dominate, weaker where hand-placed micro-editing, expressive MIDI, and real-time manipulation matter
-most.
-That bounded scope is both a limitation and a strength: it kept the language implementable, the compiler evaluable, and
-the engineering story coherent within a bachelor's thesis.
+The system does not replace digital audio workstations, live environments, or synthesis platforms.
+It complements them where repetition and symbolic rules dominate.
+Within that boundary, we delivered a validating compiler, a deployable studio, and evidence that the pipeline is fast
+enough for interactive local use---answering the question posed at the outset without overstating the scope.
