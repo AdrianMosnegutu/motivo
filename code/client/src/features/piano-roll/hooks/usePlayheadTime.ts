@@ -100,10 +100,7 @@ export function usePlayheadTracker(
         const delta = lastTick > 0 ? timestamp - lastTick : 0;
         lastTick = timestamp;
 
-        if (
-          !options.followPlayheadRef.current &&
-          options.lastManualScrollAtRef.current > 0
-        ) {
+        if (!options.followPlayheadRef.current && options.lastManualScrollAtRef.current > 0) {
           options.manualScrollIdleMsRef.current += delta;
           if (options.manualScrollIdleMsRef.current >= FOLLOW_RESUME_AFTER_MS) {
             options.followPlayheadRef.current = true;
@@ -115,11 +112,7 @@ export function usePlayheadTracker(
         const shouldFollow = options.followPlayheadRef.current;
 
         if (shouldFollow) {
-          const targetScroll = clampFollowScrollLeft(
-            playheadX,
-            grid.clientWidth,
-            grid.scrollWidth,
-          );
+          const targetScroll = clampFollowScrollLeft(playheadX, grid.clientWidth, grid.scrollWidth);
           options.autoScrollLeftRef.current = targetScroll;
 
           if (Math.abs(grid.scrollLeft - targetScroll) > 0.01) {

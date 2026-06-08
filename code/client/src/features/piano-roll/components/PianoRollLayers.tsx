@@ -53,7 +53,9 @@ type VerticalGridProps = {
   lines: GridLine[];
 };
 
-export const PianoRollVerticalGrid = memo(function PianoRollVerticalGrid({ lines }: VerticalGridProps) {
+export const PianoRollVerticalGrid = memo(function PianoRollVerticalGrid({
+  lines,
+}: VerticalGridProps) {
   return (
     <>
       {lines.map((line) => (

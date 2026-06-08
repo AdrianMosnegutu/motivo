@@ -14,7 +14,9 @@ function createHeader(options: {
 }) {
   const ppq = options.ppq ?? 480;
   const bpm = options.bpm ?? 120;
-  const timeSignatures = options.timeSignatures ?? [{ ticks: 0, timeSignature: [4, 4] as [number, number] }];
+  const timeSignatures = options.timeSignatures ?? [
+    { ticks: 0, timeSignature: [4, 4] as [number, number] },
+  ];
 
   const tempos = [{ ticks: 0, bpm, time: 0 }];
 
@@ -38,9 +40,12 @@ describe('piano roll timeline grid', () => {
     const barTimes = lines.filter((line) => line.kind === 'bar').map((line) => line.timeSec);
 
     expect(barTimes.slice(0, 4)).toEqual([0, 2, 4, 6]);
-    expect(lines.filter((line) => line.kind === 'beat').map((line) => line.timeSec).slice(0, 3)).toEqual([
-      0.5, 1, 1.5,
-    ]);
+    expect(
+      lines
+        .filter((line) => line.kind === 'beat')
+        .map((line) => line.timeSec)
+        .slice(0, 3),
+    ).toEqual([0.5, 1, 1.5]);
   });
 
   it('respects the time signature denominator', () => {

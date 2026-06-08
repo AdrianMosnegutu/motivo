@@ -7,7 +7,6 @@ import { useMidi } from '@/features/midi/MidiContext';
 import { usePlaybackController } from '@/features/playback/PlaybackControllerContext';
 import { cn } from '@/lib/utils';
 
-import { PianoRollLaneChrome, PianoRollNotes, PianoRollVerticalGrid } from './PianoRollLayers';
 import { usePlayheadTracker } from '../hooks/usePlayheadTime';
 import { buildTimelineGrid, filterVisibleGridLines } from '../lib/grid';
 import {
@@ -27,6 +26,8 @@ import {
   VIEWPORT_SYNC_MS,
 } from '../lib/piano';
 import { findVisibleNoteRange } from '../lib/visible-range';
+
+import { PianoRollLaneChrome, PianoRollNotes, PianoRollVerticalGrid } from './PianoRollLayers';
 
 const KEYBOARD_WIDTH = 48;
 

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  sortUserFiles,
-  upsertUserFileSummary,
-} from '@/features/files/lib/documents';
+import { sortUserFiles, upsertUserFileSummary } from '@/features/files/lib/documents';
 import type { UserFile, UserFileSummary } from '@/features/files/types';
 
 function makeFile(overrides: Partial<UserFile> & Pick<UserFile, 'id' | 'name'>): UserFile {
@@ -19,8 +16,8 @@ function makeFile(overrides: Partial<UserFile> & Pick<UserFile, 'id' | 'name'>):
 }
 
 function makeSummary(file: UserFile): UserFileSummary {
-  const { source: _source, ...summary } = file;
-  return summary;
+  const { kind, id, name, createdAt, updatedAt, lastOpenedAt, readOnly } = file;
+  return { kind, id, name, createdAt, updatedAt, lastOpenedAt, readOnly };
 }
 
 describe('user file workspace ordering', () => {
@@ -35,8 +32,12 @@ describe('user file workspace ordering', () => {
 
   it('keeps file position when saving without a rename', () => {
     const initial = sortUserFiles([
-      makeSummary(makeFile({ id: 'a', name: 'alpha.motivo', updatedAt: '2026-01-01T00:00:00.000Z' })),
-      makeSummary(makeFile({ id: 'b', name: 'beta.motivo', updatedAt: '2026-01-03T00:00:00.000Z' })),
+      makeSummary(
+        makeFile({ id: 'a', name: 'alpha.motivo', updatedAt: '2026-01-01T00:00:00.000Z' }),
+      ),
+      makeSummary(
+        makeFile({ id: 'b', name: 'beta.motivo', updatedAt: '2026-01-03T00:00:00.000Z' }),
+      ),
     ]);
 
     const saved = upsertUserFileSummary(
@@ -58,10 +59,7 @@ describe('user file workspace ordering', () => {
       makeSummary(makeFile({ id: 'b', name: 'beta.motivo' })),
     ]);
 
-    const renamed = upsertUserFileSummary(
-      initial,
-      makeFile({ id: 'a', name: 'omega.motivo' }),
-    );
+    const renamed = upsertUserFileSummary(initial, makeFile({ id: 'a', name: 'omega.motivo' }));
 
     expect(renamed.map((file) => file.name)).toEqual(['beta.motivo', 'omega.motivo']);
   });

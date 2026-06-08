@@ -101,7 +101,7 @@ and packaged image.
     server image embedding \texttt{motivoc}.
     \texttt{client.yml} and \texttt{server.yml} share the same job graph (grouped ESLint, TypeScript, and Prettier
     checks, then Vitest---with a Postgres~16 service on the server workflow---build, and Docker package).
-    \texttt{paper.yml}: tex-fmt, chktex, and codespell gate the TeX Live PDF build.}\label{fig:ci-workflows}
+  \texttt{paper.yml}: tex-fmt, chktex, and codespell gate the TeX Live PDF build.}\label{fig:ci-workflows}
 \end{figure}
 
 The distribution of tests matches the failure modes of a full-stack language tool: semantics and MIDI correctness in

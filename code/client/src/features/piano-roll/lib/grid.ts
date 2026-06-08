@@ -28,11 +28,7 @@ export function getTimeSignatureAt(
   return active;
 }
 
-export function getTicksPerMeasure(
-  ppq: number,
-  numerator: number,
-  denominator: number,
-): number {
+export function getTicksPerMeasure(ppq: number, numerator: number, denominator: number): number {
   return numerator * ((ppq * 4) / denominator);
 }
 

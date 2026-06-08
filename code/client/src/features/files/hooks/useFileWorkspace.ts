@@ -17,9 +17,9 @@ import {
   createScratchDocument,
   ensureMotivoFileName,
   getDocumentKey,
+  sortUserFiles,
   toExampleDocument,
   toUserDocument,
-  sortUserFiles,
   upsertUserFileSummary,
 } from '../lib/documents';
 import { downloadBlob, downloadSource } from '../lib/download-source';
@@ -131,6 +131,7 @@ export function useFileWorkspace() {
       if (remaining.length === 0) return '';
       return getDocumentKey(remaining[remaining.length - 1]);
     });
+    setManualSaveStatus('idle');
   }, []);
 
   const saveSource = useCallback(
@@ -155,23 +156,34 @@ export function useFileWorkspace() {
     [clearUserFileDirty],
   );
 
-  const activateTab = useCallback((key: string) => {
-    if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
+  const selectActiveTabKey = useCallback((key: string) => {
     setActiveTabKey(key);
-    return true;
+    setManualSaveStatus('idle');
   }, []);
+
+  const activateTab = useCallback(
+    (key: string) => {
+      if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
+      selectActiveTabKey(key);
+      return true;
+    },
+    [selectActiveTabKey],
+  );
 
   const focusExistingTab = useCallback((key: string) => activateTab(key), [activateTab]);
 
-  const openDocumentInTab = useCallback((document: ActiveDocument) => {
-    const key = getDocumentKey(document);
-    setOpenTabs((tabs) => {
-      const base =
-        document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
-      return upsertOpenTab(base, document);
-    });
-    setActiveTabKey(key);
-  }, []);
+  const openDocumentInTab = useCallback(
+    (document: ActiveDocument) => {
+      const key = getDocumentKey(document);
+      setOpenTabs((tabs) => {
+        const base =
+          document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
+        return upsertOpenTab(base, document);
+      });
+      selectActiveTabKey(key);
+    },
+    [selectActiveTabKey],
+  );
 
   const openDocumentInTabRef = useRef(openDocumentInTab);
 
@@ -385,7 +397,7 @@ export function useFileWorkspace() {
             scratchSourceRef.current,
           );
           setOpenTabs(nextTabs);
-          setActiveTabKey(nextActiveKey);
+          selectActiveTabKey(nextActiveKey);
         }
         return true;
       } catch (error) {
@@ -393,7 +405,7 @@ export function useFileWorkspace() {
         return false;
       }
     },
-    [authenticated, clearUserFileDirty],
+    [authenticated, clearUserFileDirty, selectActiveTabKey],
   );
 
   const downloadUserFile = useCallback(
@@ -448,16 +460,19 @@ export function useFileWorkspace() {
     return true;
   }, [downloadExampleFile, downloadUserFile]);
 
-  const forceCloseTab = useCallback((key: string) => {
-    if (!openTabsRef.current.some((item) => getDocumentKey(item) === key)) return;
-    const { nextActiveKey, nextTabs } = closeTabWithFallback(
-      openTabsRef.current,
-      key,
-      scratchSourceRef.current,
-    );
-    setOpenTabs(nextTabs);
-    setActiveTabKey(nextActiveKey);
-  }, []);
+  const forceCloseTab = useCallback(
+    (key: string) => {
+      if (!openTabsRef.current.some((item) => getDocumentKey(item) === key)) return;
+      const { nextActiveKey, nextTabs } = closeTabWithFallback(
+        openTabsRef.current,
+        key,
+        scratchSourceRef.current,
+      );
+      setOpenTabs(nextTabs);
+      selectActiveTabKey(nextActiveKey);
+    },
+    [selectActiveTabKey],
+  );
 
   const saveAndCloseTab = useCallback(
     async (key: string) => {
@@ -500,14 +515,14 @@ export function useFileWorkspace() {
             userDocument,
           ),
         );
-        setActiveTabKey(getDocumentKey(userDocument));
+        selectActiveTabKey(getDocumentKey(userDocument));
         return true;
       } catch (error) {
         setOperationError(getFileErrorMessage(error));
         return false;
       }
     },
-    [authenticated],
+    [authenticated, selectActiveTabKey],
   );
 
   const saveActiveDocument = useCallback(async () => {
@@ -525,10 +540,6 @@ export function useFileWorkspace() {
       return false;
     }
   }, [saveSource]);
-
-  useEffect(() => {
-    setManualSaveStatus('idle');
-  }, [activeTabKey]);
 
   const focusTab = useCallback((key: string) => focusExistingTab(key), [focusExistingTab]);
 
