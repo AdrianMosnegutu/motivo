@@ -30,23 +30,40 @@ which is ignored by Git.
 ## Structure
 
 ```text
-paper.tex           Main document entrypoint; imports frontmatter and chapters
-style.sty           Thesis style package
-references.bib      Bibliography
-frontmatter/        Frontmatter files, currently the abstract
-chapters/           Chapter entrypoints and chapter section files
-scripts/            Local build, format, and lint helpers
-Makefile            Convenience targets for the local scripts
+paper.tex              Main document entrypoint; imports preamble, frontmatter, and chapters
+style.sty              Thesis style package
+references.bib         Bibliography
+preamble/              Shared setup (colors, listings, TikZ, page style)
+frontmatter/           Frontmatter files, currently the abstract
+chapters/              Chapter wrappers and per-chapter section directories
+scripts/               Local build, format, and lint helpers
+Makefile               Convenience targets for the local scripts
+build/                 Generated PDF and LaTeX intermediates (gitignored)
 ```
 
-Chapter content is split by topic:
+### Preamble
 
 ```text
-chapters/02-background/       Background sections
-chapters/03-related-work/     Related-work sections grouped by system category
-chapters/04-methodology/      DSL design and compiler methodology
-chapters/05-implementation/   Compiler implementation details
-chapters/06-evaluation/       Evaluation sections
+preamble/colors.tex           Motivo color palette (\definecolor macros)
+preamble/listings-motivo.tex  Motivo language definition for listings
+preamble/tikz-setup.tex       pgfplots/TikZ library setup
+preamble/page-style.tex       Geometry, headers, and page layout overrides
+preamble/headings.tex         \topic{} run-in labels for short titled blocks
+preamble/monospace.tex        Breakable \texttt{} and table column helpers
+```
+
+### Chapters
+
+Each chapter is a wrapper at `chapters/NN-name.tex` with a matching `chapters/NN-name/` directory of section files.
+
+```text
+chapters/01-introduction.tex              → 01-introduction/              (4 files)
+chapters/02-background.tex                → 02-background/                (7 files)
+chapters/03-motivo-language-design.tex    → 03-motivo-language-design/    (7 files)
+chapters/04-compiler-implementation.tex   → 04-compiler-implementation/   (6 files)
+chapters/05-motivo-studio-engineering.tex → 05-motivo-studio-engineering/ (5 files)
+chapters/06-evaluation.tex              → 06-evaluation/                (7 files)
+chapters/07-conclusion-next-steps.tex   → 07-conclusion-next-steps/     (4 files)
 ```
 
 ## CI

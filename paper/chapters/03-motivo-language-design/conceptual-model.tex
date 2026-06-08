@@ -1,0 +1,40 @@
+\section{Conceptual Model}\label{sec:conceptual-model}
+
+Live-coding languages often model music as a linear command stream (\texttt{play}, \texttt{sleep}), which suits
+performance but makes reusable structure fragile: changing one motif can require rewiring timing throughout the
+script.
+Motivo instead treats a piece as a \textit{recursive hierarchy}---notes grouped into patterns, patterns sequenced
+in tracks, optional voices for parallel lines within a track---so musical content (the ``what'') stays separate from
+scheduling (the ``when'').
+
+Patterns behave like pure procedures: they encapsulate logic, accept typed parameters, and produce deterministic
+event material when invoked, without a real-time runtime.
+That supports modularity (define once, call many times), abstraction (hide polyphonic detail behind a name), and
+compile-time resolution of every temporal relationship.
+
+\begin{figure}[htbp]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        level/.style={motivo/box, minimum width=10.2cm, minimum height=0.9cm},
+        arrow/.style={motivo/arrow, line width=1.3pt}
+      ]
+      \node[level, fill=motivoBlue!15] (program) {Motivo program: tempo, time signature, global definitions};
+      \node[level, fill=motivoCyan!18, below=0.35cm of program] (track) {Tracks: instrumental identity and MIDI
+      channel allocation};
+      \node[level, fill=motivoGreen!18, below=0.35cm of track] (voice) {Voices: parallel timeline fragments
+      inside a track};
+      \node[level, fill=motivoAmber!20, below=0.35cm of voice] (pattern) {Patterns: reusable parameterized
+      musical procedures};
+      \node[level, fill=motivoRose!14, below=0.35cm of pattern] (values) {Values: notes, rests, chords,
+      sequences, drum notes, scalars, booleans};
+
+      \draw[arrow] (program) -- (track);
+      \draw[arrow] (track) -- (voice);
+      \draw[arrow] (voice) -- (pattern);
+      \draw[arrow] (pattern) -- (values);
+    \end{tikzpicture}%
+  }
+  \caption{Motivo's source-level hierarchy.
+  The compiler validates this hierarchy before lowering it into timestamped note events.}\label{fig:motivo-hierarchy}
+\end{figure}

@@ -35,7 +35,12 @@ import LoadingPane from './LoadingPane';
 import LogsPanel from './LogsPanel';
 import VisualizerPane from './VisualizerPane';
 
-type CloseRequest = { key: string; name: string; kind: 'scratch' | 'user' };
+type CloseRequest = {
+  key: string;
+  name: string;
+  kind: 'scratch' | 'user';
+  reason: 'unsaved' | 'save-failed';
+};
 
 const MotivoEditor = dynamic(() => import('@/features/editor/components/MotivoEditor'), {
   ssr: false,
@@ -78,22 +83,14 @@ export default function IdeWorkspace() {
 
       const dirty = tab.syncState === 'out-of-sync' || tab.syncState === 'saving';
 
-      if (tab.kind === 'scratch') {
-        setCloseRequest({ key, name: tab.name, kind: 'scratch' });
+      if (tab.kind === 'scratch' || (tab.kind === 'user' && dirty)) {
+        setCloseRequest({ key, name: tab.name, kind: tab.kind, reason: 'unsaved' });
         return;
       }
 
-      if (tab.kind === 'example' || !dirty) {
-        forceCloseTab(key);
-        return;
-      }
-
-      const saved = await saveAndCloseTab(key);
-      if (!saved) {
-        setCloseRequest({ key, name: tab.name, kind: 'user' });
-      }
+      forceCloseTab(key);
     },
-    [forceCloseTab, openTabs, saveAndCloseTab],
+    [forceCloseTab, openTabs],
   );
 
   const openSaveAs = useCallback(() => {
@@ -271,7 +268,7 @@ export default function IdeWorkspace() {
         }}
       >
         <DialogContent showCloseButton={false}>
-          {closeRequest?.kind === 'user' ? (
+          {closeRequest?.reason === 'save-failed' ? (
             <>
               <DialogHeader>
                 <DialogTitle>Couldn&apos;t save {closeRequest.name}</DialogTitle>
@@ -316,9 +313,20 @@ export default function IdeWorkspace() {
                   Don&apos;t Save
                 </Button>
                 <Button
-                  onClick={() => {
-                    setCloseRequest(null);
-                    openSaveAs();
+                  onClick={async () => {
+                    if (closeRequest.kind === 'scratch') {
+                      setCloseRequest(null);
+                      openSaveAs();
+                      return;
+                    }
+
+                    const saved = await saveAndCloseTab(closeRequest.key);
+                    if (saved) {
+                      setCloseRequest(null);
+                      return;
+                    }
+
+                    setCloseRequest({ ...closeRequest, reason: 'save-failed' });
                   }}
                 >
                   Save

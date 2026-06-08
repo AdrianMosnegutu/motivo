@@ -61,12 +61,29 @@ export function ensureMotivoFileName(name: string): string {
   return trimmed.toLowerCase().endsWith('.motivo') ? trimmed : `${trimmed}.motivo`;
 }
 
+export function compareUserFileNames(a: UserFileSummary, b: UserFileSummary): number {
+  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+}
+
 export function sortUserFiles(files: UserFileSummary[]): UserFileSummary[] {
-  return [...files].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return [...files].sort(compareUserFileNames);
 }
 
 export function upsertUserFileSummary(files: UserFileSummary[], file: UserFile): UserFileSummary[] {
   const summary = toUserFileSummary(file);
-  const next = files.filter((item) => item.id !== summary.id);
-  return sortUserFiles([summary, ...next]);
+  const index = files.findIndex((item) => item.id === summary.id);
+
+  if (index === -1) {
+    return sortUserFiles([...files, summary]);
+  }
+
+  const previous = files[index];
+  const next = [...files];
+  next[index] = summary;
+
+  if (previous.name === summary.name) {
+    return next;
+  }
+
+  return sortUserFiles(next);
 }

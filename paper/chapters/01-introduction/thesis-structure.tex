@@ -1,0 +1,31 @@
+\section{Structure of This Thesis}\label{sec:thesis-structure}
+
+Table~\ref{tab:thesis-roadmap} summarizes the thesis structure.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{M{1.2cm}M{4.5cm}M{7.5cm}}
+    \toprule
+    \textbf{Ch.} & \textbf{Title} & \textbf{What the reader learns} \\
+    \midrule
+    1 & Introduction &
+    Problem, motivation, relevance, use cases, and roadmap \\
+    2 & Background &
+    Digital music context, music and MIDI primers, compiler theory, algorithmic composition overview, related
+    musical DSLs, research gap \\
+    3 & Motivo language design &
+    Grammar, types, semantics, temporal model, version~1 to version~2 evolution \\
+    4 & Compiler implementation &
+    Pipeline, frontend, semantic pass, lowering, MIDI backend \\
+    5 & Motivo Studio and engineering operations &
+    Web IDE, server, persistence, testing, CI/CD, deployment \\
+    6 & Evaluation &
+    Benchmarks, compilation time, event expansion, limits \\
+    7 & Conclusion &
+    Contributions, limitations, future work \\
+    \bottomrule
+  \end{tabular}
+  \caption{Roadmap of the thesis chapters.}\label{tab:thesis-roadmap}
+\end{table}

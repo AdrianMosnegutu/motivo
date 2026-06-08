@@ -6,6 +6,7 @@
 .vscode/
 .codex/
 .claude/
+.cursor/
 .gemini/
 *.swp
 *.swo

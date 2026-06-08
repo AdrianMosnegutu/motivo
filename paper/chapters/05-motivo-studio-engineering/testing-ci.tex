@@ -1,0 +1,110 @@
+\section{Testing and Continuous Integration}\label{sec:testing-ci}
+
+Quality for Motivo Studio is enforced at three subsystem boundaries: the C++ compiler, the Express API, and the
+Next.js client.
+Counts below were collected on 2026-06-01 at monorepo commit \texttt{7e8a55fb} unless noted.
+
+\subsection{Verified test inventory}\label{subsec:test-inventory}
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabularx}{\textwidth}{@{}M{2.1cm}M{3.0cm}rM{3.6cm}@{}}
+    \toprule
+    \textbf{Subsystem} & \textbf{Tooling} & \textbf{Test cases} & \textbf{Test types} \\
+    \midrule
+    Compiler & CTest, GoogleTest & 635 & Unit, integration, golden \\
+    Server & Vitest, Supertest & 31 & Unit, integration \\
+    Client & Vitest, Testing Library & 79 & Unit, integration \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Verified test inventory per subsystem (2026-06-01).}\label{tab:test-counts}
+\end{table}
+
+Compiler unit suites exercise parsing, explicit type rules, lowering, MIDI writing, and integration through
+\texttt{motivo::compile()}.
+Golden tests compile fixture sources (\texttt{happy\_path.motivo}, \texttt{parse\_errors.motivo},
+\texttt{semantic\_errors.motivo}, \texttt{lowering\_errors.motivo}) and assert MIDI shape or collected diagnostics per
+stage---not byte-identical comparison to a checked-in \texttt{fur\_elise} binary (that composition ships as a studio
+example only).
+
+Server tests cover Zod validation, compile controller success and failure paths with fake \texttt{motivoc}
+executables, stderr diagnostic parsing, auth session cookies, and file CRUD against Postgres when available.
+Client tests cover compile hooks, marker mapping, MIDI parsing, piano-roll layout hooks, playback utilities, auth
+context, file workspace document handling, and IDE shortcuts.
+
+\subsection{Monorepo CI workflows}\label{subsec:ci-workflows}
+
+GitHub Actions workflows live at the monorepo root (paths under \texttt{code/} and \texttt{paper/}).
+
+\begin{table}[htbp]
+  \centering
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\textwidth}{@{}M{2.4cm}M{3.0cm}>{\raggedright\arraybackslash\hspace{0pt}}X@{}}
+    \toprule
+    \textbf{Workflow} & \textbf{Trigger paths} & \textbf{Job progression} \\
+    \midrule
+    \texttt{compiler.yml} & \texttt{code/compiler/**} & static analysis (clang-format) $\rightarrow$ build (CMake/Ninja)
+    $\rightarrow$ test (CTest + gcovr report) $\rightarrow$ package (server image with embedded compiler). \\
+    \texttt{server.yml} & \texttt{code/server/**} & static analysis (lint, typecheck, format) $\rightarrow$ test
+    (Vitest + Postgres) $\rightarrow$ build $\rightarrow$ package. \\
+    \texttt{client.yml} & \texttt{code/client/**} & static analysis (lint, typecheck, format) $\rightarrow$ test
+    $\rightarrow$ build $\rightarrow$ package. \\
+    \texttt{paper.yml} & \texttt{paper/**} (excludes \texttt{notes/}, \texttt{scripts/}) & static analysis (tex-fmt,
+    chktex, codespell) $\rightarrow$ build-paper (TeX Live PDF). \\
+    \bottomrule
+  \end{tabularx}
+  \caption{CI workflows and their primary stages.}\label{tab:ci-workflows}
+\end{table}
+
+Each workflow supports \texttt{workflow\_dispatch} for manual reruns and uses path filters so unrelated modules do not
+rebuild on every commit.
+Concurrency groups cancel superseded runs on the same branch.
+Figure~\ref{fig:ci-workflows} summarizes the job graphs; client and server differ only in trigger paths, test fixtures,
+and packaged image.
+
+\begin{figure}[htbp]
+  \centering
+  \motivosmallfig{%
+    \begin{tikzpicture}[
+        row sep/.initial=0.78cm,
+        job/.style={motivo/ci/job},
+        lbl/.style={motivo/ci/label},
+        arr/.style={motivo/ci/arrow}
+      ]
+      \node[lbl] (compiler-lbl) at (0,0) {\texttt{compiler.yml}};
+      \node[job, fill=motivoBlue!14, right=0.12cm of compiler-lbl] (c-static) {static};
+      \node[job, fill=motivoCyan!14, right=0.1cm of c-static] (c-build) {build};
+      \node[job, fill=motivoGreen!14, right=0.1cm of c-build] (c-test) {test};
+      \node[job, fill=motivoAmber!20, right=0.1cm of c-test] (c-package) {package};
+      \draw[arr] (c-static) -- (c-build);
+      \draw[arr] (c-build) -- (c-test);
+      \draw[arr] (c-test) -- (c-package);
+
+      \node[lbl] (web-lbl) at (0,-0.78) {\texttt{client/server.yml}};
+      \node[job, fill=motivoBlue!14, right=0.12cm of web-lbl] (w-static) {static};
+      \node[job, fill=motivoGreen!14, right=0.1cm of w-static] (w-test) {test};
+      \node[job, fill=motivoCyan!14, right=0.1cm of w-test] (w-build) {build};
+      \node[job, fill=motivoAmber!20, right=0.1cm of w-build] (w-package) {package};
+      \draw[arr] (w-static) -- (w-test);
+      \draw[arr] (w-test) -- (w-build);
+      \draw[arr] (w-build) -- (w-package);
+
+      \node[lbl] (paper-lbl) at (0,-1.56) {\texttt{paper.yml}};
+      \node[job, fill=motivoBlue!14, right=0.12cm of paper-lbl] (p-static) {static};
+      \node[job, fill=motivoGreen!14, right=0.1cm of p-static] (p-build) {build};
+      \draw[arr] (p-static) -- (p-build);
+    \end{tikzpicture}%
+  }
+  \caption{Monorepo CI job progressions.
+    \texttt{compiler.yml}: clang-format static analysis, CMake build, CTest with gcovr, then Docker package of the
+    server image embedding \texttt{motivoc}.
+    \texttt{client.yml} and \texttt{server.yml} share the same job graph (grouped ESLint, TypeScript, and Prettier
+    checks, then Vitest---with a Postgres~16 service on the server workflow---build, and Docker package).
+  \texttt{paper.yml}: tex-fmt, chktex, and codespell gate the TeX Live PDF build.}\label{fig:ci-workflows}
+\end{figure}
+
+The distribution of tests matches the failure modes of a full-stack language tool: semantics and MIDI correctness in
+C++; process and HTTP contracts on the server; parsing, rendering, and UX on the client; typographic and build integrity
+on the paper.
+Deploy gating is described in the deployment section above.

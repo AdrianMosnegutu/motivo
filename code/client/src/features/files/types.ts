@@ -43,8 +43,6 @@ export interface ExampleDocument extends ExampleFile {
 
 export type ActiveDocument = ScratchDocument | UserDocument | ExampleDocument;
 
-export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
-
 export type TabSyncState = 'readonly' | 'out-of-sync' | 'saving' | 'synced';
 
 export interface OpenDocumentTab {

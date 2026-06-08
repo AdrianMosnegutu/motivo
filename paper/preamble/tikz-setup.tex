@@ -1,0 +1,48 @@
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc, matrix, backgrounds}
+
+% Shared Motivo figure styling (colors from preamble/colors.tex).
+\tikzset{
+  motivo/stage/.style={rounded corners=6pt, draw=motivoInk!70, line width=1.4pt, align=center,
+  font=\small\sffamily},
+  motivo/box/.style={rounded corners=4pt, draw=motivoInk!65, line width=1.2pt, align=center,
+  font=\small\sffamily},
+  motivo/mod/.style={rounded corners=4pt, draw=motivoInk!60, line width=1.1pt, align=center,
+  font=\scriptsize\sffamily},
+  motivo/actor/.style={rounded corners=4pt, draw=motivoInk!60, line width=1.2pt, align=center,
+  font=\small\sffamily},
+  motivo/service/.style={rounded corners=5pt, draw=motivoInk!65, line width=1.3pt, align=center,
+  font=\small\sffamily},
+  motivo/panel/.style={rounded corners=4pt, draw=motivoInk!55, line width=1.2pt, align=center,
+  font=\small\sffamily},
+  motivo/arrow/.style={-Stealth, line width=1.2pt, draw=motivoInk!75},
+  motivo/guard/.style={font=\scriptsize\sffamily, text=motivoInk!80, align=center},
+  motivo/msg/.style={font=\scriptsize\sffamily, text=motivoInk},
+  motivo/beat/.style={font=\scriptsize\sffamily, text=motivoInk},
+}
+
+% Scale wide TikZ figures to the text block for A4 print.
+\newcommand{\motivoscalefig}[1]{%
+  \resizebox{\linewidth}{!}{#1}%
+}
+
+% Compact scale for small inline pipeline rows (CI workflows, etc.).
+\newcommand{\motivosmallfig}[1]{%
+  \resizebox{0.62\linewidth}{!}{#1}%
+}
+
+\tikzset{
+  motivo/ci/job/.style={motivo/mod, minimum width=0.95cm, minimum height=0.44cm, inner sep=1.5pt,
+  font=\tiny\sffamily},
+  motivo/ci/label/.style={font=\tiny\sffamily\bfseries, text=motivoInk, anchor=east},
+  motivo/ci/arrow/.style={-Stealth, semithick, draw=motivoInk!65},
+}
+
+\pgfplotsset{
+  motivo/bar/.style={
+    ymajorgrids=true,
+    grid style={draw=motivoInk!12},
+    tick label style={font=\scriptsize\sffamily},
+    label style={font=\small\sffamily, text=motivoInk},
+  },
+}

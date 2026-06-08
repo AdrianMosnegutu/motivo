@@ -1,0 +1,7 @@
+\section{Compilation Strategy}\label{sec:compilation-strategy}
+
+Motivo follows a \textit{zero-runtime} model: loops, branches, and pattern calls are expanded during compilation,
+not interpreted at playback.
+Lowering produces a flat intermediate representation of timestamped events, which the MIDI backend serializes.
+Semantic errors are reported before lowering begins; strict typing and single-pass analysis keep that pipeline
+predictable.

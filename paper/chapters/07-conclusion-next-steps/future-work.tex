@@ -1,0 +1,19 @@
+\section{Future Work}\label{sec:future-work}
+
+The items below extend Motivo without abandoning the offline, MIDI-first design.
+
+\topic{Richer output and reuse.}
+Per-note velocity, controllers, and additional IR fields would widen expressive range while reusing the existing
+backend split.
+Cross-file modules, custom instrument tables, and a shipped pattern library would ease reuse beyond single-document
+projects.
+
+\topic{Language depth.}
+Key-signature context, higher-order transforms over \texttt{seq} values, and patterns that return composable sequences
+would support pipeline-style algorithmic composition atop the current typed overload model.
+
+\topic{Studio and empirical depth.}
+Multi-file workspaces, compile metrics in the UI, and alternative exporters (MusicXML, JSON event streams) could broaden
+Motivo Studio without changing the core compiler contract.
+User-centered comparisons to DAW note entry and configurable resource limits would strengthen workflow claims beyond
+synthetic throughput benchmarks.

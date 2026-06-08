@@ -1,0 +1,13 @@
+\chapter{Implementation of the Motivo Compiler}\label{ch:compiler-implementation}
+
+This chapter is an engineering account of \texttt{motivoc}: one compilation from source text to Standard MIDI File bytes
+through lexical and syntactic analysis, semantic validation, intermediate lowering, and binary serialization.
+The emphasis is on module boundaries, data artifacts passed between stages, and the concrete C++ components that
+implement each phase.
+
+\input{chapters/04-compiler-implementation/compiler-pipeline}
+\input{chapters/04-compiler-implementation/implementation-frontend}
+\input{chapters/04-compiler-implementation/semantic-implementation}
+\input{chapters/04-compiler-implementation/diagnostics}
+\input{chapters/04-compiler-implementation/lowering-ir}
+\input{chapters/04-compiler-implementation/midi-backend-design}

@@ -1,0 +1,24 @@
+\section{Contributions}\label{sec:contributions}
+
+The thesis asked whether a small compiled language can keep compositional structure explicit while emitting a standard
+MIDI file.
+We delivered that pipeline end to end.
+
+\topic{Language and compiler.}
+Motivo maps notes, patterns, tracks, and voices to a closed type system and a staged native compiler.
+Lowering treats sequential statements, parallel voices, and typed pattern calls as a temporal expansion problem rather
+than as raw byte assembly.
+Version~2.0 replaced implicit \texttt{let} typing with explicit declarations and signature-based overload resolution;
+evaluation shows roughly $0$--$2\%$ end-to-end overhead on large fixtures with byte-identical MIDI.
+
+\topic{Motivo Studio and engineering.}
+Motivo Studio wraps \texttt{motivoc} in a Next.js editor with diagnostics, piano-roll preview, browser playback, and
+authenticated file storage.
+The monorepo enforces quality at four boundaries---635 CTest cases, server and client Vitest suites, and paper
+CI---and deploys to \texttt{motivo-studio.eu} as a maintainable product rather than a one-off prototype.
+
+\topic{Evaluation.}
+Synthetic benchmarks compile up to 20,000 events in about 5--8~ms on a local Release build; lowering and MIDI
+serialization dominate per-stage cost.
+Together with the test inventory, this supports offline batch composition, teaching with immediate feedback, and motif
+prototyping before DAW polish---without claiming superiority over established production tools.

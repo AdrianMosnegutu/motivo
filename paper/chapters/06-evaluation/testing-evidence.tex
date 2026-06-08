@@ -1,0 +1,21 @@
+\section{Testing Evidence}\label{sec:test-evidence}
+
+Quantitative testing claims in this chapter rest on the metrics baseline collected on 2026-06-01 at monorepo commit
+\texttt{7e8a55fb}.
+Table~\ref{tab:test-counts} summarizes the verified test inventory used throughout the evaluation claims.
+
+The compiler suite spans parsing, explicit type rules, lowering, MIDI writing, integration through
+\texttt{motivo::compile()}, and four golden \texttt{.motivo} fixtures that assert stage-specific diagnostics or MIDI
+shape.
+During baseline collection, the golden test \texttt{Golden.LoweringErrorsAreCollectedAcrossTracks} initially failed
+because \texttt{lowering\_errors.motivo} relied on integer division semantics that changed when \texttt{/} began
+promoting to \texttt{double}.
+The fixture was corrected to trigger lowering errors via invalid loop bounds; the full suite now passes at \textbf{635 /
+635}.
+
+Coverage percentages are not a proof of correctness.
+They do not show whether the language is pleasant to use or whether every musical edge case has been modeled.
+They do show that the implementation is treated as a software system with repeatable checks at the compiler, API, and
+client boundaries.
+For this thesis, that matters because Motivo is evaluated both as a language design and as a full-stack engineering
+project.

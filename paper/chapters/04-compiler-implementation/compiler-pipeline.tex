@@ -1,0 +1,194 @@
+\section{Compiler Pipeline}\label{sec:compiler-pipeline}
+
+The Motivo compiler is organized as a strictly sequential multi-pass pipeline.
+Each stage transforms the representation of the musical program, moving from abstract textual intent to a
+concrete binary artifact.
+By decoupling these stages, the compiler catches errors early, keeps musical structure fully resolved before code
+generation, and allows each module to be tested in isolation.
+
+\subsection{Orchestration and Control Flow}\label{detail-subsec:orchestration}
+
+The public entry point \texttt{motivo::compile} in \texttt{compiler/src/motivo/compiler.cpp} orchestrates the full
+pipeline.
+A single \texttt{DiagnosticsEngine} instance is created at the start and passed by reference into every stage that can
+report structured errors; the engine accumulates \texttt{Diagnostic} records tagged with a \texttt{DiagnosticStage}
+(\texttt{Parsing}, \texttt{Semantic}, \texttt{Lowering}, or \texttt{Output}) and an optional source location.
+After each stage, \texttt{compiler.cpp} checks for stage-specific failures and returns early with the collected
+diagnostics rather than proceeding on invalid input.
+
+The orchestration sequence matches the implementation exactly:
+
+\begin{enumerate}
+  \item \texttt{parsing::parse\_stream} reads the input \texttt{FILE*} and returns a \texttt{ParseResult} wrapping an
+    \texttt{ast::Program}, or reports parse errors and yields an empty result.
+  \item \texttt{semantic::analyze} accepts the parsed program and produces an \texttt{AnalysisResult} containing the
+    same \texttt{ast::Program} plus symbol-table and annotation side tables.
+  \item \texttt{lowering::lower} consumes the \texttt{AnalysisResult} and returns a \texttt{LowerResult} holding an
+    optional \texttt{ir::Program}.
+  \item \texttt{midi::write\_midi} serializes the \texttt{ir::Program} to the output path; I/O failures are caught and
+    reported as \texttt{DiagnosticStage::Output} errors.
+\end{enumerate}
+
+Figure~\ref{fig:compiler-pipeline-full} presents this control flow at full width, naming the C++ entry functions and
+the guard conditions that terminate compilation early.
+
+\subsection{Information Flow and Artifacts}\label{detail-subsec:information-flow-and-artifacts}
+
+Each stage consumes a typed result object from its predecessor and produces the input expected by its successor.
+Figure~\ref{fig:compiler-data-artifacts} summarizes the primary data structures and their fields; the annotated AST is
+not a separate tree copy---semantic analysis attaches metadata to the existing \texttt{ast::Program} through
+\texttt{AnalysisResult}.
+
+\topic{\texttt{ParseResult} (\texttt{motivo::parsing}).}
+On success, owns a \texttt{std::unique\_ptr\textless ast::Program\textgreater{}} built by the Bison parser.
+The program decomposes into a \texttt{Header} (tempo and time signature), a vector of \texttt{GlobalItem} nodes, and a
+vector of \texttt{TrackDefinition} nodes.
+The \texttt{ok()} predicate is true when the program pointer is non-null.
+
+\topic{\texttt{AnalysisResult} (\texttt{motivo::semantic}).}
+Retains a const reference to the parsed \texttt{ast::Program} and owns private \texttt{SymbolTable} and
+\texttt{Annotations} instances populated by \texttt{detail::Traversal::run()}.
+Callers query resolved expression types and symbol identifiers through accessor methods such as
+\texttt{get\_expression\_type} and \texttt{get\_resolved\_symbol}; lowering reads these caches instead of repeating
+lookups.
+
+\topic{\texttt{ir::Program} (\texttt{motivo::lowering}).}
+A flat timeline artifact: \texttt{tempo\_bpm}, \texttt{time\_sig\_numerator}, \texttt{time\_sig\_denominator}, and a
+vector of \texttt{ir::Track} records.
+Each track stores an \texttt{music::Instrument} and a chronologically sorted vector of \texttt{ir::NoteEvent} structures
+(\texttt{midi\_note}, \texttt{start\_beat}, \texttt{duration\_beats}, \texttt{velocity}).
+
+\topic{MIDI output (\texttt{motivo::midi}).}
+\texttt{write\_midi} does not return a structured result; it writes Standard MIDI File Format~1 bytes directly to disk
+or throws an exception converted to an output-stage diagnostic.
+
+\subsection{Transformation Stages}\label{detail-subsec:transformation-stages}
+
+The transformation process is organized into four conceptual stages aligned with the pipeline diagram above.
+
+\topic{Text to tree (frontend).} Flex (\texttt{parsing/detail/scanner.l}) tokenizes the character stream;
+Bison (\texttt{parsing/detail/parser.y}) reduces tokens to an \texttt{ast::Program}.
+The AST captures logical hierarchy (patterns, tracks, voices) without temporal resolution.
+
+\topic{Tree to annotated tree (semantic analysis).} \texttt{detail::Traversal} performs symbol resolution,
+explicit type checking, and musical constraint validation in a single walk.
+Collectors register pattern symbols before bodies are visited; validators enforce operand and call-site rules; visitors
+in \texttt{semantic/detail/traversal/visitors/} dispatch on \texttt{std::variant} node kinds.
+
+\topic{Tree to timeline (lowering).} \texttt{detail::LowererContext} executes the annotated program like an
+interpreter: \texttt{ast\_lowerers/} emit \texttt{NoteEvent}s, \texttt{expression\_evaluators/} resolve runtime
+\texttt{ir::Value}s, and \texttt{value\_flattener.cpp} expands chords and sequences into atomic events.
+
+\topic{Timeline to binary (backend).} \texttt{midi/write\_midi.cpp} converts absolute beat positions to MIDI
+ticks, splits each note into Note-On and Note-Off messages, stable-sorts events, and writes delta-time encoded track
+chunks.
+
+\begin{figure}[p]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        stage/.style={motivo/stage, minimum width=2.55cm, minimum height=1.65cm, text width=2.45cm},
+        guard/.style={motivo/guard, text width=2.1cm},
+        arrow/.style={motivo/arrow},
+        diag/.style={motivo/panel, fill=motivoRose!10, minimum width=2.2cm, minimum height=6.8cm, align=center}
+      ]
+      \node[stage, fill=motivoSoft] (input) {\textbf{Input}\\\texttt{FILE*}\\source name\\output path};
+      \node[stage, fill=motivoBlue!18, right=0.95cm of input] (parse)
+      {\textbf{Parsing}\\\texttt{parse\_stream}\\Flex + Bison};
+      \node[stage, fill=motivoCyan!22, right=0.95cm of parse] (sem)
+      {\textbf{Semantic}\\\texttt{analyze}\\\texttt{Traversal::run}};
+      \node[stage, fill=motivoGreen!22, right=0.95cm of sem] (low)
+      {\textbf{Lowering}\\\texttt{lower}\\\texttt{LowererContext}};
+      \node[stage, fill=motivoAmber!26, right=0.95cm of low] (midi)
+      {\textbf{MIDI}\\\texttt{write\_midi}\\SMF Format~1};
+      \node[stage, fill=motivoSoft, right=0.95cm of midi] (out) {\textbf{Output}\\\texttt{.mid}\\binary artifact};
+
+      \draw[arrow] (input) -- (parse);
+      \draw[arrow] (parse) -- (sem);
+      \draw[arrow] (sem) -- (low);
+      \draw[arrow] (low) -- (midi);
+      \draw[arrow] (midi) -- (out);
+
+      \node[guard, below=0.55cm of parse, align=center] {\texttt{!ok()}\\$\rightarrow$ abort};
+      \node[guard, below=0.55cm of sem, align=center] {semantic\\errors $\rightarrow$ abort};
+      \node[guard, below=0.55cm of low, align=center] {\texttt{!ok()}\\$\rightarrow$ abort};
+      \node[guard, below=0.55cm of midi, align=center] {I/O exception\\$\rightarrow$ output error};
+
+      \node[diag, above=0.35cm of sem, yshift=0.15cm] (diagbox) {%
+        \textbf{DiagnosticsEngine}\\[0.35em]
+        \scriptsize\sffamily
+        shared ref\\[0.2em]
+        passed to\\all stages\\[0.2em]
+        \texttt{take\_diagnostics()}\\at end
+      };
+
+      \draw[motivo/arrow, dashed, draw=motivoRose!55] (diagbox.south) -- ++(0,-0.25) -| (parse.north);
+      \draw[motivo/arrow, dashed, draw=motivoRose!55] (diagbox.south) -- (sem.north);
+      \draw[motivo/arrow, dashed, draw=motivoRose!55] (diagbox.south) -- ++(0,-0.25) -| (low.north);
+      \draw[motivo/arrow, dashed, draw=motivoRose!55] (diagbox.south) -- ++(0,-0.25) -| (midi.north);
+    \end{tikzpicture}%
+  }
+  \caption{Full compiler pipeline orchestrated by \texttt{motivo::compile} in \texttt{compiler.cpp},
+    including early-exit guards after each stage and the shared \texttt{DiagnosticsEngine} reference passed to every
+  reporting site.}\label{fig:compiler-pipeline-full}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        box/.style={motivo/box, minimum width=3.35cm, minimum height=1.35cm, text width=3.1cm},
+        field/.style={motivo/guard, text width=3.0cm, align=center},
+        arrow/.style={motivo/arrow, line width=1.4pt},
+        label/.style={font=\small\sffamily\bfseries, text=motivoInk}
+      ]
+      \node[box, fill=motivoBlue!16] (pr) {\textbf{ParseResult}\\\texttt{unique\_ptr\textless Program\textgreater}};
+      \node[box, fill=motivoCyan!20, right=1.1cm of pr] (ar) {\textbf{AnalysisResult}\\\texttt{Program
+      ref}\\\texttt{SymbolTable}\\\texttt{Annotations}};
+      \node[box, fill=motivoGreen!20, right=1.1cm of ar] (ir) {\textbf{ir::Program}\\header
+      fields\\\texttt{vector\textless Track\textgreater}};
+      \node[box, fill=motivoAmber!24, right=1.1cm of ir] (mid) {\textbf{SMF bytes}\\\texttt{MThd + MTrk}\\480 PPQ};
+
+      \draw[arrow] (pr) -- node[label, above=0.15cm] {analyze} (ar);
+      \draw[arrow] (ar) -- node[label, above=0.15cm] {lower} (ir);
+      \draw[arrow] (ir) -- node[label, above=0.15cm] {write\_midi} (mid);
+
+      \node[field, below=0.75cm of pr] (f1) {\texttt{Header}\\\texttt{globals[]}\\\texttt{tracks[]}\\hierarchical AST};
+      \node[field, below=0.75cm of ar] (f2) {same AST nodes\\+ expression types\\+ resolved symbols};
+      \node[field, below=0.75cm of ir] (f3) {flat timeline\\\texttt{NoteEvent}s\\no control flow};
+      \node[field, below=0.75cm of mid] (f4) {relative delta-times\\per track chunk\\binary encoding};
+
+      \draw[-{Stealth[length=2mm]}, draw=motivoInk!35, dashed] (pr.south) -- (f1.north);
+      \draw[-{Stealth[length=2mm]}, draw=motivoInk!35, dashed] (ar.south) -- (f2.north);
+      \draw[-{Stealth[length=2mm]}, draw=motivoInk!35, dashed] (ir.south) -- (f3.north);
+      \draw[-{Stealth[length=2mm]}, draw=motivoInk!35, dashed] (mid.south) -- (f4.north);
+    \end{tikzpicture}%
+  }
+  \caption{Stage artifacts passed between compiler modules: \texttt{ParseResult} $\rightarrow$
+    \texttt{AnalysisResult} $\rightarrow$ \texttt{ir::Program} $\rightarrow$ MIDI
+  file.}\label{fig:compiler-data-artifacts}
+\end{figure}
+
+\subsection{Technical Foundations}\label{subsec:implementation-foundations}
+
+The implementation balances high-level musical expressiveness with low-level binary precision.
+The discussion below covers the C++ language features that support this architecture.
+
+\subsection{Language Choice: Modern C++ (C++23)}\label{detail-subsec:language-choice:-modern-c++-(c++23)}
+
+The compiler targets the C++23 standard.
+C++ was selected for deterministic performance during recursive unrolling, a strong static type system for AST and IR
+modeling, and native support for binary serialization in the MIDI backend.
+
+\topic{C++23 Features Used in the Architecture.}
+
+\topic{\texttt{std::variant} as a sum type.} AST and IR nodes use \texttt{std::variant} (e.g.,
+\texttt{StatementKind}, \texttt{ExpressionKind}, \texttt{ir::Value}) with \texttt{std::visit} dispatch in semantic
+visitors, lowering lowerers, and expression evaluators.
+
+\topic{Value-oriented memory management.} Recursive AST nodes use \texttt{std::unique\_ptr}; side tables
+(\texttt{SymbolTable}, \texttt{Annotations}) use contiguous vectors indexed by opaque ID types
+(\texttt{SymbolId}, \texttt{ScopeId}).
+
+\topic{Standard ranges.} \texttt{std::ranges::stable\_sort} orders MIDI events; \texttt{std::ranges::any\_of}
+checks diagnostic severity in \texttt{CompileResult::has\_errors()}.

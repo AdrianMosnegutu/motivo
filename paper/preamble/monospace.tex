@@ -1,0 +1,11 @@
+% Breakable inline monospace: wrap at line and column bounds instead of clipping.
+\usepackage{seqsplit}
+\DeclareRobustCommand{\texttt}[1]{%
+  \begingroup
+  \ttfamily
+  \seqsplit{#1}%
+  \endgroup
+}
+
+% Wrapping paragraph column for code-heavy table cells.
+\newcolumntype{M}[1]{>{\raggedright\arraybackslash}p{#1}}

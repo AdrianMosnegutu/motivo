@@ -8,23 +8,32 @@ import { usePlaybackController } from '@/features/playback/PlaybackControllerCon
 import { cn } from '@/lib/utils';
 
 import { usePlayheadTracker } from '../hooks/usePlayheadTime';
+import { buildTimelineGrid, filterVisibleGridLines } from '../lib/grid';
 import {
   calculateNoteRange,
+  clampFollowScrollLeft,
+  isAutoFollowScroll,
   isBlackKey,
+  isOctaveSeparatorBelowRow,
+  KEYBOARD_LINE_EMPHASIS,
+  KEYBOARD_LINE_ROW,
   midiToLabel,
   NOTE_BUFFER_AHEAD_SEC,
   NOTE_BUFFER_BEHIND_SEC,
   PIXELS_PER_SECOND,
   ROW_HEIGHT,
-  trackColor,
+  VIEWPORT_SCROLL_DELTA_PX,
+  VIEWPORT_SYNC_MS,
 } from '../lib/piano';
+import { findVisibleNoteRange } from '../lib/visible-range';
+
+import { PianoRollLaneChrome, PianoRollNotes, PianoRollVerticalGrid } from './PianoRollLayers';
 
 const KEYBOARD_WIDTH = 48;
 
 type ViewportState = {
   left: number;
   width: number;
-  playheadSec: number;
 };
 
 export default function PianoRoll() {
@@ -33,15 +42,13 @@ export default function PianoRoll() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const followPlayheadRef = useRef(true);
-  const programmaticScrollRef = useRef(false);
+  const autoScrollLeftRef = useRef(0);
   const lastManualScrollAtRef = useRef(0);
   const manualScrollIdleMsRef = useRef(0);
+  const lastScrollTopRef = useRef(0);
   const [scrollTop, setScrollTop] = useState(0);
-  const [viewport, setViewport] = useState<ViewportState>({
-    left: 0,
-    width: 0,
-    playheadSec: 0,
-  });
+  const [viewport, setViewport] = useState<ViewportState>({ left: 0, width: 0 });
+  const lastViewportPublishRef = useRef({ at: 0, left: -1, width: 0 });
 
   const { minMidi, maxMidi } = useMemo(
     () => calculateNoteRange(parsedMidi?.tracks ?? null),
@@ -56,7 +63,7 @@ export default function PianoRoll() {
 
   const notes = useMemo(() => {
     if (!parsedMidi) return [];
-    return parsedMidi.tracks.flatMap((track, trackIndex) =>
+    const list = parsedMidi.tracks.flatMap((track, trackIndex) =>
       track.notes.map((note, noteIndex) => ({
         key: `${trackIndex}-${noteIndex}`,
         trackIndex,
@@ -65,63 +72,122 @@ export default function PianoRoll() {
         duration: note.duration,
       })),
     );
+    list.sort((a, b) => a.time - b.time || a.trackIndex - b.trackIndex);
+    return list;
   }, [parsedMidi]);
+
+  const scrollStartSec = viewport.left / PIXELS_PER_SECOND;
+  const scrollEndSec = (viewport.left + viewport.width) / PIXELS_PER_SECOND;
 
   const visibleNotes = useMemo(() => {
     if (viewport.width <= 0) return notes;
 
-    const scrollStartSec = viewport.left / PIXELS_PER_SECOND;
-    const scrollEndSec = (viewport.left + viewport.width) / PIXELS_PER_SECOND;
     const start = scrollStartSec - NOTE_BUFFER_BEHIND_SEC;
-    const end = Math.max(
-      scrollEndSec + NOTE_BUFFER_AHEAD_SEC,
-      viewport.playheadSec + NOTE_BUFFER_AHEAD_SEC,
-    );
+    const end = scrollEndSec + NOTE_BUFFER_AHEAD_SEC;
+    const { start: from, end: to } = findVisibleNoteRange(notes, start, end);
+    return notes.slice(from, to);
+  }, [notes, scrollEndSec, scrollStartSec, viewport.width]);
 
-    return notes.filter((note) => note.time + note.duration >= start && note.time <= end);
-  }, [notes, viewport.left, viewport.playheadSec, viewport.width]);
+  const timelineGrid = useMemo(() => {
+    if (!parsedMidi?.header) return [];
+    return buildTimelineGrid(parsedMidi.header, parsedMidi.duration);
+  }, [parsedMidi]);
+
+  const visibleGridLines = useMemo(() => {
+    if (viewport.width <= 0) return timelineGrid;
+    return filterVisibleGridLines(
+      timelineGrid,
+      scrollStartSec,
+      scrollEndSec,
+      NOTE_BUFFER_BEHIND_SEC,
+      NOTE_BUFFER_AHEAD_SEC,
+    );
+  }, [scrollEndSec, scrollStartSec, timelineGrid, viewport.width]);
 
   const duration = parsedMidi?.duration ?? 0;
   const contentWidth = Math.max(duration * PIXELS_PER_SECOND, 240);
   const contentHeight = rows.length * ROW_HEIGHT;
 
-  const syncViewport = useCallback(() => {
+  const syncViewport = useCallback((force = false) => {
     const grid = scrollRef.current;
     if (!grid) return;
-    setScrollTop(grid.scrollTop);
-    setViewport({
-      left: grid.scrollLeft,
-      width: grid.clientWidth,
-      playheadSec: Tone.getTransport().seconds,
-    });
+
+    const left = grid.scrollLeft;
+    const width = grid.clientWidth;
+    const now = performance.now();
+    const last = lastViewportPublishRef.current;
+
+    if (
+      !force &&
+      width === last.width &&
+      Math.abs(left - last.left) < VIEWPORT_SCROLL_DELTA_PX &&
+      now - last.at < VIEWPORT_SYNC_MS
+    ) {
+      return;
+    }
+
+    lastViewportPublishRef.current = { at: now, left, width };
+    if (grid.scrollTop !== lastScrollTopRef.current) {
+      lastScrollTopRef.current = grid.scrollTop;
+      setScrollTop(grid.scrollTop);
+    }
+    setViewport({ left, width });
+  }, []);
+
+  const disableFollow = useCallback(() => {
+    followPlayheadRef.current = false;
+    lastManualScrollAtRef.current = 1;
+    manualScrollIdleMsRef.current = 0;
   }, []);
 
   const handleGridScroll = useCallback(() => {
-    if (programmaticScrollRef.current) {
-      programmaticScrollRef.current = false;
-    } else {
-      followPlayheadRef.current = false;
-      lastManualScrollAtRef.current = 1;
-      manualScrollIdleMsRef.current = 0;
+    const grid = scrollRef.current;
+    if (!grid) return;
+
+    if (!isAutoFollowScroll(grid.scrollLeft, autoScrollLeftRef.current)) {
+      disableFollow();
+      syncViewport(true);
+      return;
     }
-    syncViewport();
-  }, [syncViewport]);
+
+    if (grid.scrollTop !== lastScrollTopRef.current) {
+      lastScrollTopRef.current = grid.scrollTop;
+      setScrollTop(grid.scrollTop);
+    }
+  }, [disableFollow, syncViewport]);
 
   useEffect(() => {
     const grid = scrollRef.current;
     if (!grid) return;
 
-    syncViewport();
-    const observer = new ResizeObserver(syncViewport);
+    syncViewport(true);
+    lastScrollTopRef.current = grid.scrollTop;
+    autoScrollLeftRef.current = grid.scrollLeft;
+
+    const observer = new ResizeObserver(() => syncViewport(true));
     observer.observe(grid);
     return () => observer.disconnect();
   }, [syncViewport, parsedMidi]);
 
+  useEffect(() => {
+    const grid = scrollRef.current;
+    if (!grid) return;
+
+    const onWheel = (event: WheelEvent) => {
+      if (Tone.getTransport().state !== 'started') return;
+      const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+      if (horizontal || event.shiftKey) disableFollow();
+    };
+
+    grid.addEventListener('wheel', onWheel, { passive: true });
+    return () => grid.removeEventListener('wheel', onWheel);
+  }, [disableFollow, parsedMidi]);
+
   usePlayheadTracker(scrollRef, playheadRef, {
+    autoScrollLeftRef,
     followPlayheadRef,
     lastManualScrollAtRef,
     manualScrollIdleMsRef,
-    programmaticScrollRef,
     onViewportChange: syncViewport,
   });
 
@@ -134,12 +200,17 @@ export default function PianoRoll() {
     lastManualScrollAtRef.current = 0;
     manualScrollIdleMsRef.current = 0;
 
+    const playheadX = seekTime * PIXELS_PER_SECOND;
+    if (playheadRef.current) {
+      playheadRef.current.style.transform = `translateX(${playheadX}px)`;
+    }
+
     const grid = scrollRef.current;
     if (grid) {
-      const playheadX = seekTime * PIXELS_PER_SECOND;
-      programmaticScrollRef.current = true;
-      grid.scrollLeft = Math.max(0, playheadX - grid.clientWidth / 2);
-      syncViewport();
+      const scrollLeft = clampFollowScrollLeft(playheadX, grid.clientWidth, grid.scrollWidth);
+      grid.scrollLeft = scrollLeft;
+      autoScrollLeftRef.current = scrollLeft;
+      syncViewport(true);
     }
   };
 
@@ -163,14 +234,19 @@ export default function PianoRoll() {
             transform: `translateY(-${scrollTop}px)`,
           }}
         >
-          {rows.map((midi) => (
+          {rows.map((midi, index) => (
             <div
               key={midi}
               className={cn(
-                'flex items-center justify-end border-b border-[#11151c] pr-1',
+                'flex items-center justify-end border-b pr-1',
                 isBlackKey(midi) ? 'bg-[#0b0e14]' : 'bg-[#232a36]',
               )}
-              style={{ height: ROW_HEIGHT }}
+              style={{
+                height: ROW_HEIGHT,
+                borderBottomColor: isOctaveSeparatorBelowRow(rows, index)
+                  ? KEYBOARD_LINE_EMPHASIS
+                  : KEYBOARD_LINE_ROW,
+              }}
             >
               <span
                 className={cn(
@@ -191,43 +267,13 @@ export default function PianoRoll() {
         onScroll={handleGridScroll}
       >
         <div
-          className="relative shrink-0 cursor-pointer"
+          className="relative shrink-0 cursor-pointer bg-[#151921]"
           onClick={handleSeek}
-          style={{
-            width: contentWidth,
-            height: contentHeight,
-            backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${ROW_HEIGHT - 1}px, rgba(42,48,60,0.6) ${ROW_HEIGHT - 1}px ${ROW_HEIGHT}px), repeating-linear-gradient(to right, transparent 0 ${PIXELS_PER_SECOND - 1}px, rgba(42,48,60,0.4) ${PIXELS_PER_SECOND - 1}px ${PIXELS_PER_SECOND}px)`,
-          }}
+          style={{ width: contentWidth, height: contentHeight }}
         >
-          {rows.map((midi, index) =>
-            isBlackKey(midi) ? (
-              <div
-                key={midi}
-                aria-hidden
-                className="absolute inset-x-0 bg-[rgba(0,0,0,0.32)]"
-                style={{ top: index * ROW_HEIGHT, height: ROW_HEIGHT }}
-              />
-            ) : null,
-          )}
-
-          {visibleNotes.map((note) => {
-            const color = trackColor(note.trackIndex);
-            return (
-              <div
-                key={note.key}
-                className="absolute rounded-[2px] border border-white/20"
-                style={{
-                  left: note.time * PIXELS_PER_SECOND,
-                  top: (maxMidi - note.midi) * ROW_HEIGHT + 2,
-                  width: Math.max(note.duration * PIXELS_PER_SECOND - 1, 4),
-                  height: ROW_HEIGHT - 4,
-                  backgroundColor: color,
-                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%)`,
-                  boxShadow: `0 0 6px ${color}40`,
-                }}
-              />
-            );
-          })}
+          <PianoRollLaneChrome rows={rows} />
+          <PianoRollVerticalGrid lines={visibleGridLines} />
+          <PianoRollNotes maxMidi={maxMidi} notes={visibleNotes} />
 
           <div
             ref={playheadRef}

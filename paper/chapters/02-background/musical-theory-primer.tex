@@ -1,0 +1,51 @@
+\section{Musical Concepts Used by the Language}\label{sec:music-theory-primer}
+
+To understand the abstractions Motivo provides, we need a shared vocabulary for western tonal music.
+The language organizes material both vertically (pitch and harmony) and horizontally (time and rhythm).
+This section is not a complete theory course; it covers only the concepts referenced explicitly in later
+chapters.
+
+\subsection{Pitch, Notes, and Octaves}\label{detail-subsec:pitch-notes-and-octaves}
+
+The fundamental unit of melody and harmony is the \textit{note}, which represents a sound of a specific frequency.
+In western music, the octave is divided into twelve semitones.
+The seven natural notes are designated by the letters A through G\@.
+\textit{Accidentals} modify these natural notes: a sharp (\#) raises the pitch by one semitone, while a flat (b) lowers
+it by one semitone.
+
+An \textit{octave} is the interval between one musical pitch and another with double its frequency.
+To uniquely identify a note across the entire audible spectrum, it is denoted by its pitch class and its octave number
+(e.g., \texttt{C4}, which is often referred to as ``Middle C'').
+When two or more distinct notes are sounded simultaneously, they form a \textit{chord}, which provides the harmonic
+foundation of a composition.
+
+\subsection{Time, Rhythm, and Tempo}\label{detail-subsec:time-rhythm-and-tempo}
+
+While pitch defines the frequency of a sound, rhythm defines its placement and duration in time.
+The speed at which a piece of music is played is governed by its \textit{tempo}, typically measured in Beats Per Minute
+(BPM).
+A tempo of 120 BPM signifies that there are 120 quarter-note beats in one minute, or one beat every 0.5 seconds.
+
+Music is structurally divided into \textit{measures} (or bars) by a \textit{time signature}.
+A time signature, such as 4/4, consists of two numbers: the numerator indicates the number of beats per measure (four),
+and the denominator indicates the note value that constitutes one beat (the quarter note).
+A \textit{rest} is a period of silence that has a specific duration, functioning as a ``silent note'' that preserves the
+rhythmic alignment of the timeline.
+
+\subsection{Textual Notation and ABC}\label{subsec:abc-notation}
+
+Long before DAWs, composers captured music in written notation.
+Modern interchange formats inherit that declarative tradition in lighter-weight textual forms.
+
+\topic{ABC notation.} Is a plain-text format for notating folk and traditional music~\cite{Walshaw_2011}.
+Header fields encode metadata (title, meter, key); the body encodes notes, durations, and repeats using an ASCII
+alphabet.
+ABC is human-readable and widely supported by conversion tools, but it is a \textit{notation} format rather than a
+programming language: it lacks parameterized patterns, typed variables, and imperative control flow.
+MusicXML addresses score interchange between notation programs through a structured XML representation~\cite{Good_2001}.
+
+We mention ABC because it illustrates a useful contrast for Motivo.
+Notation formats excel at fixed scores intended for human performance; Motivo instead targets procedural descriptions
+that compile into event streams.
+Neither ABC nor MusicXML provides the executable abstractions---typed patterns, loops, and conditional
+generation---that Motivo offers at the source level.

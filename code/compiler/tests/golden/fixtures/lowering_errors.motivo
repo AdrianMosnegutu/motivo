@@ -2,17 +2,11 @@ tempo 120;
 signature 4/4;
 
 track lead {
-    int base = 8;
-    int divisor = 0;
-    int duration = base / divisor;
-    play A4 :duration;
+    loop (-1) { play A4; }
     play C5;
 }
 
 track harmony {
-    int scale = 3;
-    int shift = scale - 3;
-    int length = scale / shift;
-    play E4 :length;
+    loop (-2) { play E4; }
     play G4;
 }

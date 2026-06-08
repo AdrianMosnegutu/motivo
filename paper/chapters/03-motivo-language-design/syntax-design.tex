@@ -1,0 +1,25 @@
+\section{Imperative Syntax}\label{sec:syntax-design}
+
+Motivo uses C-style imperative syntax---blocks, semicolons, and familiar control flow---so composers can focus on
+musical logic rather than a novel notation paradigm.
+\texttt{loop} and \texttt{for} express repetition; \texttt{if}/\texttt{else} express conditional variation; typed
+variables let loop indices and parameters drive pitch or rhythm algorithmically.
+Because the compiler unrolls control flow at build time, the composer gets procedural generation without a
+real-time interpreter.
+
+\begin{lstlisting}[language=Motivo, caption={A compact Motivo drum pattern.}, label={lst:motivo-groove}]
+tempo 128;
+signature 4/4;
+
+track percussion using drums {
+    pattern bar() {
+        for (int i = 0; i < 16; i = i + 1) {
+            play hihat from i;
+            if (i % 8 == 0) { play kick from i; }
+            if (i % 8 == 4) { play snare from i; }
+        }
+    }
+
+    loop (500) { play bar(); }
+}
+\end{lstlisting}

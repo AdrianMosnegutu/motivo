@@ -1,0 +1,109 @@
+\section{Semantic Analysis Implementation}\label{sec:semantic-implementation}
+
+This section describes how the semantic rules are realized in \texttt{motivoc}.
+\texttt{analyze} constructs an \texttt{AnalysisResult} from the parsed program and runs a single
+\texttt{Traversal::run} depth-first walk.
+Unlike a multi-pass design that separates name resolution from type checking, Motivo v2 folds both into one traversal:
+symbols are registered before bodies are visited, expression types are written to \texttt{Annotations} as subtrees are
+evaluated, and lowering reads those caches without re-inferring types.
+
+\subsection{Traversal Order and Scope Model}\label{detail-subsec:semantic-traversal-order}
+
+\texttt{Traversal::run} pushes a global scope, validates the header, visits global items, then visits each track
+definition in source order.
+The scope model mirrors the language's lexical nesting:
+
+\begin{enumerate}
+  \item \textbf{Global scope.} Holds global variable declarations and pattern symbols.
+    \texttt{collect\_global\_patterns} registers patterns before global statements execute.
+  \item \textbf{Track scope.} Entered by \texttt{visit\_track}; optional track name becomes a \texttt{SymbolKind::Track}
+    symbol.
+    \texttt{current\_track\_instrument\_} is set from the track's \texttt{using} clause for drum/melody checks.
+    \texttt{writable\_boundary\_} marks the track body scope: variables declared in outer scopes (globals) cannot be
+    reassigned from within the track.
+  \item \textbf{Voice scope.} Entered by \texttt{visit\_voice}; inherits the enclosing track's instrument context.
+    A \texttt{from} expression, if present, must type-check as numeric.
+  \item \textbf{Pattern scope.} Entered by \texttt{visit\_pattern}; parameters are registered as
+    \texttt{SymbolKind::Parameter} symbols.
+    Patterns nested inside a track inherit the track's \texttt{writable\_boundary\_} so they can mutate track-local
+    variables; top-level patterns establish their own boundary.
+  \item \textbf{Block scope.} \texttt{ForStatement} bodies and other blocks push an inner scope via
+    \texttt{ScopeStack::Guard}.
+\end{enumerate}
+
+Pattern overload resolution does not use arity alone.
+Registration calls \texttt{find\_in\_current\_scope\_by\_signature} with the full parameter-type vector; duplicate
+definitions with identical signatures are rejected at registration time.
+Call sites use \texttt{find\_visible\_pattern\_by\_signature}, which walks outward through parent scopes and selects
+the best-scoring overload where each argument is assignable to the corresponding parameter type (exact type matches
+score higher).
+
+\subsection{Type Checking Rules}\label{detail-subsec:semantic-type-checking}
+
+Type rules live in \texttt{motivo\_types} (\texttt{type\_rules.cpp}).
+Motivo v2 uses \emph{strict} assignability: \texttt{is\_assignable(target, source)} requires identical types; there is
+no implicit widening from \texttt{int} to \texttt{double} in variable initialization or assignment.
+
+\topic{Arithmetic and comparisons.}
+Binary \texttt{+}, \texttt{-}, \texttt{*}, and \texttt{/} require numeric operands; the result type follows
+\texttt{numeric\_result} (if either operand is \texttt{double}, the result is \texttt{double}).
+Modulo requires integer operands.
+Comparison operators require numeric operands and always yield \texttt{bool}.
+\texttt{==} and \texttt{!=} accept numeric--numeric or boolean--boolean pairs only.
+
+\topic{Logic and conditionals.}
+\texttt{\&\&}, \texttt{||}, and unary \texttt{!} require boolean operands.
+\texttt{IfStatement}, \texttt{ForStatement} conditions, and ternary conditions enforce the same boolean requirement.
+Ternary branches must evaluate to the same known type.
+
+\topic{Declarations and assignments.}
+\texttt{VarDeclStatement} checks that the initializer type is assignable to the declared type, emitting a message that
+names both types on failure.
+\texttt{AssignStatement} resolves the target symbol, rejects writes to parameters, enforces the writable-boundary rule
+for outer-scope variables, and checks assignability of the right-hand side.
+
+\topic{Musical types.}
+\texttt{SequenceExpression} items must be notes, chords, or rests; optional duration sub-expressions must be numeric.
+\texttt{ChordExpression} applies the same duration rule per note slot.
+\texttt{PlayStatement} targets must be musical types (\texttt{note}, \texttt{chord}, \texttt{seq}, or \texttt{rest}).
+When the enclosing track has an instrument, drum literals are rejected on melodic tracks and pitch literals on drum
+tracks.
+
+\topic{Pattern calls.}
+\texttt{visit\_call} evaluates argument expressions, records their types, and delegates to \texttt{validate\_call}.
+Failure modes are deliberately distinct: \texttt{undefined pattern 'name'} when no pattern symbol is visible,
+\texttt{no matching overload of pattern 'name'} when symbols exist but no signature matches, and
+\texttt{argument N of pattern 'name' has incompatible type} when a candidate overload fails assignability on a specific
+position.
+
+\subsection{Annotations and the Lowering Contract}\label{detail-subsec:semantic-annotations}
+
+Each \texttt{visit\_*} method for expressions returns a \texttt{types::Type} and calls
+\texttt{Annotations::set\_expression\_type} before returning.
+Identifier expressions additionally record \texttt{set\_resolved\_symbol} with the \texttt{SymbolId} from the symbol
+table.
+Assignment statements record \texttt{set\_assign\_target} so lowering can update the correct binding without repeating
+name lookup.
+
+Lowering never re-runs type inference.
+\texttt{LowererContext} queries \texttt{AnalysisResult::get\_expression\_type} and
+\texttt{get\_resolved\_symbol} when evaluating identifiers and pattern calls.
+This single-pass annotation design is the primary architectural change from Motivo v1, where semantic information was
+re-derived in multiple passes.
+
+\subsection{Header Validation}\label{detail-subsec:semantic-header-validation}
+
+\texttt{validate\_header} runs before any track body is visited.
+Tempo declarations must satisfy $1 \leq \mathrm{BPM} \leq 1000$; time signature numerators must lie in $[1, 32]$ and
+denominators must be powers of two in the same range.
+Optional header fields that are absent leave IR defaults (\texttt{120} BPM, \texttt{4/4}) to lowering.
+The diagnostics section below documents the full invariant rationale.
+
+\subsection{Error Reporting Behaviour}\label{detail-subsec:semantic-error-behaviour}
+
+\texttt{Traversal::diagnose} appends errors to the shared \texttt{DiagnosticsEngine} but does not abort the walk.
+Independent errors in disjoint subtrees therefore appear in a single diagnostics vector, which is preferable for IDE
+feedback.
+When a subtree encounters an \texttt{Unknown} type (e.g., after an undefined identifier), downstream checks guard on
+\texttt{is\_known} to avoid cascading false positives.
+Stage gating in \texttt{compiler.cpp} ensures lowering never runs when any semantic error is present.

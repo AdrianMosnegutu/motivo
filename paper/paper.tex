@@ -4,16 +4,20 @@
 \usepackage{fancyhdr}
 \usepackage{listings}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{pgfplots}
 \usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{xurl}
 
-\geometry{a4paper,top=2.5cm,left=3cm,right=2.5cm,bottom=2.5cm}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
-
-\pagestyle{fancy}
-\lhead{}
-\chead{}
-\renewcommand{\headrulewidth}{0.2pt}
-\renewcommand{\footrulewidth}{0.2pt}
+\input{preamble/monospace}
+\input{preamble/tikz-setup}
+\input{preamble/headings}
+\input{preamble/colors}
+\input{preamble/listings-motivo}
+\input{preamble/page-style}
 
 \begin{document}
 
@@ -22,6 +26,7 @@
 \author{Moșneguțu Adrian-Ioan}
 \supervisor{Dr.\ Lect.\ Mircea Ioan-Gabriel}
 
+\hypersetup{pageanchor=false}
 \maketitle
 
 \newpage
@@ -29,6 +34,7 @@
 \mbox{}
 \newpage
 \pagenumbering{roman}
+\hypersetup{pageanchor=true}
 
 \input{frontmatter/abstract}
 
@@ -39,11 +45,11 @@
 
 \input{chapters/01-introduction}
 \input{chapters/02-background}
-\input{chapters/03-related-work}
-\input{chapters/04-methodology}
-\input{chapters/05-implementation}
+\input{chapters/03-motivo-language-design}
+\input{chapters/04-compiler-implementation}
+\input{chapters/05-motivo-studio-engineering}
 \input{chapters/06-evaluation}
-\input{chapters/07-conclusion}
+\input{chapters/07-conclusion-next-steps}
 
 \bibliography{references}
 

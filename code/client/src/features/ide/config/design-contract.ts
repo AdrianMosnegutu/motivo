@@ -61,9 +61,9 @@ export const IDE_BEHAVIOR_CONTRACT = {
     sampleFilesReadOnly: true,
     sampleFilesDownloadable: true,
   },
-  autosave: {
-    closesUserTabs: true,
-    debounceRequired: true,
+  save: {
+    manualOnly: true,
+    shortcut: 'cmdOrCtrl+s',
     saveIndicator: ['out-of-sync', 'saving', 'synced'] as const,
     promptOnFailureEveryAttempt: true,
   },

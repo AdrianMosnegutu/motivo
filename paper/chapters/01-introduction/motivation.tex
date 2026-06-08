@@ -1,0 +1,11 @@
+\section{Motivation and Problem}\label{sec:motivation}
+
+In a digital audio workstation, the piano roll is intuitive but brittle: transposing a repeating phrase or
+changing its last repetition means editing hundreds of events by hand, and the original algorithmic intent is
+lost. Live-coding languages recover structure, but they target low-latency performance and synthesis rather
+than a portable offline artefact. General-purpose MIDI scripting offers offline output without musical
+abstractions---composers end up engineering delta-times instead of writing music.
+
+Motivo closes that gap with an offline compiler: the same source always yields the same Format~1 MIDI file, with
+no runtime interpreter required at playback. Patterns, tracks, voices, and familiar control flow describe the
+piece; the compiler expands them into a timeline of note events.

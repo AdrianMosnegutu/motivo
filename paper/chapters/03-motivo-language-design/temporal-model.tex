@@ -1,0 +1,49 @@
+\section{Timeline Semantics}\label{sec:temporal-model}
+
+Motivo schedules events with a per-context cursor measured in beats.
+\topic{Relative placement.}
+A \texttt{play} without \texttt{from} places material at the current cursor.
+Notes and rests advance the cursor by their duration; chords advance by the longest member; sequences advance
+by the sum of their parts.
+The colon operator sets an explicit duration (\texttt{play C4:0.5}).
+\topic{Absolute placement.}
+\texttt{from} schedules at a fixed beat without moving the cursor (\texttt{play A4 from 16;}), so layers can
+be added without disturbing sequential flow.
+\topic{Control flow and patterns.}
+\texttt{loop}, \texttt{for}, and \texttt{if} reuse the enclosing cursor---each loop iteration continues from
+the beat reached by the previous one.
+Pattern calls run against an internal cursor starting at zero; when the call completes, the caller jumps
+forward by the pattern footprint (including internal rests).
+\topic{Voices.}
+Each voice inherits the parent track cursor or a \texttt{from} offset, then maintains a parallel cursor.
+Events from voices merge into the same track output sorted by absolute beat; outer-track statements scheduled
+after a voice do not wait for the voice to finish.
+
+\begin{figure}[htbp]
+  \centering
+  \motivoscalefig{%
+    \begin{tikzpicture}[
+        beat/.style={motivo/beat},
+        note/.style={rounded corners=2pt, minimum height=0.4cm, draw=white, line width=0.8pt},
+        arrow/.style={-Stealth, thick, draw=motivoInk!70}
+      ]
+      \draw[thick, draw=motivoInk!70] (0,0) -- (11.5,0);
+      \foreach \x/\b in {0/0,2/1,4/2,6/3,8/4,10/5,11.5/6} {
+        \draw[draw=motivoInk!45] (\x,0.12) -- (\x,-0.12);
+        \node[beat, below=0.16cm] at (\x,0) {\b};
+      }
+
+      \node[note, fill=motivoBlue!70, minimum width=1.7cm] at (1,0.6) {\textcolor{white}{\scriptsize play C4}};
+      \node[note, fill=motivoGreen!70, minimum width=1.7cm] at (3,0.6) {\textcolor{white}{\scriptsize play D4}};
+      \node[note, fill=motivoAmber!85, minimum width=1.7cm] at (5,0.6) {\textcolor{white}{\scriptsize play E4}};
+      \node[note, fill=motivoRose!80, minimum width=2.0cm] at (8,1.35) {\textcolor{white}{\scriptsize play G4 from 4}};
+
+      \draw[arrow] (0,1.05) -- node[beat, above, align=center] {sequential \texttt{play}\\advances cursor} (6.2,1.05);
+      \draw[dashed, thick, draw=motivoInk!55] (8,0.9) -- (8,0.5);
+      \node[beat, align=center] at (11.2,1.55) {\texttt{from 4}: beat~4 placement,\\cursor unchanged};
+    \end{tikzpicture}%
+  }
+  \caption{Cursor-based temporal placement.
+    Sequential \texttt{play} statements advance the cursor; \texttt{from} places an event at an explicit beat without
+  moving the cursor.}\label{fig:cursor-model}
+\end{figure}

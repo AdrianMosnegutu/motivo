@@ -1,0 +1,5 @@
+% Run-in topic label for short titled blocks within a section.
+% Replaces \noindent\textbf{...}, \paragraph{...}, and shallow \subsubsection{...}.
+% Convention: end the label with a period; body text continues on the same paragraph.
+% Example: \topic{Scoping rules.} Symbols live in a stack of lexical environments...
+\newcommand{\topic}[1]{\par\textbf{#1}\space}

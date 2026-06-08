@@ -1,0 +1,21 @@
+\section{Limitations}\label{sec:limitations}
+
+Motivo deliberately targets offline, rule-based expansion into Standard MIDI Files.
+That focus enables determinism and a compact implementation, but it also bounds what the system claims to replace.
+
+\topic{Expressive and structural scope.}
+The intermediate representation stores pitch, start beat, duration, and a fixed default velocity.
+Per-note dynamics, continuous controllers, pitch bend, and synthesis parameters are not part of the source language.
+Instruments are a closed keyword set mapped to General MIDI; compositions must live in a single file with no
+\texttt{import} mechanism.
+The lowerer caps output at 20,000 note events.
+
+\topic{Workflow fit.}
+Piano-roll editing is fast for exploratory scratch work but brittle for repetition; Motivo inverts that trade-off.
+It rewards composers who think in rules, loops, and variation, while hand-placed micro-editing, mixing, and real-time
+manipulation remain downstream in a DAW.
+
+\topic{Evaluation scope.}
+The evaluation reports compilation time, source-to-event expansion, and automated test coverage---not whether composers
+prefer Motivo over a DAW or learn the syntax quickly.
+Those questions would require a separate user study; this thesis does not claim them.

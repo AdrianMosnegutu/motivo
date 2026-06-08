@@ -17,6 +17,7 @@ import {
   createScratchDocument,
   ensureMotivoFileName,
   getDocumentKey,
+  sortUserFiles,
   toExampleDocument,
   toUserDocument,
   upsertUserFileSummary,
@@ -24,7 +25,7 @@ import {
 import { downloadBlob, downloadSource } from '../lib/download-source';
 import type { ActiveDocument, OpenDocumentTab, UserFileSummary } from '../types';
 
-import { useDebouncedAutosave } from './useDebouncedAutosave';
+type ManualSaveStatus = 'idle' | 'saving' | 'error';
 
 const SCRATCH_KEY = 'scratch:scratch';
 
@@ -69,6 +70,7 @@ export function useFileWorkspace() {
   const [openTabs, setOpenTabs] = useState<ActiveDocument[]>([]);
   const [activeTabKey, setActiveTabKey] = useState('');
   const [dirtyUserFileIds, setDirtyUserFileIds] = useState<Record<string, true>>({});
+  const [manualSaveStatus, setManualSaveStatus] = useState<ManualSaveStatus>('idle');
   const dirtyUserFileIdsRef = useRef(dirtyUserFileIds);
   const activeDocument = useMemo(() => {
     if (!activeTabKey) return null;
@@ -129,6 +131,7 @@ export function useFileWorkspace() {
       if (remaining.length === 0) return '';
       return getDocumentKey(remaining[remaining.length - 1]);
     });
+    setManualSaveStatus('idle');
   }, []);
 
   const saveSource = useCallback(
@@ -153,57 +156,33 @@ export function useFileWorkspace() {
     [clearUserFileDirty],
   );
 
-  const {
-    scheduleSave,
-    flushPendingSave,
-    status: autosaveStatus,
-  } = useDebouncedAutosave({
-    authenticated,
-    fileId: activeDocument?.kind === 'user' ? activeDocument.id : null,
-    readOnly: activeDocument?.readOnly ?? true,
-    save: saveSource,
-    onError: (error) => setOperationError(getFileErrorMessage(error)),
-  });
+  const selectActiveTabKey = useCallback((key: string) => {
+    setActiveTabKey(key);
+    setManualSaveStatus('idle');
+  }, []);
 
   const activateTab = useCallback(
-    async (key: string) => {
+    (key: string) => {
       if (!openTabsRef.current.some((tab) => getDocumentKey(tab) === key)) return false;
-
-      const current = activeDocumentRef.current;
-      if (current?.kind === 'user' && getDocumentKey(current) !== key) {
-        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
-        if (isDirty) {
-          await flushPendingSave();
-        }
-      }
-
-      setActiveTabKey(key);
+      selectActiveTabKey(key);
       return true;
     },
-    [flushPendingSave],
+    [selectActiveTabKey],
   );
 
   const focusExistingTab = useCallback((key: string) => activateTab(key), [activateTab]);
 
   const openDocumentInTab = useCallback(
-    async (document: ActiveDocument) => {
-      const current = activeDocumentRef.current;
-      if (current?.kind === 'user') {
-        const isDirty = Boolean(dirtyUserFileIdsRef.current[current.id]);
-        if (isDirty) {
-          await flushPendingSave();
-        }
-      }
-
+    (document: ActiveDocument) => {
       const key = getDocumentKey(document);
       setOpenTabs((tabs) => {
         const base =
           document.kind === 'scratch' ? tabs : tabs.filter((tab) => tab.kind !== 'scratch');
         return upsertOpenTab(base, document);
       });
-      setActiveTabKey(key);
+      selectActiveTabKey(key);
     },
-    [flushPendingSave],
+    [selectActiveTabKey],
   );
 
   const openDocumentInTabRef = useRef(openDocumentInTab);
@@ -218,7 +197,7 @@ export function useFileWorkspace() {
 
     try {
       const files = await listFiles();
-      setUserFiles(files);
+      setUserFiles(sortUserFiles(files));
 
       if (preferredFileId && files.some((file) => file.id === preferredFileId)) {
         const file = await readFile(preferredFileId);
@@ -280,7 +259,7 @@ export function useFileWorkspace() {
       try {
         const files = await listFiles();
         if (cancelled) return;
-        setUserFiles(files);
+        setUserFiles(sortUserFiles(files));
         filesListedForUserIdRef.current = userId;
 
         const lastOpenedFileId = authUserRef.current?.lastOpenedFileId;
@@ -418,7 +397,7 @@ export function useFileWorkspace() {
             scratchSourceRef.current,
           );
           setOpenTabs(nextTabs);
-          setActiveTabKey(nextActiveKey);
+          selectActiveTabKey(nextActiveKey);
         }
         return true;
       } catch (error) {
@@ -426,7 +405,7 @@ export function useFileWorkspace() {
         return false;
       }
     },
-    [authenticated, clearUserFileDirty],
+    [authenticated, clearUserFileDirty, selectActiveTabKey],
   );
 
   const downloadUserFile = useCallback(
@@ -481,16 +460,19 @@ export function useFileWorkspace() {
     return true;
   }, [downloadExampleFile, downloadUserFile]);
 
-  const forceCloseTab = useCallback((key: string) => {
-    if (!openTabsRef.current.some((item) => getDocumentKey(item) === key)) return;
-    const { nextActiveKey, nextTabs } = closeTabWithFallback(
-      openTabsRef.current,
-      key,
-      scratchSourceRef.current,
-    );
-    setOpenTabs(nextTabs);
-    setActiveTabKey(nextActiveKey);
-  }, []);
+  const forceCloseTab = useCallback(
+    (key: string) => {
+      if (!openTabsRef.current.some((item) => getDocumentKey(item) === key)) return;
+      const { nextActiveKey, nextTabs } = closeTabWithFallback(
+        openTabsRef.current,
+        key,
+        scratchSourceRef.current,
+      );
+      setOpenTabs(nextTabs);
+      selectActiveTabKey(nextActiveKey);
+    },
+    [selectActiveTabKey],
+  );
 
   const saveAndCloseTab = useCallback(
     async (key: string) => {
@@ -533,24 +515,27 @@ export function useFileWorkspace() {
             userDocument,
           ),
         );
-        setActiveTabKey(getDocumentKey(userDocument));
+        selectActiveTabKey(getDocumentKey(userDocument));
         return true;
       } catch (error) {
         setOperationError(getFileErrorMessage(error));
         return false;
       }
     },
-    [authenticated],
+    [authenticated, selectActiveTabKey],
   );
 
   const saveActiveDocument = useCallback(async () => {
     const document = activeDocumentRef.current;
     if (!document || document.kind !== 'user') return false;
 
+    setManualSaveStatus('saving');
     try {
       await saveSource(document.id, document.source);
+      setManualSaveStatus('idle');
       return true;
     } catch (error) {
+      setManualSaveStatus('error');
       setOperationError(getFileErrorMessage(error));
       return false;
     }
@@ -583,9 +568,8 @@ export function useFileWorkspace() {
           getDocumentKey(document) === key ? { ...document, source } : document,
         ),
       );
-      scheduleSave(source);
     },
-    [markUserFileDirty, scheduleSave],
+    [markUserFileDirty],
   );
 
   const openDocumentTabs = useMemo<OpenDocumentTab[]>(() => {
@@ -619,9 +603,9 @@ export function useFileWorkspace() {
       const isDirty = Boolean(dirtyUserFileIds[document.id]);
       const isActive = key === activeTabKey;
       const syncState =
-        isActive && autosaveStatus === 'saving'
+        isActive && manualSaveStatus === 'saving'
           ? 'saving'
-          : isDirty || (isActive && (autosaveStatus === 'pending' || autosaveStatus === 'error'))
+          : isDirty || (isActive && manualSaveStatus === 'error')
             ? 'out-of-sync'
             : 'synced';
 
@@ -635,14 +619,13 @@ export function useFileWorkspace() {
         syncState,
       };
     });
-  }, [activeTabKey, autosaveStatus, dirtyUserFileIds, openTabs]);
+  }, [activeTabKey, dirtyUserFileIds, manualSaveStatus, openTabs]);
 
   return {
     activeDocument,
     activeTabKey,
     authLoading,
     authenticated,
-    autosaveStatus,
     forceCloseTab,
     saveAndCloseTab,
     saveActiveDocument,
