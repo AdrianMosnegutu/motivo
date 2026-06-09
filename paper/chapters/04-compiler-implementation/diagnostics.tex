@@ -1,7 +1,7 @@
 \section{Diagnostics and Compiler Invariants}\label{sec:compiler-diagnostics}
 
-This section documents how errors are collected across pipeline stages and the hard limits the implementation enforces
-to keep compilation predictable.
+Having described parsing, semantic analysis, lowering, and MIDI serialization, this section ties the pipeline together:
+how errors are collected across stages and the hard limits the implementation enforces to keep compilation predictable.
 
 \subsection{Shared Diagnostics Object and Stage Gating}\label{detail-subsec:diagnostics-architecture}
 

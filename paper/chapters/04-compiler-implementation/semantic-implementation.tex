@@ -97,13 +97,4 @@ re-derived in multiple passes.
 Tempo declarations must satisfy $1 \leq \mathrm{BPM} \leq 1000$; time signature numerators must lie in $[1, 32]$ and
 denominators must be powers of two in the same range.
 Optional header fields that are absent leave IR defaults (\texttt{120} BPM, \texttt{4/4}) to lowering.
-The diagnostics section below documents the full invariant rationale.
-
-\subsection{Error Reporting Behaviour}\label{detail-subsec:semantic-error-behaviour}
-
-\texttt{Traversal::diagnose} appends errors to the shared \texttt{DiagnosticsEngine} but does not abort the walk.
-Independent errors in disjoint subtrees therefore appear in a single diagnostics vector, which is preferable for IDE
-feedback.
-When a subtree encounters an \texttt{Unknown} type (e.g., after an undefined identifier), downstream checks guard on
-\texttt{is\_known} to avoid cascading false positives.
-Stage gating in the compiler driver ensures lowering never runs when any semantic error is present.
+Section~\ref{sec:compiler-diagnostics} documents the full invariant rationale and how semantic errors are collected.
