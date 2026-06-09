@@ -1,22 +1,41 @@
 \section{Source Syntax and Grammar}\label{sec:source-grammar}
 
-Motivo is defined by a lexical scanner and a context-free parser; the authoritative specification is
-\texttt{compiler/docs/grammar.bnf}.
+Motivo is defined by a lexical scanner and a context-free parser; the authoritative specification is a documented EBNF
+grammar.
 The scanner recognizes note literals (\verb|[A-G][#b]?[0-8]|), drum names, keywords for structure
 (\texttt{track}, \texttt{pattern}, \texttt{voice}), control flow, and declarable types (\texttt{int},
 \texttt{double}, \texttt{bool}, \texttt{note}, \texttt{seq}, \texttt{chord}).
 \texttt{rest} and drum literals appear in expressions but are not declaration types.
 
-A program begins with optional \texttt{tempo} and \texttt{signature} declarations, then top-level variables,
-patterns, and tracks.
-Tracks may contain statements, local patterns, and \texttt{voice} blocks; voices may not nest further tracks.
-Declarations use \texttt{<type> IDENT = <expr>;} and pattern parameters use the same type keywords.
-\texttt{play} targets notes, rests, chords, sequences, drum hits, or pattern calls, with optional \texttt{:duration}
-and \texttt{from} offsets.
+\subsection{Lexical and syntactic strata}
 
-\topic{Version 1.0 to 2.0.}
-Version~1.0 used untyped \texttt{let} bindings, arity-only pattern overloading, and a second semantic pass that
-simulated pattern bodies at call sites.
-Version~2.0 replaces \texttt{let} with explicit typed declarations, resolves overloads by full parameter type
-signature, and performs semantic analysis in a single pass, because explicit types make parameter contracts
-visible in source text and remove the need to infer intent from initializer shape alone.
+The lexical layer reserves two relevant closed vocabularies.
+First, instrument keywords are fixed to \texttt{piano}, \texttt{guitar}, \texttt{bass}, \texttt{violin}, and
+\texttt{drums}.
+Second, drum-note tokens are fixed to \texttt{kick}, \texttt{snare}, \texttt{hihat}, \texttt{crash}, and
+\texttt{ride}.
+This bounded token set intentionally privileges deterministic static validation over open-ended runtime patch naming.
+
+At parse level, a program starts with optional header declarations (\texttt{tempo}, \texttt{signature}), followed by
+top-level variable declarations, pattern definitions, and track definitions.
+Tracks may contain statements, local patterns, and \texttt{voice} blocks; a voice can contain statements and local
+patterns but cannot introduce nested tracks, preserving one instrument context per track.
+
+Declarations follow \texttt{<type> IDENT = <expr>;} across global and local scopes.
+Pattern parameters use the same type keywords, ensuring one type vocabulary across binding and invocation sites.
+\texttt{play} targets notes, rests, chords, sequences, drum literals, identifiers, and pattern calls, with optional
+\texttt{:duration} and \texttt{from} modifiers constrained by grammar category.
+
+\subsection{Version 1 to version 2 grammar evolution}
+\label{detail-subsec:v1-v2-grammar-evolution}
+
+The transition from version~1 to version~2 is a language-design revision, not only a parser refactor.
+Version~1 favored a scripting style with untyped \texttt{let} declarations and arity-only pattern dispatch.
+That surface brevity shifted semantic burden to later analysis stages, including a follow-up pass to detect call-shape
+inconsistencies that were not explicit in source.
+
+Version~2 replaces \texttt{let} with explicit type-prefixed declarations and typed pattern parameters.
+As a result, overload resolution is defined on full parameter type signatures rather than argument count alone.
+Because contracts are now visible in grammar-level forms, semantic checking can validate calls in one coherent pass.
+The evolution also standardizes program headers: optional \texttt{tempo} and \texttt{signature} declarations precede
+top-level definitions, and all compositional structure lives in typed tracks, patterns, and statements below.

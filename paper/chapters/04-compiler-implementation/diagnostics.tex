@@ -5,8 +5,7 @@ to keep compilation predictable.
 
 \subsection{Shared Diagnostics Object and Stage Gating}\label{detail-subsec:diagnostics-architecture}
 
-Diagnostics are centralized in the \texttt{motivo\_diagnostics} library
-(\texttt{common/diagnostics/diagnostics\_engine.cpp}).
+Diagnostics are centralized in the \texttt{motivo\_diagnostics} library.
 \texttt{motivo::compile} constructs one \texttt{DiagnosticsEngine} on the stack and passes a non-owning reference into
 \texttt{parsing::parse\_stream}, \texttt{semantic::analyze}, \texttt{lowering::lower}, and the \texttt{write\_midi}
 exception handler.
@@ -22,7 +21,7 @@ stage strings are \texttt{parse}, \texttt{semantic}, \texttt{lowering}, and \tex
 Motivo Studio's compile API serializes the same records into JSON with a \texttt{type} field mirroring the stage enum;
 the thesis uses the string form below because it matches unit-test assertions and CLI stderr.
 
-\topic{Stage gating in \texttt{compiler.cpp}.}
+\topic{Stage gating in the compiler driver.}
 Compilation is strictly sequential; later stages never run on input that failed an earlier gate:
 
 \begin{enumerate}
@@ -36,7 +35,7 @@ Compilation is strictly sequential; later stages never run on input that failed 
 \end{enumerate}
 
 \topic{Lexical error collection.}
-The Flex scanner (\texttt{scanner.l}) calls \texttt{report\_lexical}, which forwards to
+The Flex scanner calls \texttt{report\_lexical}, which forwards to
 \texttt{DiagnosticsEngine::report} when a diagnostics pointer is installed.
 Lexical errors do not abort tokenization immediately; the scanner continues so multiple invalid characters or
 unterminated comments can be reported in one pass.
@@ -106,7 +105,7 @@ unrolling cost.
 The grammar already restricts tempo operands to positive integer literals, so only zero and values above the cap reach
 semantic validation.
 The upper bound prevents absurd MIDI tempo meta-events ($uspb = 60{,}000{,}000 / \mathrm{BPM}$ would underflow or
-quantize poorly for extreme values) and matches the range covered by \texttt{metadata\_test.cpp}.
+quantize poorly for extreme values) and is covered by unit tests on header validation.
 
 \topic{Time signature rules (semantic).}
 When a \texttt{signature} declaration is present, the numerator must satisfy $1 \leq n \leq 32$ and the denominator
@@ -116,17 +115,18 @@ denominator as $\log_2 d$ in \texttt{build\_tempo\_track}; values that are not p
 faithfully.
 
 \topic{Division and modulo by zero (lowering).}
-Integer and floating-point division in \texttt{evaluate\_binary\_expression.cpp} throw \texttt{LoweringFailure} when
+Integer and floating-point division in the expression evaluator throw \texttt{LoweringFailure} when
 the divisor evaluates to zero.
 Modulo applies the same guard for integer operands.
 These cases are not semantic errors because divisors may be variables whose value is unknown until unrolling; the test
 suite confirms both literal (\texttt{1 / 0}) and variable (\texttt{4 / d}) paths.
 
 \topic{Event cap \texttt{MAX\_EVENTS = 20000} (lowering).}
-\texttt{LowererContext::register\_events} increments a program-wide counter each time notes are emitted.
-Exceeding \texttt{MAX\_EVENTS} aborts lowering with a diagnostic naming the limit and the actual count.
-The cap serves two purposes: it bounds memory and MIDI file size for pathological loops (including \texttt{for (;;)}),
-and it provides a practical termination guarantee where the language has no compile-time iteration bound.
+The cap provides a termination guarantee for programs with no statically-bounded iteration count.
+\texttt{LowererContext::register\_events} increments a program-wide counter each time notes are emitted; exceeding
+\texttt{MAX\_EVENTS} aborts lowering with a diagnostic naming the limit and the actual count.
+Because Motivo accepts \texttt{for (;;)} and defers trip-count analysis to unrolling time, the cap is the stopping rule
+for pathological or non-terminating loops.
 Exactly 20{,}000 events across one or more tracks is valid; 20{,}001 triggers an error.
 
 \topic{What is not statically bounded.}

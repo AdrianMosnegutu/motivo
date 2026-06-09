@@ -1,7 +1,7 @@
 \section{Contributions}\label{sec:contributions}
 
-The thesis asked whether a small compiled language can keep compositional structure explicit while emitting a standard
-MIDI file.
+Motivo demonstrates that compositional structure can stay explicit in typed source and expand deterministically into a
+standard MIDI file without a language runtime at playback.
 We delivered that pipeline end to end.
 
 \topic{Language and compiler.}
@@ -14,8 +14,8 @@ evaluation shows roughly $0$--$2\%$ end-to-end overhead on large fixtures with b
 \topic{Motivo Studio and engineering.}
 Motivo Studio wraps \texttt{motivoc} in a Next.js editor with diagnostics, piano-roll preview, browser playback, and
 authenticated file storage.
-The monorepo enforces quality at four boundaries (635 CTest cases, server and client Vitest suites, and paper CI) and
-deploys to \texttt{motivo-studio.eu} as a maintainable product rather than a one-off prototype.
+The monorepo enforces quality with 745 automated tests (635 compiler, 31 server, 79 client), paper CI, and deployment to
+\texttt{motivo-studio.eu} as a maintainable product rather than a one-off prototype.
 
 \topic{Evaluation.}
 Synthetic benchmarks compile up to 20,000 events in about 5--8~ms on a local Release build; lowering and MIDI

@@ -1,34 +1,61 @@
 \section{Types and Compositional Constructs}\label{sec:musical-primitives}
 
-Motivo maps musical entities to a closed type system used by semantic analysis and lowering.
+Motivo treats musical material as typed source objects rather than ad hoc event emissions.
+This design supports static diagnostics while preserving a compositional vocabulary familiar to musicians:
+motifs can be named, reused, and transformed without manually recalculating absolute timestamps.
 
-\topic{Notes.} Literals such as \texttt{C4}, \texttt{F\#2} denote pitch class and octave.
-\topic{Chords.} Group simultaneous pitches with optional per-note durations.
-\topic{Sequences.} Bracketed lists such as \texttt{[C4, D4:2, rest]} order notes, chords, or rests into cells or bars.
-\topic{Rests and drum hits.} Named literals such as \texttt{kick} and \texttt{snare} are expression-only constants: they
-schedule silence or percussion but cannot be bound to variables, because they behave like fixed symbolic tokens
-rather than stored musical values.
-Scalars \texttt{int}, \texttt{double}, and \texttt{bool} support loop bounds, arithmetic, and conditionals.
+\subsection{Musical entities as typed values}
 
-Three constructs organize the hierarchy (Figure~\ref{fig:motivo-hierarchy}).
+The language separates declarable value types from expression-only musical constants.
 
-\topic{Patterns.} Typed procedures invoked only through \texttt{play}.
-They may be declared globally, inside a track, or inside a voice; inner declarations shadow outer names
-lexically.
-Overload resolution uses the full parameter type list, so \texttt{fill(bool)} and \texttt{fill(seq)} may
-coexist.
-Arguments are evaluated in the caller's scope before parameters bind.
-A pattern's body may contain declarations, control flow, and nested \texttt{play} calls; when used as a
-\texttt{play} target, the caller's cursor advances by the pattern's total rhythmic footprint.
+\topic{Notes.}
+Literals such as \texttt{C4} or \texttt{F\#2} denote pitch class plus octave and can be stored in \texttt{note}
+variables.
 
-\topic{Tracks.} Provide the main sequential timeline for one performer and map to one MIDI channel in the
-output.
-An optional name aids diagnostics; \texttt{using piano} or \texttt{using drums} sets instrument identity and
-enables drum-versus-melodic checks on every \texttt{play} in that track.
-Tracks cannot nest inside patterns or voices.
+\topic{Chords.}
+Parenthesized collections such as \texttt{(C4, E4, G4)} represent simultaneous events.
+Optional per-member durations affect local span, and chord duration is interpreted as the maximum member duration.
 
-\topic{Voices.} Add parallel horizontal lines within a track.
-A voice inherits the track cursor unless \texttt{from} supplies an entry beat; thereafter it maintains an
-isolated cursor that does not advance the outer track timeline.
-Sibling voices can weave independent rhythms on the same channel; variables declared in a voice are not
-visible outside it.
+\topic{Sequences.}
+Bracketed lists such as \texttt{[C4, D4:2, rest]} encode ordered cells that may contain notes, chords, and rests.
+The sequence type (\texttt{seq}) therefore captures phrase-level structure directly in source code.
+
+\topic{Rests and drum hits.}
+\texttt{rest} and drum literals such as \texttt{kick}, \texttt{snare}, and \texttt{hihat} are expression-only symbolic
+constants.
+They can be scheduled by \texttt{play} and embedded in larger expressions (for example in sequences), but they are not
+declaration types.
+This preserves a clear distinction between stored musical variables (\texttt{note}, \texttt{chord}, \texttt{seq}) and
+domain tokens that represent silence or percussion events.
+
+\topic{Scalars.}
+\texttt{int}, \texttt{double}, and \texttt{bool} support algorithmic composition through loop bounds, guards, and
+numeric transformations applied to musical expressions.
+
+\subsection{Compositional abstractions}
+
+Three structural constructs organize the hierarchy shown in Figure~\ref{fig:motivo-hierarchy}: patterns for reuse,
+tracks for instrumental identity, and voices for controlled parallelism.
+
+\topic{Patterns as reusable units.}
+A \texttt{pattern} is a named, typed compositional unit invoked through \texttt{play}.
+Patterns can appear globally or inside enclosing track/voice scopes, and lexical shadowing applies in the usual
+inside-out manner.
+Version~2 overload resolution is signature-based: patterns with the same name may coexist when their parameter type
+lists differ (for example, \texttt{fill(bool)} and \texttt{fill(seq)}).
+Arguments are evaluated in caller scope before parameter binding, after which the pattern executes in its own local
+scope.
+
+\topic{Tracks as instrument and channel contexts.}
+Each \texttt{track} defines a primary sequential timeline that lowers to one MIDI channel in the output artifact.
+The optional \texttt{using} clause selects instrument identity from a closed keyword set:
+\texttt{piano}, \texttt{guitar}, \texttt{bass}, \texttt{violin}, and \texttt{drums}.
+This closed vocabulary is a deliberate General MIDI tradeoff: it limits source-level naming freedom but ensures that
+instrument semantics are stable and immediately verifiable at compile time.
+
+\topic{Voices as parallel lines inside a track.}
+A \texttt{voice} creates a parallel line that inherits the enclosing track cursor (or an explicit \texttt{from}
+offset), then advances independently.
+This allows contrapuntal layering within one instrumental context without forcing the outer track timeline to wait.
+Voice-local declarations remain encapsulated, preserving modularity and avoiding accidental state coupling across
+parallel lines.

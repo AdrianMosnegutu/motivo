@@ -1,39 +1,80 @@
 \section{Semantic Analysis}\label{sec:semantic-rules}
 
-The semantic pass validates scoping, types, and musical constraints on the parser's AST.
-It performs a single traversal: validate tempo and signature headers, register patterns when each scope opens,
-then check statements and expressions, attaching symbol links and expression types that lowering reads without
-re-analysis.
-\topic{Scoping and writable boundaries.}
-Symbols live in a stack of lexical environments (global, track, voice, pattern, control-flow block).
-Lookup walks outward from the current scope for reads; writes are governed by a \textit{writable boundary} that
-reflects whether an inner scope executes sequentially inside its parent or in parallel with it.
+Semantic analysis establishes that a parsed Motivo program is not only syntactically valid but compositionally
+well-formed.
+The pass verifies scope visibility, assignment legality, type safety, and instrument-specific musical constraints, then
+stores typed bindings for later lowering.
 
-Sequential inner scopes inherit the parent's writable boundary.
-Statements in a track body, patterns defined inside that track, and control-flow blocks such as \texttt{for},
-\texttt{loop}, and \texttt{if} may therefore read and assign variables declared in the enclosing track (or
-global scope when the boundary permits).
-They execute in source order on the same timeline, so mutating a shared counter or motif parameter in the track
-scope is well defined.
+\subsection{Single-pass analysis and design rationale}
 
-Parallel inner scopes receive a new writable boundary at their own scope.
-A \texttt{voice} inside a track may \textit{read} track-level variables when building its part, but assignments
-to those outer variables are rejected; the diagnostic reports a read-only outer binding.
-Voices lower to parallel cursors on the same MIDI channel; allowing them to mutate the parent track's state would
-conflate timelines that the language intentionally keeps independent.
-Variables declared inside the voice remain fully writable within that voice.
+Version~2 semantic checking is intentionally organized as one coherent traversal.
+When a scope opens, visible pattern signatures are registered; statements and expressions are then validated in source
+order within that same walk.
+This differs from version~1, where arity-based pattern calls required an additional pass to simulate pattern bodies
+under concrete arguments.
+Explicit source types in version~2 make contracts visible at declaration sites, so call checking can be performed at the
+call itself instead of being deferred.
 
-Global patterns establish the writable boundary at pattern scope, so they cannot assign globals or track state
-unless nested inside a track that has already set a wider boundary.
-\topic{Types.}
-Declarable types are \texttt{int}, \texttt{double}, \texttt{bool}, \texttt{note}, \texttt{seq}, and
+The practical consequence is earlier feedback:
+type and binding errors are reported where the mismatch is introduced, and lowering can consume analysis results directly
+without re-deriving symbol or expression metadata.
+
+\subsection{Scoping model and writable boundaries}
+
+Motivo uses lexical scope stacking (global, track, voice, pattern, and control-flow blocks), but write permissions are
+governed by an additional \emph{writable boundary} relation that reflects temporal execution context.
+
+Let $\Gamma$ be the visible symbol environment and $W$ the innermost scope that remains writable from the current
+position.
+Identifier lookup follows standard lexical rules, but assignment must satisfy both visibility and boundary permissions:
+\[
+\Gamma \vdash x : \tau,\quad
+\Gamma \vdash e : \tau,\quad
+\mathrm{scope}(x) \preceq W
+\;\Rightarrow\;
+\Gamma, W \vdash (x \leftarrow e)\ \text{is valid}
+\]
+If the declaration scope of $x$ lies outside the writable boundary $W$, assignment is rejected even when the type
+matches.
+
+\topic{Sequential contexts.}
+Track bodies, nested patterns in the same sequential context, and control-flow blocks (\texttt{for}, \texttt{loop},
+\texttt{if}) inherit the parent writable boundary.
+Because these constructs execute on one timeline, updating shared counters or phrase parameters is deterministic.
+
+\topic{Parallel contexts.}
+A \texttt{voice} introduces a new writable boundary at voice scope.
+Inside that voice, outer bindings remain readable but are not writable.
+This prevents two parallel lines from racing on the same mutable track-level state while still allowing local voice
+variables to evolve.
+
+\subsection{Type system rules}
+
+Declarable source types are \texttt{int}, \texttt{double}, \texttt{bool}, \texttt{note}, \texttt{seq}, and
 \texttt{chord}.
-Declarations and assignments require exact type equality: \texttt{int x = 1.0;} is rejected even though
-arithmetic expressions may promote numeric operands.
-Binary operators enforce numeric or boolean rules; sequences cannot be added with \texttt{+}.
+Declarations and assignments require exact type equality:
+\[
+\Gamma \vdash e : \tau
+\;\Rightarrow\;
+\Gamma \vdash \text{declare}(x:\tau, e)\ \text{is valid}
+\]
+and any $\tau' \neq \tau$ is a type error.
+Thus \texttt{int x = 1.0;} is invalid even though numeric operators may produce promoted intermediate results.
 
-\topic{Patterns and \texttt{play}.}
-Pattern calls type-check arguments, then select the overload whose parameter types match.
-\texttt{play} requires musical expression types on melodic tracks and drum literals on drum tracks; optional
-\texttt{:duration} and \texttt{from} operands must be numeric.
-These rules replace version~1.0's arity-only dispatch and second-pass pattern simulation.
+Operator families are validated by operand class:
+arithmetic operators require numeric operands, logical operators require booleans, relational operators require
+compatible comparands, and sequence concatenation is not defined through \texttt{+}.
+
+\subsection{Pattern signatures, overloads, and \texttt{play}}
+
+Pattern resolution is signature-based.
+For call-site argument types $\langle \tau_1,\dots,\tau_n \rangle$, the analyzer selects a visible pattern whose
+parameter list exactly matches that sequence.
+Name equality and arity alone are insufficient; this enables semantically distinct overloads such as rhythmic and
+melodic variants under one pattern name.
+
+\texttt{play} then applies domain constraints:
+melodic tracks accept note/chord/sequence-style material, drum tracks accept drum-note material, and optional
+\texttt{:duration} and \texttt{from} expressions must type-check as numeric.
+Together, these rules replace version~1's arity-only dispatch and second-pass instantiation checks while keeping the
+analysis model fully static.

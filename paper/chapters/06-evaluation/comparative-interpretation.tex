@@ -8,16 +8,12 @@ Second, it situates Motivo within the broader ecosystem of music programming too
 \subsection{Version 1.0 versus Version 2.0}\label{detail-subsec:version-comparison}
 
 The explicit-typing release changes the surface language and semantic pipeline without altering the lowering or MIDI
-backend architecture.
-Version~1.0 inferred variable types from initializers (\texttt{let}), resolved pattern overloads by arity alone, and ran
-a second semantic pass (\texttt{validate\_pattern\_instantiation}) after the main traversal.
-Version~2.0 requires explicit type annotations on variable declarations (\texttt{<type> IDENT = expr}), resolves
-patterns by parameter type signatures, and
-performs semantic analysis in a single traversal with assignability checks at declaration and assignment sites.
-
-These design changes add compile-time guarantees: ill-typed programs fail before lowering, and pattern calls cannot
-silently bind to the wrong overload when arities coincide but types differ.
-The engineering question for this thesis is whether those guarantees impose measurable cost at scale.
+backend architecture; the semantic rationale is specified in Section~\ref{sec:semantic-rules}.
+Version~1.0 inferred types from \texttt{let} initializers, resolved pattern overloads by arity alone, and ran a second
+pass (\texttt{validate\_pattern\_instantiation}) that simulated pattern bodies under concrete arguments; version~2.0
+requires explicit declarations, matches overloads by parameter signatures, and checks assignability in a single
+traversal.
+The engineering question for this evaluation is whether those stricter static guarantees impose measurable cost at scale.
 
 Table~\ref{tab:benchmark-wall-clock} answers that question on the B1--B3 fixtures.
 End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$, effectively
@@ -69,38 +65,8 @@ did not materially increase compile-time cost relative to version~1.0.
 
 \subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
 
-For offline composition, many developers use general-purpose programming languages combined with MIDI libraries, such as
-Python's \texttt{mido} or C++'s \texttt{RtMidi}.
-While these tools offer absolute control over the output, they operate at an exceptionally low level of abstraction.
-
-\topic{Event Placement and Musical Intent.}
-When using a library like \texttt{mido}, the composer must manually construct \texttt{Note-On} and \texttt{Note-Off}
-messages.
-Crucially, because the MIDI file format relies on delta-times, the composer is forced to manually calculate the tick
-difference between every sequential event across all tracks.
-
-Motivo abstracts this entirely.
-A composer writing \texttt{play (C4, E4, G4):2;} in Motivo communicates their \textit{musical intent} (playing a
-C-Major triad for two beats).
-Motivo's lowering engine and backend automatically handle the translation into absolute beats, the flattening into
-individual notes, the sorting by absolute tick, and the final variable-length delta-time encoding.
-
-\topic{Boilerplate and Expressiveness.}
-A simple four-beat loop of a hi-hat playing eighth notes requires a significant amount of boilerplate in
-Python: creating
-a file, creating a track, appending tempo metadata, and writing a loop that interleaves \texttt{Note-On} and
-\texttt{Note-Off} messages with explicit delta times.
-
-Motivo achieves the same result with minimal syntax:
-\begin{lstlisting}[language=Motivo,label={lst:midi-scripting-comparison}]
-tempo 120;
-track using drums {
-    loop (8) { play hihat :0.5; }
-}
-\end{lstlisting}
-
-This contrast in verbosity illustrates Motivo's intended role as a domain-specific tool.
-By embedding musical semantics (like default durations, rest tracking, and automatic track/channel
-assignment) directly into
-the language design, the compiler reduces cognitive friction and allows the user to operate strictly within the musical
-domain.
+The contrast between Motivo source and raw \texttt{mido}-style MIDI scripting (from \texttt{play (C4, E4, G4):2} to
+the hi-hat loop in Listing~\ref{lst:midi-scripting-comparison}) is developed in
+Section~\ref{sec:motivation} because it motivates the language design rather than the benchmark evidence in this chapter.
+The B1--B3 measurements neither quantify that verbosity gap nor depend on it; they instead confirm that pursuing
+domain-level abstractions did not materially increase compile-time cost relative to version~1.0.

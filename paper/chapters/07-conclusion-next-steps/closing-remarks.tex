@@ -2,8 +2,13 @@
 
 Flat event editing loses algorithmic intent; live-coding systems recover structure but couple composition to a running
 synthesizer.
-Motivo sits between those poles: structure stays in typed source, expansion is deterministic, and the artefact is a
+Motivo sits between those poles: structure stays in typed source, expansion is deterministic, and the artifact is a
 Format~1 MIDI file importable into any host.
+On the benchmark workloads in Chapter~\ref{ch:evaluation}, that design delivers: a handful of source lines expand into
+thousands of note events, compilation stays in the low-millisecond range on a local Release build, and output is
+byte-reproducible.
+The gap between flat event editing and runtime-coupled live systems, set out in Section~\ref{sec:motivation}, is closed
+for offline, rule-based symbolic composition within the scope stated here.
 
 The system does not replace digital audio workstations, live environments, or synthesis platforms.
 It complements them where repetition and symbolic rules dominate.
@@ -33,5 +38,5 @@ The integration is tested automatically; classroom or usability studies are outs
 Patterns and control flow support motif sketches in source, with MIDI export for mixing and micro-editing in a DAW.
 This matches Section~\ref{sec:motivation}: Motivo front-loads structure rather than replacing production tooling.
 
-Taken together, these cases answer Chapter~\ref{ch:introduction}'s question affirmatively within an offline, symbolic,
-complementary scope.
+Taken together, these cases show the delivered system meets the offline, symbolic, complementary scope set out in
+Chapter~\ref{ch:introduction}.

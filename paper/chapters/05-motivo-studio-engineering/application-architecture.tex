@@ -1,6 +1,6 @@
 \section{Application Architecture}\label{sec:studio-architecture}
 
-Motivo Studio is a browser-hosted IDE for the Motivo language.
+Motivo Studio is a browser-based studio for the Motivo language.
 The user edits \texttt{.motivo} source, compiles it through a backend API, inspects compiler diagnostics in the
 editor, visualizes the resulting MIDI on a piano roll, and auditions the output with in-browser synthesis.
 Version~2.0 extends this playground with account-based persistence: PostgreSQL stores users, sessions, and saved
@@ -9,14 +9,8 @@ tabs alongside bundled example compositions.
 
 \subsection{Runtime topology}\label{subsec:studio-runtime-topology}
 
-Production deployment is documented below.
-
-\topic{Local development.} Uses Docker Compose with four application services plus PostgreSQL: database,
-Express server (runs migrations then the API), Next.js client, and an nginx HTTPS gateway at
-\texttt{motivo-studio.local}.
-The gateway terminates TLS with a self-signed certificate, forwards page traffic to the client, and proxies
-\texttt{/api/*} to the server with the \texttt{/api} prefix stripped, matching the URL shape the production client
-exposes through Next.js rewrites.
+Figure~\ref{fig:studio-architecture} shows the logical topology shared by local Docker Compose and production Railway;
+physical deployment and environment differences are in Section~\ref{sec:deployment}.
 
 \begin{figure}[htbp]
   \centering
@@ -49,9 +43,8 @@ exposes through Next.js rewrites.
 
 The compile path deliberately keeps a narrow boundary: TypeScript in the client and server, C++ only inside
 \texttt{motivoc}.
-The server validates compile bodies with Zod, writes source to a temporary \texttt{.motivo} file, invokes
-\texttt{execFile} on \texttt{COMPILER\_BIN} (default \texttt{/usr/local/bin/motivoc} in the server image), and returns
-either \texttt{audio/midi} bytes or JSON diagnostics parsed from stderr.
+The server validates compile bodies, writes source to a temporary file, invokes the embedded \texttt{motivoc} binary, and
+returns either \texttt{audio/midi} bytes or JSON diagnostics parsed from stderr.
 File and auth routes live on the same Express app but require a valid session cookie.
 
 \subsection{Backend API surface}\label{subsec:studio-api-surface}
@@ -69,8 +62,7 @@ Routes are mounted at the server root; the client always calls them under the \t
     Compile & \texttt{POST /compile}: body \texttt{\{ source \}}; success returns MIDI; failure returns structured
     diagnostics (severity, \texttt{type}, message, optional line/column). \\
     Auth & \texttt{POST /auth/register}, \texttt{POST /auth/login}, \texttt{POST /auth/logout}, \texttt{GET /auth/me}:
-    email/password credentials; HTTP-only session cookie (name from \texttt{SESSION\_COOKIE\_NAME}, secure flag
-    enabled in production). \\
+    email/password credentials; HTTP-only session cookie (secure flag enabled in production). \\
     Files & \texttt{GET /files}, \texttt{POST /files}, \texttt{GET /files/:id}, \texttt{PATCH /files/:id},
     \texttt{DELETE /files/:id}, \texttt{GET /files/:id/download}: all require authentication; store Motivo source
     per user in PostgreSQL. \\
@@ -81,8 +73,7 @@ Routes are mounted at the server root; the client always calls them under the \t
 
 \subsection{Database schema}\label{subsec:studio-database}
 
-PostgreSQL stores three entity groups defined in the server migration
-\texttt{001\_auth\_account\_file\_storage\_schema}:
+PostgreSQL stores three entity groups:
 
 \begin{itemize}
   \item \textbf{users}: \texttt{id}, normalized \texttt{email}, \texttt{password\_hash}, optional
@@ -97,33 +88,30 @@ PostgreSQL stores three entity groups defined in the server migration
 
 The Next.js client is organized by feature directories rather than a flat component tree.
 
-\topic{Editor (\texttt{features/editor}).} Monaco with a registered Motivo language id, Monarch tokenizer
+\topic{Editor.} Monaco with a registered Motivo language id, Monarch tokenizer
 (keywords, types, instruments, drum notes, literals), light/dark themes, snippet completions, and marker mapping from
 compiler diagnostics.
 
-\topic{Compile (\texttt{features/compile}).} Axios client posting to \texttt{/api/compile} with
+\topic{Compile.} HTTP client posting to \texttt{/api/compile} with
 \texttt{arraybuffer} responses; distinguishes MIDI success from JSON diagnostic payloads.
 
-\topic{MIDI and piano roll (\texttt{features/midi}, \texttt{features/piano-roll}).} Parse binary MIDI into
+\topic{MIDI and piano roll.} Parse binary MIDI into
 note events; canvas piano-roll with pitch scale, time axis, and playhead synchronization.
 
-\topic{Playback (\texttt{features/playback}).} Tone.js scheduling with SoundFont-based General MIDI
+\topic{Playback.} Tone.js scheduling with SoundFont-based General MIDI
 instruments; transport bar for play, stop, progress, and MIDI download.
 
-\topic{IDE shell (\texttt{features/ide}).} Workspace layout (editor pane, visualizer, logs, header);
+\topic{IDE shell.} Workspace layout (editor pane, visualizer, logs, header);
 \texttt{useIdeCompile} ties compile actions to editor markers and MIDI context; keyboard shortcuts for compile, save,
 playback, and log panel focus.
 
-\topic{Auth (\texttt{features/auth}).} React context for register, login, logout, and session refresh via
+\topic{Auth.} React context for register, login, logout, and session refresh via
 \texttt{/api/auth/*}.
 
-\topic{Files (\texttt{features/files}).} File explorer, multi-tab documents (scratch buffer, bundled
-examples, user files), manual save with dirty-state tracking, download of \texttt{.motivo} sources, create/rename/delete
-for owned files.
+\topic{Files.} File explorer, multi-tab documents (scratch buffer, bundled examples, user files), manual save with
+dirty-state tracking, download of Motivo source, create/rename/delete for owned files.
 
-\topic{Examples (\texttt{features/examples}).} Shipped \texttt{.motivo} sources
-(e.g.\ \texttt{example.motivo},
-\texttt{fur\_elise.motivo}) readable without login; opening an example does not require persistence.
+\topic{Examples.} Bundled demonstration sources readable without login; opening an example does not require persistence.
 
 Guests can compile and audition from the scratch editor and read-only examples; persistence and manual save require
 authentication.

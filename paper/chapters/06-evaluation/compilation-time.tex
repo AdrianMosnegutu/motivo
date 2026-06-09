@@ -43,11 +43,9 @@ workloads.
   \label{tab:benchmark-midi-size}
 \end{table}
 
-The largest cases finish in about 8~ms on the stated machine.
-Because these times are small, they should be interpreted as local measurements rather than as a portable performance
-result.
-They are still useful for the thesis because they show that the current native compiler is fast enough to support an
-interactive compile loop in this local setup.
+On the benchmark machine, the largest fixtures finish in about 8~ms end-to-end (Table~\ref{tab:benchmark-wall-clock}).
+Hardware-specific absolute times may differ on other hosts; the relevant engineering question for Motivo Studio is
+whether explicit recompilation stays within interactive latency.
 
 Table~\ref{tab:benchmark-per-stage} breaks the in-process work down by pipeline stage.
 Parsing and semantic analysis remain below $0.04$~ms regardless of program; lowering and MIDI writing dominate, which
@@ -117,19 +115,15 @@ B3 stresses nested loop structure rather than a flat iteration count; its loweri
 the same event
 cap because the lowering engine walks nested control-flow frames.
 The backend also sorts events by tick before computing delta-times.
-The result is still small at the current safety limit, but the implementation should not be described as unbounded.
+Cost grows with event count and nested structure (B3 exceeds B1 in lowering time at the same cap) but remains in the
+low-millisecond range on the benchmark machine.
 
-\subsection{Execution Speed and Real-Time Viability}\label{detail-subsec:execution-speed-and-real-time-viability}
+\subsection{Execution Speed and Studio Workflow}\label{detail-subsec:execution-speed-and-real-time-viability}
 
-Because the compiler is implemented as a native C++23 program without reliance on garbage collection or dynamic dispatch
-for AST traversal, the constant factors in the time complexity are small in the current measurements.
-In practice, the compiler generates compositions containing event streams up to the current implementation limit in a
-fraction of a second.
-
-These local measurements are relevant to Motivo Studio because the editor workflow depends on compilation remaining
-quick enough for interactive use.
-Motivo Studio relies on the compiler's ability to re-compile
-the entire source file during interactive compile actions.
-Because the execution time for typical musical pieces (ranging from hundreds to thousands of events) sits well below the
-latency usually noticed during ordinary editor interaction, the composer experiences interactive auditory and visual
-feedback without using an interpreted runtime during playback.
+Motivo Studio compiles when the user presses the compile button, not on every keystroke or on save.
+At roughly 5--8~ms for programs up to the 20,000-event cap on the tested Release build, that whole-file compile step is
+fast enough that the editor's compile-to-preview loop feels immediate in practice.
+Per-keystroke recompilation would require incremental parsing and partial lowering; the current architecture does not
+implement that optimization, but the measured throughput leaves headroom if such a feature were added later.
+Typical studio pieces (hundreds to a few thousand events) compile even faster than the B1--B3 stress fixtures, so
+auditory and visual feedback does not depend on an interpreted runtime at playback.

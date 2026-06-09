@@ -40,7 +40,7 @@ score higher).
 
 \subsection{Type Checking Rules}\label{detail-subsec:semantic-type-checking}
 
-Type rules live in \texttt{motivo\_types} (\texttt{type\_rules.cpp}).
+Type rules live in the \texttt{motivo\_types} module.
 Motivo v2 uses \emph{strict} assignability: \texttt{is\_assignable(target, source)} requires identical types; there is
 no implicit widening from \texttt{int} to \texttt{double} in variable initialization or assignment.
 
@@ -106,4 +106,4 @@ Independent errors in disjoint subtrees therefore appear in a single diagnostics
 feedback.
 When a subtree encounters an \texttt{Unknown} type (e.g., after an undefined identifier), downstream checks guard on
 \texttt{is\_known} to avoid cascading false positives.
-Stage gating in \texttt{compiler.cpp} ensures lowering never runs when any semantic error is present.
+Stage gating in the compiler driver ensures lowering never runs when any semantic error is present.

@@ -9,11 +9,16 @@ structure is tedious to change and easy to lose.
 Live-coding and scripting approaches recover programmability, yet they usually target real-time performance or
 low-level event assembly rather than deterministic offline compilation to a portable score.
 
-This thesis presents \textit{Motivo}, a domain-specific language and native compiler that keeps compositional structure
-explicit in source and expands it into a Standard MIDI File without a language runtime at playback.
-Motivo Studio wraps the toolchain in a browser-based editor for writing, compiling, and auditioning results.
+This thesis presents \textit{Motivo}, a domain-specific language, offline C++ compiler, and browser-based studio that
+keeps compositional structure explicit in typed source and expands it deterministically into a Standard MIDI File
+without a language runtime at playback.
 
-We describe the language design, compiler implementation, studio application, and an empirical evaluation on synthetic
-workloads.
-The results support a bounded engineering claim: compact structural descriptions can be expanded into large timelines
-within interactive compile times, without positioning Motivo as a replacement for established production tools.
+We describe the language semantics, multi-stage compiler pipeline, Motivo Studio integration, and an empirical
+evaluation on synthetic workloads.
+The compiler expands programs of fewer than fifteen lines into timelines of up to 20,000 note events in about 5--8~ms
+end-to-end on a local Release build; explicit typing in version~2.0 adds negligible overhead while preserving
+byte-identical MIDI output.
+Automated testing comprises 745 cases (635 compiler, 31 server, 79 client), covering the toolchain from parsing through
+deployment.
+Motivo complements established digital audio workstation workflows: it recovers editable structure in source form while
+exporting portable scores that interoperate with conventional production tools.

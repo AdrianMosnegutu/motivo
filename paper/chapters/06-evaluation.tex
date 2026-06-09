@@ -1,10 +1,10 @@
 \chapter{Empirical Evaluation}\label{ch:evaluation}
 
-The evaluation is designed around claims that can be supported by the implementation.
-Motivo is not evaluated as a general measure of musical creativity, and the thesis does not include a user study.
-Instead, this chapter evaluates engineering properties: whether the compiler can expand compact source programs into
-larger MIDI event streams, how quickly it compiles a small benchmark corpus on one local machine, what safety limits the
-current implementation imposes, and how the software project is tested.
+This chapter tests whether Motivo's structural compression works in practice: can compact symbolic source expand
+deterministically into much larger MIDI timelines without a playback-time runtime?
+The evidence covers source-to-event expansion (Section~\ref{sec:compression}), compile time on a local benchmark corpus
+(Section~\ref{sec:compile-time}), implementation limits (Section~\ref{sec:limits}), and automated test coverage.
+No user study was conducted; musical quality and learnability are out of scope.
 
 \input{chapters/06-evaluation/methodology}
 \input{chapters/06-evaluation/compilation-time}
