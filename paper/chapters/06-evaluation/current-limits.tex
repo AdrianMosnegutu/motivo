@@ -24,3 +24,5 @@ The lowering IR holds only atomic fields per event (pitch, start beat, duration,
 \texttt{struct}s.
 This layout keeps traversal over contiguous data and limits retained state to the parsed tree plus the expanded event
 list bounded by \texttt{MAX\_EVENTS}, rather than interpreter frames or runtime scheduling state.
+These bounds complete the implementation-side evidence gathered in this chapter; the following section interprets the
+benchmark measurements in broader context.
