@@ -25,7 +25,7 @@ certificate, proxies \texttt{/api/*} to Express (stripping the prefix), and forw
       \node[svc, fill=motivoAmber!18, below=0.75cm of browser] (nginx) {nginx gateway\\HTTPS :443};
       \node[svc, fill=motivoBlue!13, below left=0.85cm and 0.5cm of nginx] (client) {Next.js\\port 3000};
       \node[svc, fill=motivoCyan!16, below right=0.85cm and 0.5cm of nginx] (server) {Express\\port 3001};
-      \node[svc, fill=motivoGreen!16, below=0.65cm of server] (compiler) {\texttt{motivoc}};
+      \node[svc, fill=motivoGreen!16, below=0.85cm of server] (compiler) {\texttt{motivoc}};
       \node[svc, fill=motivoSoft, below left=0.85cm and 0.5cm of server] (db) {PostgreSQL};
 
       \draw[arrow] (browser) -- (nginx);
@@ -74,7 +74,7 @@ design locally.
 
       \draw[arrow] (browser) -- (cf);
       \draw[arrow] (cf) -- (client);
-      \draw[arrow] (client) -- node[above, font=\scriptsize\sffamily] {\texttt{/api/*}} (server);
+      \draw[arrow] (client) -- node[right, font=\scriptsize\sffamily] {\texttt{/api/*}} (server);
       \draw[arrow] (server) -- (db);
     \end{tikzpicture}%
   }

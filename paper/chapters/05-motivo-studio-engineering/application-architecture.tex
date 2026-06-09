@@ -22,16 +22,16 @@ physical deployment and environment differences are in Section~\ref{sec:deployme
         arrow/.style={motivo/arrow}
       ]
       \node[service, fill=motivoBlue!14] (browser) {Browser\\HTTPS};
-      \node[service, fill=motivoBlue!12, below=0.75cm of browser] (client) {Next.js client\\Monaco, piano
+      \node[service, fill=motivoBlue!12, below=1cm of browser] (client) {Next.js client\\Monaco, piano
       roll, auth UI};
-      \node[service, fill=motivoCyan!16, below left=0.85cm and 0.15cm of client] (server) {Express
+      \node[service, fill=motivoCyan!16, below=1cm and 0.15cm of client] (server) {Express
       API\\compile, auth, files};
-      \node[service, fill=motivoGreen!16, below right=0.85cm and 0.15cm of server] (compiler)
+      \node[service, fill=motivoGreen!16, below right=1cm and 0.15cm of server] (compiler)
       {\texttt{motivoc}\\subprocess};
-      \node[store, fill=motivoSoft, below=0.7cm of server] (db) {PostgreSQL\\users, sessions, files};
+      \node[store, fill=motivoSoft, below left=1cm and 0.15cm of server] (db) {PostgreSQL\\users, sessions, files};
 
-      \draw[arrow] (browser) -- node[right, font=\scriptsize\sffamily, align=left] {pages +\\\texttt{/api/*}} (client);
-      \draw[arrow] (client) -- node[above, font=\scriptsize\sffamily] {\texttt{/api/*} proxy} (server);
+      \draw[arrow] (browser) -- node[right, font=\scriptsize\sffamily, align=left] {pages +\texttt{/api/*}} (client);
+      \draw[arrow] (client) -- node[right, font=\scriptsize\sffamily, align=left] {\texttt{/api/*} proxy} (server);
       \draw[arrow] (server) -- (compiler);
       \draw[arrow] (server) -- (db);
     \end{tikzpicture}%
