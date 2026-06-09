@@ -8,3 +8,7 @@ add_library(motivo_compiler STATIC motivo/compiler.cpp)
 motivo_configure_public_library(motivo_compiler)
 target_link_libraries(motivo_compiler
         PRIVATE motivo_diagnostics motivo_parsing motivo_semantic motivo_lowering motivo_midi)
+
+if(MOTIVO_ENABLE_BENCHMARK)
+    target_compile_definitions(motivo_compiler PRIVATE MOTIVO_BENCHMARK)
+endif()

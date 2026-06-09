@@ -1,0 +1,125 @@
+// Many parallel tracks: 20 tracks x 1000 notes = 20000 events.
+// Stresses multi-track MIDI serialization and per-track event handling.
+tempo 120;
+signature 4/4;
+
+track t00 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t01 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t02 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t03 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t04 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t05 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t06 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t07 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t08 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t09 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t10 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t11 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t12 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t13 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t14 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t15 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t16 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t17 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t18 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+
+track t19 using piano {
+    loop (1000) {
+        play C4;
+    }
+}
+

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(MOTIVO_ENABLE_COVERAGE "Build compiler targets with coverage instrumentation" OFF)
+option(MOTIVO_ENABLE_BENCHMARK "Compile in benchmark stage timers and event-count emission" OFF)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)

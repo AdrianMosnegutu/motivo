@@ -1,0 +1,38 @@
+tempo 240;
+signature 4/4;
+
+track using guitar {
+    play D2;
+
+    loop (3) {
+        play [D2, D#2, E2:2];
+        play [G2, E2, G2, E2, E2];
+        play [D#2, D2, A2, D2, D2:2, A2];
+    }
+}
+
+track using bass {
+    play D2;
+
+    loop (3) {
+        play [D2, D#2, E2:6];
+        play [E2:2 , D2:6];
+    }
+}
+
+track using drums {
+    play crash from 3;
+
+    voice from 4 {
+        loop (3 * 14 + 4) play hihat;
+    }
+
+    play [snare, snare];
+
+    loop (3) {
+        play [kick, kick];
+        play [rest, snare, rest, kick, kick, snare];
+        loop (3) play kick;
+        play [snare, kick, rest, kick, snare];
+    }
+}

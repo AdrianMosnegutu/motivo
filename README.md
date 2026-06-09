@@ -4,11 +4,12 @@ Motivo is a music composition language with a native compiler and Motivo Studio,
 
 This project is also my bachelor thesis implementation. The accompanying paper remains under its academic title, **Design and Implementation of a Domain-Specific Language for Music Composition**.
 
-The project has three main parts:
+The project has these main parts:
 
 - `paper/` - LaTeX source for the written thesis.
 - `code/compiler/` - C++23 compiler for Motivo.
 - `code/server/` and `code/client/` - Motivo Studio backend and frontend.
+- `experiments/` - reproducible compiler benchmark suite backing the thesis evaluation.
 
 ## Repository Layout
 
@@ -21,8 +22,24 @@ The project has three main parts:
 |   |-- client/        Motivo Studio Next.js app
 |   |-- nginx/         Motivo Studio HTTPS gateway
 |   `-- docker-compose.yml
+|-- experiments/       Reproducible compiler benchmark suite (evaluation)
 `-- .github/           CI workflows and report summarizers
 ```
+
+## Experiments
+
+The `experiments/` module reproduces the thesis evaluation (the v1-vs-v2 comparison on the
+B1-B3 fixtures) and extends it with stress and general-case benchmark suites. Run the whole
+thing with:
+
+```sh
+cd experiments
+make run
+```
+
+This builds the compilers (current `motivoc` plus the v1/v2 tags), runs every suite, and writes
+`SUMMARY.md` + `results.csv` under `experiments/results/`. See `experiments/README.md` for
+details.
 
 ## Quick Start
 
@@ -56,6 +73,7 @@ For component-specific development, use the README in each subdirectory:
 - `code/compiler/README.md`
 - `code/server/README.md`
 - `code/client/README.md`
+- `experiments/README.md`
 
 ## CI
 
