@@ -18,7 +18,7 @@ scope is well defined.
 
 Parallel inner scopes receive a new writable boundary at their own scope.
 A \texttt{voice} inside a track may \textit{read} track-level variables when building its part, but assignments
-to those outer variables are rejected---the diagnostic reports a read-only outer binding.
+to those outer variables are rejected; the diagnostic reports a read-only outer binding.
 Voices lower to parallel cursors on the same MIDI channel; allowing them to mutate the parent track's state would
 conflate timelines that the language intentionally keeps independent.
 Variables declared inside the voice remain fully writable within that voice.

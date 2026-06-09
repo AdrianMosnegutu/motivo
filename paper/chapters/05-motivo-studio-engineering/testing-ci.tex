@@ -25,7 +25,7 @@ Compiler unit suites exercise parsing, explicit type rules, lowering, MIDI writi
 \texttt{motivo::compile()}.
 Golden tests compile fixture sources (\texttt{happy\_path.motivo}, \texttt{parse\_errors.motivo},
 \texttt{semantic\_errors.motivo}, \texttt{lowering\_errors.motivo}) and assert MIDI shape or collected diagnostics per
-stage---not byte-identical comparison to a checked-in \texttt{fur\_elise} binary (that composition ships as a studio
+stage, not byte-identical comparison to a checked-in \texttt{fur\_elise} binary (that composition ships as a studio
 example only).
 
 Server tests cover Zod validation, compile controller success and failure paths with fake \texttt{motivoc}
@@ -100,7 +100,7 @@ and packaged image.
     \texttt{compiler.yml}: clang-format static analysis, CMake build, CTest with gcovr, then Docker package of the
     server image embedding \texttt{motivoc}.
     \texttt{client.yml} and \texttt{server.yml} share the same job graph (grouped ESLint, TypeScript, and Prettier
-    checks, then Vitest---with a Postgres~16 service on the server workflow---build, and Docker package).
+    checks, then Vitest (with a Postgres~16 service on the server workflow), build, and Docker package).
   \texttt{paper.yml}: tex-fmt, chktex, and codespell gate the TeX Live PDF build.}\label{fig:ci-workflows}
 \end{figure}
 

@@ -15,7 +15,7 @@ Production deployment is documented below.
 Express server (runs migrations then the API), Next.js client, and an nginx HTTPS gateway at
 \texttt{motivo-studio.local}.
 The gateway terminates TLS with a self-signed certificate, forwards page traffic to the client, and proxies
-\texttt{/api/*} to the server with the \texttt{/api} prefix stripped---the same URL shape the production client
+\texttt{/api/*} to the server with the \texttt{/api} prefix stripped, matching the URL shape the production client
 exposes through Next.js rewrites.
 
 \begin{figure}[htbp]
@@ -65,14 +65,14 @@ Routes are mounted at the server root; the client always calls them under the \t
     \toprule
     \textbf{Route group} & \textbf{Endpoints and behavior} \\
     \midrule
-    Health & \texttt{GET /health} --- liveness for orchestration. \\
-    Compile & \texttt{POST /compile} --- body \texttt{\{ source \}}; success returns MIDI; failure returns structured
+    Health & \texttt{GET /health}: liveness for orchestration. \\
+    Compile & \texttt{POST /compile}: body \texttt{\{ source \}}; success returns MIDI; failure returns structured
     diagnostics (severity, \texttt{type}, message, optional line/column). \\
-    Auth & \texttt{POST /auth/register}, \texttt{POST /auth/login}, \texttt{POST /auth/logout}, \texttt{GET /auth/me}
-    --- email/password credentials; HTTP-only session cookie (name from \texttt{SESSION\_COOKIE\_NAME}, secure flag
+    Auth & \texttt{POST /auth/register}, \texttt{POST /auth/login}, \texttt{POST /auth/logout}, \texttt{GET /auth/me}:
+    email/password credentials; HTTP-only session cookie (name from \texttt{SESSION\_COOKIE\_NAME}, secure flag
     enabled in production). \\
     Files & \texttt{GET /files}, \texttt{POST /files}, \texttt{GET /files/:id}, \texttt{PATCH /files/:id},
-    \texttt{DELETE /files/:id}, \texttt{GET /files/:id/download} --- all require authentication; store Motivo source
+    \texttt{DELETE /files/:id}, \texttt{GET /files/:id/download}: all require authentication; store Motivo source
     per user in PostgreSQL. \\
     \bottomrule
   \end{tabularx}
@@ -85,11 +85,11 @@ PostgreSQL stores three entity groups defined in the server migration
 \texttt{001\_auth\_account\_file\_storage\_schema}:
 
 \begin{itemize}
-  \item \textbf{users} --- \texttt{id}, normalized \texttt{email}, \texttt{password\_hash}, optional
+  \item \textbf{users}: \texttt{id}, normalized \texttt{email}, \texttt{password\_hash}, optional
     \texttt{last\_opened\_file\_id}, timestamps.
-  \item \textbf{motivo\_files} --- per-user documents with \texttt{owner\_id} foreign key, \texttt{name},
+  \item \textbf{motivo\_files}: per-user documents with \texttt{owner\_id} foreign key, \texttt{name},
     \texttt{source} text, \texttt{last\_opened\_at}, and unique \texttt{(owner\_id, lower(name))} constraint.
-  \item \textbf{sessions} --- \texttt{user\_id}, hashed \texttt{token\_hash}, \texttt{expires\_at}, indexed for lookup
+  \item \textbf{sessions}: \texttt{user\_id}, hashed \texttt{token\_hash}, \texttt{expires\_at}, indexed for lookup
     and expiry sweeps.
 \end{itemize}
 

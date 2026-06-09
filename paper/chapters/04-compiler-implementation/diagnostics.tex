@@ -38,7 +38,7 @@ Compilation is strictly sequential; later stages never run on input that failed 
 \topic{Lexical error collection.}
 The Flex scanner (\texttt{scanner.l}) calls \texttt{report\_lexical}, which forwards to
 \texttt{DiagnosticsEngine::report} when a diagnostics pointer is installed.
-Lexical errors do not abort tokenization immediately---the scanner continues so multiple invalid characters or
+Lexical errors do not abort tokenization immediately; the scanner continues so multiple invalid characters or
 unterminated comments can be reported in one pass.
 
 \topic{Parser error recovery.}

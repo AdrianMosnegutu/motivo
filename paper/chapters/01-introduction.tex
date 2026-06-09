@@ -1,10 +1,18 @@
 \chapter{Introduction}\label{ch:introduction}
 
 Composition is structural as well as sonic: motifs, repetition, and layered parts are how many composers think,
-yet common production tools store music as flat note events. This thesis asks whether a small compiled language
-can keep that structure explicit and emit a standard MIDI file. We present \textit{Motivo}---a domain-specific
-language and offline compiler for symbolic composition---together with Motivo Studio, a web editor that wraps
-the toolchain in a deployable product.
+yet common production tools store music as flat note events.
+When a phrase repeats or varies, the piano roll makes every copy editable by hand, and the rules that generated the
+pattern are rarely recoverable from the event list alone.
+This thesis asks whether a small compiled language can keep that structure explicit in source form and expand it
+deterministically into a standard MIDI file, without requiring a language runtime at playback.
+
+We present \textit{Motivo}, a domain-specific language and offline compiler for symbolic composition, together with
+Motivo Studio, a web editor that wraps the toolchain in a deployable product.
+The work is scoped to offline, rule-based expansion into portable symbolic output: Motivo complements established
+digital audio workstation workflows rather than replacing them.
+Section~\ref{sec:use-cases} outlines four representative use cases; the evaluation in Chapter~\ref{ch:evaluation} and
+the conclusions in Chapter~\ref{ch:conclusion} return to those scenarios with the evidence gathered here.
 
 \input{chapters/01-introduction/motivation}
 \input{chapters/01-introduction/relevance}

@@ -10,7 +10,7 @@ The colon operator sets an explicit duration (\texttt{play C4:0.5}).
 \texttt{from} schedules at a fixed beat without moving the cursor (\texttt{play A4 from 16;}), so layers can
 be added without disturbing sequential flow.
 \topic{Control flow and patterns.}
-\texttt{loop}, \texttt{for}, and \texttt{if} reuse the enclosing cursor---each loop iteration continues from
+\texttt{loop}, \texttt{for}, and \texttt{if} reuse the enclosing cursor: each loop iteration continues from
 the beat reached by the previous one.
 Pattern calls run against an internal cursor starting at zero; when the call completes, the caller jumps
 forward by the pattern footprint (including internal rests).

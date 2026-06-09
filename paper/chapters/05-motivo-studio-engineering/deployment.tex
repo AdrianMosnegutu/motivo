@@ -3,8 +3,8 @@
 Motivo Studio is deployed twice in practice: a \textbf{local Docker Compose stack} that emulates production topology
 for development and thesis demonstrations, and a \textbf{production stack} on Railway with Cloudflare DNS and TLS in
 front of \texttt{motivo-studio.eu}.
-The two environments share the same logical shape---browser to Next.js client, same-origin \texttt{/api/*} proxy to
-Express, private database networking, embedded \texttt{motivoc} in the server image---but differ in TLS termination
+The two environments share the same logical shape (browser to Next.js client, same-origin \texttt{/api/*} proxy to
+Express, private database networking, embedded \texttt{motivoc} in the server image) but differ in TLS termination
 and gateway components.
 
 \subsection{Local Docker Compose stack}\label{subsec:local-docker}
@@ -12,14 +12,14 @@ and gateway components.
 \texttt{code/docker-compose.yml} defines four cooperating services plus a named Postgres volume:
 
 \begin{itemize}
-  \item \textbf{motivo-studio-db} --- PostgreSQL~16 with database \texttt{motivo\_studio}; exposed on host port~5432 for
+  \item \textbf{motivo-studio-db}: PostgreSQL~16 with database \texttt{motivo\_studio}; exposed on host port~5432 for
     optional direct inspection.
-  \item \textbf{motivo-studio-server} --- multi-stage image from \texttt{server/Dockerfile} that builds and installs
+  \item \textbf{motivo-studio-server}: multi-stage image from \texttt{server/Dockerfile} that builds and installs
     \texttt{motivoc} at \texttt{/usr/local/bin/motivoc}, then runs \texttt{node dist/db/migrate.js} followed by
     \texttt{node dist/server.js} on container start (migrations before listen).
-  \item \textbf{motivo-studio-client} --- Next.js production build with \texttt{API\_PROXY\_URL} pointing at the server
+  \item \textbf{motivo-studio-client}: Next.js production build with \texttt{API\_PROXY\_URL} pointing at the server
     service hostname on the Compose network.
-  \item \textbf{motivo-studio-gateway} --- nginx container (\texttt{code/nginx/}) listening on ports~80 and~443,
+  \item \textbf{motivo-studio-gateway}: nginx container (\texttt{code/nginx/}) listening on ports~80 and~443,
     redirecting HTTP to \texttt{https://motivo-studio.local}, terminating HTTPS with a local self-signed
     certificate, proxying
     \texttt{/api/*} to Express (stripping the prefix) and all other paths to the client (including WebSocket headers for
@@ -68,16 +68,16 @@ Production (author-confirmed, 2026-06-01) serves \texttt{https://motivo-studio.e
 \topic{Railway.} Hosts three services, all in the Amsterdam region:
 
 \begin{itemize}
-  \item \textbf{Frontend} --- Docker image from \texttt{code/client/Dockerfile}; public Next.js entrypoint.
-  \item \textbf{Backend} --- Docker image from \texttt{code/server/Dockerfile} with embedded
+  \item \textbf{Frontend}: Docker image from \texttt{code/client/Dockerfile}; public Next.js entrypoint.
+  \item \textbf{Backend}: Docker image from \texttt{code/server/Dockerfile} with embedded
     \texttt{motivoc}; not exposed
-    as a separate public host---reachable from the client via internal networking and \texttt{API\_PROXY\_URL}.
-  \item \textbf{Database} --- managed PostgreSQL on private Railway networking (not publicly routable).
+    as a separate public host, reachable from the client via internal networking and \texttt{API\_PROXY\_URL}.
+  \item \textbf{Database}: managed PostgreSQL on private Railway networking (not publicly routable).
 \end{itemize}
 
 Deploy automation integrates with GitHub: pushes to \texttt{main} run module-scoped CI workflows first; Railway deploys
 only after the relevant pipeline succeeds.
-Path-scoped watches limit churn---client-only changes redeploy the frontend service; server or compiler changes redeploy
+Path-scoped watches limit churn: client-only changes redeploy the frontend service; server or compiler changes redeploy
 the backend (which rebuilds the embedded compiler).
 The server service runs \texttt{node dist/db/migrate.js} as a \textbf{pre-deploy} hook configured in the Railway
 dashboard so schema changes apply before new containers accept traffic.

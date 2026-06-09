@@ -18,5 +18,5 @@ and \texttt{from} offsets.
 Version~1.0 used untyped \texttt{let} bindings, arity-only pattern overloading, and a second semantic pass that
 simulated pattern bodies at call sites.
 Version~2.0 replaces \texttt{let} with explicit typed declarations, resolves overloads by full parameter type
-signature, and performs semantic analysis in a single pass---because explicit types make parameter contracts
+signature, and performs semantic analysis in a single pass, because explicit types make parameter contracts
 visible in source text and remove the need to infer intent from initializer shape alone.

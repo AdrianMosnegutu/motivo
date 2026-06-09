@@ -20,7 +20,7 @@ silently bind to the wrong overload when arities coincide but types differ.
 The engineering question for this thesis is whether those guarantees impose measurable cost at scale.
 
 Table~\ref{tab:benchmark-wall-clock} answers that question on the B1--B3 fixtures.
-End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$---effectively
+End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$, effectively
 $0$--$2\%$ on an Apple M3 Pro Release build.
 MIDI output sizes match byte-for-byte (Table~\ref{tab:benchmark-midi-size}), confirming that both compilers lower the
 same workloads to equivalent artifacts.
@@ -50,12 +50,13 @@ Notation and interchange formats such as ABC and MIDI encode musical information
 Motivo's combination of typed variables, parameterized patterns, and imperative control flow at the source level.
 
 The benchmark evidence in this chapter does not reproduce those qualitative comparisons quantitatively.
-It instead confirms the engineering side of Motivo's positioning: a zero-runtime compiler can expand compact structural
-rules into thousands of MIDI events within the \texttt{MAX\_EVENTS} safety cap while incurring negligible overhead for
+It is instead consistent with the engineering side of Motivo's positioning: a zero-runtime compiler can expand compact
+structural rules into thousands of MIDI events within the \texttt{MAX\_EVENTS} safety cap while incurring negligible
+overhead for
 explicit typing in version~2.0.
 Where Sonic Pi advances time through \texttt{sleep} and parallel \texttt{in\_thread} blocks during performance, and
 Tidal and Strudel transform time-varying patterns at live-coding time, Motivo resolves voices and loops entirely at
-compile time into a portable Standard MIDI File---the trade-off already summarized in
+compile time into a portable Standard MIDI File, the trade-off already summarized in
 Table~\ref{tab:related-work-comparison} rather than re-derived here.
 The B1--B3 fixtures stress that offline model through nested loops, chord flattening, and flat 20,000-event expansion
 at the compiler cap.
@@ -63,8 +64,8 @@ at the compiler cap.
 Unlike raw MIDI scripting, Motivo keeps compositional
 intent at the level of beats, patterns, and tracks; unlike ABC notation, the source is executable and procedurally
 generative.
-These distinctions motivated the language design; the measurements above show that pursuing them did not sacrifice
-compile-time throughput on the tested workloads.
+These distinctions motivated the language design; on the tested workloads, the measurements suggest that pursuing them
+did not materially increase compile-time cost relative to version~1.0.
 
 \subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
 
@@ -79,8 +80,8 @@ Crucially, because the MIDI file format relies on delta-times, the composer is f
 difference between every sequential event across all tracks.
 
 Motivo abstracts this entirely.
-A composer writing \texttt{play (C4, E4, G4):2;} in Motivo communicates their \textit{musical intent}---playing a
-C-Major triad for two beats.
+A composer writing \texttt{play (C4, E4, G4):2;} in Motivo communicates their \textit{musical intent} (playing a
+C-Major triad for two beats).
 Motivo's lowering engine and backend automatically handle the translation into absolute beats, the flattening into
 individual notes, the sorting by absolute tick, and the final variable-length delta-time encoding.
 

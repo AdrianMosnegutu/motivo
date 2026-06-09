@@ -36,7 +36,7 @@ the guard conditions that terminate compilation early.
 
 Each stage consumes a typed result object from its predecessor and produces the input expected by its successor.
 Figure~\ref{fig:compiler-data-artifacts} summarizes the primary data structures and their fields; the annotated AST is
-not a separate tree copy---semantic analysis attaches metadata to the existing \texttt{ast::Program} through
+not a separate tree copy; semantic analysis attaches metadata to the existing \texttt{ast::Program} through
 \texttt{AnalysisResult}.
 
 \topic{\texttt{ParseResult} (\texttt{motivo::parsing}).}
