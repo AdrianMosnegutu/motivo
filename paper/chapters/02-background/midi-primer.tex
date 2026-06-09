@@ -28,7 +28,7 @@ making MIDI the \textit{de facto} standard for digital composition~\cite{Moog_19
 Moore argues that MIDI conflates musical structure with performance data and lacks native support for higher-level
 abstractions such as phrasing and hierarchy~\cite{Moore_1988}.
 We therefore treat MIDI as an excellent \textit{backend} target while keeping compositional intent in the source
-language---a design choice Motivo adopts deliberately.
+language, a design choice Motivo adopts deliberately.
 
 \subsection{Channels and General MIDI}\label{detail-subsec:channels-and-general-midi}
 
@@ -47,4 +47,4 @@ wait after the \textit{previous} event before executing the current one.
 Ticks are subdivisions of a quarter note, defined by the file's \textit{Pulses Per Quarter-note} (PPQ) resolution (e.g.,
 480 PPQ).
 This relative timing system is efficient for serialization but requires careful calculation when translating from
-absolute musical beats into a binary file format---a task Motivo's MIDI backend performs during code generation.
+absolute musical beats into a binary file format, a task Motivo's MIDI backend performs during code generation.

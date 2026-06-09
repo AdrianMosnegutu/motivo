@@ -38,15 +38,13 @@ of diagnostics; the compiler remains a CLI subprocess with a stable interface.
   Next.js rewrites \texttt{/api/compile} to the Express \texttt{POST /compile} handler.}\label{fig:compile-sequence}
 \end{figure}
 
-When the user triggers compile (toolbar control or shortcut), \texttt{useIdeCompile} reads the current editor buffer
-and calls \texttt{compileSource}.
+When the user triggers compile (toolbar control or shortcut), the client reads the current editor buffer and posts it
+to the compile endpoint.
 The HTTP client posts \texttt{\{ source \}} to \texttt{/api/compile} with \texttt{responseType: arraybuffer} so a
 successful compile can return raw MIDI without an extra download step.
 
-On the server, Zod validates the body, then the compiler service writes \texttt{motivo-\{uuid\}.motivo} and
-\texttt{motivo-\{uuid\}.mid} under the system temporary directory, runs \texttt{motivoc} with the source path
-as its sole
-argument, and deletes both files in a \texttt{finally} block.
+On the server, Zod validates the body, then the compiler service writes source and output to temporary files, runs
+\texttt{motivoc}, and deletes both files when the request completes.
 Non-zero exit codes with stderr content are parsed line-by-line into diagnostics (lexical, syntax, semantic, lowering,
 output stages) using a regex that strips ANSI color codes and optional \texttt{line:column} locations; each parsed
 record exposes a \texttt{type} field in the JSON API (the compiler stderr labels name the pipeline stage).

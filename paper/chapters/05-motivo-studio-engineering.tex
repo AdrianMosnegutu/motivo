@@ -4,12 +4,12 @@ The compiler is the core technical artifact, but a compiler alone is not a compl
 Motivo Studio was developed to make the language usable from a browser: the user writes Motivo source, sends it to a
 backend service, receives either MIDI bytes or diagnostics, and sees the resulting music in an editor-centered
 interface.
-This chapter describes that \textit{product and operations layer}---application architecture, compile request flow,
+This chapter describes that \textit{product and operations layer}: application architecture, compile request flow,
 editor integration, visualization, playback, authentication, file management, deployment, automated testing, and
-continuous integration---without treating the application as a secondary demo.
+continuous integration, without treating the application as a secondary demo.
 
-The same logical topology---Next.js client proxying \texttt{/api/*} to an Express server, private database networking,
-and an embedded \texttt{motivoc} binary---can be exercised on a developer machine via Docker Compose and on the public
+The same logical topology (Next.js client proxying \texttt{/api/*} to an Express server, private database networking,
+and an embedded \texttt{motivoc} binary) can be exercised on a developer machine via Docker Compose and on the public
 internet via Railway and Cloudflare.
 Quality verification and deploy gates are documented alongside runtime configuration.
 

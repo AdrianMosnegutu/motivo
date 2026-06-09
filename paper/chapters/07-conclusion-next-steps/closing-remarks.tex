@@ -2,10 +2,41 @@
 
 Flat event editing loses algorithmic intent; live-coding systems recover structure but couple composition to a running
 synthesizer.
-Motivo sits between those poles: structure stays in typed source, expansion is deterministic, and the artefact is a
+Motivo sits between those poles: structure stays in typed source, expansion is deterministic, and the artifact is a
 Format~1 MIDI file importable into any host.
+On the benchmark workloads in Chapter~\ref{ch:evaluation}, that design delivers: a handful of source lines expand into
+thousands of note events, compilation stays in the low-millisecond range on a local Release build, and output is
+byte-reproducible.
+The gap between flat event editing and runtime-coupled live systems, set out in Section~\ref{sec:motivation}, is closed
+for offline, rule-based symbolic composition within the scope stated here.
 
 The system does not replace digital audio workstations, live environments, or synthesis platforms.
 It complements them where repetition and symbolic rules dominate.
 Within that boundary, we delivered a validating compiler, a deployable studio, and evidence that the pipeline is fast
-enough for interactive local use---answering the question posed at the outset without overstating the scope.
+enough for interactive local use on the tested workloads.
+
+\subsection{Use Cases Revisited}\label{subsec:use-cases-revisited}
+
+Section~\ref{sec:use-cases} named four workflows; the delivered system addresses each within the scope stated above.
+
+\topic{Offline batch composition.}
+The compiler emits byte-reproducible Format~1 MIDI with no runtime at playback.
+Motivo Studio adds authenticated storage and download, so source can be edited, compiled, and imported into any standard
+host.
+
+\topic{Compact symbolic descriptions.}
+Fixtures B1--B3 expand 8--12 source lines into up to 20,000 note events in interactive compile times on a local Release
+build.
+The drum-pattern example in Chapter~\ref{ch:evaluation} shows the same pattern at smaller scale: rules replace
+hand-drawn events, and lowering materializes the timeline.
+
+\topic{Teaching algorithmic composition.}
+Motivo Studio pairs diagnostics, piano-roll preview, and browser playback without a local synthesis install.
+The integration is tested automatically; classroom or usability studies are outside this thesis.
+
+\topic{Rapid prototyping before DAW polish.}
+Patterns and control flow support motif sketches in source, with MIDI export for mixing and micro-editing in a DAW.
+This matches Section~\ref{sec:motivation}: Motivo front-loads structure rather than replacing production tooling.
+
+Taken together, these cases show the delivered system meets the offline, symbolic, complementary scope set out in
+Chapter~\ref{ch:introduction}.

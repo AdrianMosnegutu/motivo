@@ -1,23 +1,44 @@
 \section{Timeline Semantics}\label{sec:temporal-model}
 
-Motivo schedules events with a per-context cursor measured in beats.
+Motivo schedules all musical events through a cursor model measured in beats.
+Rather than relying on runtime clocks, each compositional context carries an abstract playhead whose movement is defined
+purely by source semantics.
+
+\subsection{Cursor movement in sequential contexts}
+
 \topic{Relative placement.}
-A \texttt{play} without \texttt{from} places material at the current cursor.
-Notes and rests advance the cursor by their duration; chords advance by the longest member; sequences advance
-by the sum of their parts.
-The colon operator sets an explicit duration (\texttt{play C4:0.5}).
+A \texttt{play} statement without \texttt{from} emits material at the current cursor, then advances it by the emitted
+duration.
+For primitive values, this duration follows the value kind:
+notes and rests use their explicit or default duration, chords advance by the longest member span, and sequences advance
+by the sum of their flattened members.
+The colon modifier sets an explicit duration expression (for example \texttt{play C4:0.5}).
+
 \topic{Absolute placement.}
-\texttt{from} schedules at a fixed beat without moving the cursor (\texttt{play A4 from 16;}), so layers can
-be added without disturbing sequential flow.
-\topic{Control flow and patterns.}
-\texttt{loop}, \texttt{for}, and \texttt{if} reuse the enclosing cursor---each loop iteration continues from
-the beat reached by the previous one.
-Pattern calls run against an internal cursor starting at zero; when the call completes, the caller jumps
-forward by the pattern footprint (including internal rests).
-\topic{Voices.}
-Each voice inherits the parent track cursor or a \texttt{from} offset, then maintains a parallel cursor.
-Events from voices merge into the same track output sorted by absolute beat; outer-track statements scheduled
-after a voice do not wait for the voice to finish.
+\texttt{from} schedules material at an absolute beat without moving the local cursor (\texttt{play A4 from 16;}).
+This separation allows anchoring events to fixed timeline points while preserving sequential authoring flow around them.
+
+\subsection{Pattern footprints and caller advancement}
+
+Pattern execution uses an internal cursor that starts at zero for each call.
+When the call returns, the caller cursor advances by the pattern's \emph{footprint}: the total span reached by that
+internal cursor, including embedded rests and control-flow expansion.
+This makes pattern calls compositional in time: callers can treat a pattern as one durational unit without
+inspecting its
+internal statement graph.
+
+\subsection{Voice isolation and parallel timelines}
+
+A \texttt{voice} inherits the enclosing track cursor, or a beat specified by \texttt{from}, and then advances on its own
+independent cursor.
+Advancement inside that voice does not mutate the track cursor and does not mutate sibling voice cursors.
+This isolation is essential for deterministic parallelism:
+multiple lines can begin from related reference beats yet diverge rhythmically without hidden interference.
+
+After lowering, events from track and voice contexts are merged by absolute beat into the same track output stream.
+Consequently, statements that follow a voice declaration in source continue from the track cursor rather than
+waiting for
+the longest voice branch to terminate.
 
 \begin{figure}[htbp]
   \centering

@@ -1,7 +1,24 @@
 \section{Use Cases}\label{sec:use-cases}
 
 Motivo suits composers who reason about repetition and variation but lack a concise editable source form.
-Typical workflows include offline batch composition (compile once, import the \texttt{.mid} into any host),
-compact symbolic descriptions that expand into large event lists, teaching algorithmic composition with
-immediate diagnostics and visualization in Motivo Studio, and rapid prototyping of motifs before manual
-polish in a digital audio workstation.
+The scenarios below are not exhaustive; they frame how the language and studio are intended to fit alongside
+existing production tools.
+
+\topic{Offline batch composition.}
+A composer writes Motivo source, compiles once, and imports the resulting \texttt{.mid} into any host.
+Deterministic output makes the artifact reproducible and easy to version alongside the source file.
+
+\topic{Compact symbolic descriptions.}
+Patterns, loops, and control flow can describe arrangements that would require hundreds of hand-placed events in a
+piano roll.
+The compiler expands those rules into a flat timeline at compile time, which is useful when repetitive structure
+dominates the piece.
+
+\topic{Teaching algorithmic composition.}
+Motivo Studio pairs immediate diagnostics with piano-roll preview and browser playback, so students can see how a small
+change in source affects the expanded score without configuring a synthesis stack.
+
+\topic{Rapid prototyping before DAW polish.}
+Motifs and harmonic sketches can be iterated in typed source and then refined manually in a digital audio workstation
+for mixing, micro-timing, and sound design.
+Motivo is meant to front-load structural work, not to replace downstream production steps.

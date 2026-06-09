@@ -8,7 +8,7 @@ The intermediate representation stores pitch, start beat, duration, and a fixed 
 Per-note dynamics, continuous controllers, pitch bend, and synthesis parameters are not part of the source language.
 Instruments are a closed keyword set mapped to General MIDI; compositions must live in a single file with no
 \texttt{import} mechanism.
-The lowerer caps output at 20,000 note events.
+The lowerer caps output at 20,000 note events; see Section~\ref{sec:limits} for the rationale.
 
 \topic{Workflow fit.}
 Piano-roll editing is fast for exploratory scratch work but brittle for repetition; Motivo inverts that trade-off.
@@ -16,6 +16,6 @@ It rewards composers who think in rules, loops, and variation, while hand-placed
 manipulation remain downstream in a DAW.
 
 \topic{Evaluation scope.}
-The evaluation reports compilation time, source-to-event expansion, and automated test coverage---not whether composers
+The evaluation reports compilation time, source-to-event expansion, and automated test coverage, not whether composers
 prefer Motivo over a DAW or learn the syntax quickly.
 Those questions would require a separate user study; this thesis does not claim them.

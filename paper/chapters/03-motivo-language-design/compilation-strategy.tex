@@ -1,7 +1,25 @@
 \section{Compilation Strategy}\label{sec:compilation-strategy}
 
-Motivo follows a \textit{zero-runtime} model: loops, branches, and pattern calls are expanded during compilation,
-not interpreted at playback.
-Lowering produces a flat intermediate representation of timestamped events, which the MIDI backend serializes.
-Semantic errors are reported before lowering begins; strict typing and single-pass analysis keep that pipeline
-predictable.
+Motivo adopts an explicitly offline, \textit{zero-runtime} strategy.
+Source programs are compositional specifications, not executable performance scripts:
+loops, conditionals, and pattern calls are resolved during compilation so the output artifact contains only concrete
+timestamped events.
+
+This decision addresses the tension in Section~\ref{sec:motivation} between live-coding immediacy and
+DAW-style repeatability.
+Live systems privilege on-the-fly interaction but can defer correctness and timing behavior to runtime state.
+DAW workflows privilege deterministic playback and editable structure but often lack compact algorithmic abstractions.
+Motivo commits to the deterministic side of that spectrum while retaining algorithmic source constructs through
+compile-time expansion.
+
+Semantics therefore precede lowering as a hard gate.
+Type mismatches, illegal writes across scope boundaries, and invalid play-target combinations are rejected before event
+generation begins.
+Once validated, lowering reconstructs a flat event timeline that is serialized by the MIDI backend.
+Implementation details of this pipeline and its data artifacts are discussed in
+Chapter~\ref{ch:compiler-implementation}; the present section focuses only on the language-level strategy.
+
+The zero-runtime commitment is what lets algorithmic intent survive lowering to a flat timeline.
+For a fixed source file and compiler version, the generated event schedule is reproducible and independent of
+host timing,
+thread scheduling, or interactive interpreter latency; the rules remain readable in source even after expansion.

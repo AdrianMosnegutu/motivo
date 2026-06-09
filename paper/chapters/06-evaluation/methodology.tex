@@ -3,35 +3,24 @@
 The evaluation compares two tagged compiler releases on identical synthetic workloads.
 Version~1.0 corresponds to git tag \texttt{v1.0.0-base} and the \texttt{dslrc} CLI over \texttt{.dsl} sources;
 version~2.0 corresponds to \texttt{v2.0.0-explicit-types} and the \texttt{motivoc} CLI over \texttt{.motivo} sources.
-Both binaries were built from the monorepo root in separate Release directories
-(\texttt{build/bench-v1} and \texttt{build/bench-v2}) with \texttt{-DCMAKE\_BUILD\_TYPE=Release} and
-\texttt{-DBUILD\_TESTING=OFF}, then benchmarked on the same machine without checkout thrashing between runs.
+Both binaries were built as separate Release configurations from the same codebase and benchmarked on one
+machine without
+switching versions between runs.
 
 Measurements were taken on an Apple M3 Pro (arm64, macOS~26.5) with 18~GB of RAM.
-Wall-clock times were recorded by the thesis harness script \texttt{run-benchmark.sh}, which wraps each compiler
+Wall-clock times were recorded by a small benchmark harness that wraps each compiler
 invocation in Python's \texttt{time.perf\_counter}, performs 5 warmup runs, and averages 50 measured runs.
 Each measured command compiles one source file and writes a \texttt{.mid} file beside the input, so the timer includes
 process startup, parsing, semantic analysis, lowering, MIDI serialization, and file I/O.
 
-Per-stage breakdowns use in-process \texttt{std::chrono} timers gated by \texttt{MOTIVO\_BENCHMARK=1} in a small
-patch applied to \texttt{compiler.cpp} on both tagged worktrees.
+Per-stage breakdowns use in-process timers enabled through a compile-time benchmark flag in the compiler driver.
 These timers report parse, semantic, lowering, and MIDI-write means independently of subprocess overhead; their sum is
 therefore smaller than the end-to-end wall-clock total.
-Aggregated JSON results and the reproduction procedure are documented under
-\texttt{paper/.specs-fire/context/benchmarks/}.
 
-The benchmark corpus is synthetic.
-It was built to exercise source-to-event expansion and compiler throughput at the current 20,000-event safety limit
-rather than to produce musically refined pieces.
-A loop that generates 20,000 notes is useful for measuring expansion and compilation cost, but it does not prove that
-the generated score is artistically interesting.
-The benchmark therefore supports the engineering claim that Motivo can generate many symbolic events from compact
-source rules within the tested limit.
-
-A defining characteristic of the Motivo compiler is its ``zero-runtime'' architecture, which shifts the computational
-burden entirely to the compilation phase.
-To evaluate the viability of this approach, it is essential to analyze the compiler's execution speed, particularly as
-the complexity of the musical composition scales.
+The fixtures are synthetic stress programs: they exercise expansion and throughput at the implementation's
+20,000-event cap (Section~\ref{sec:limits}) rather than modeling finished compositions.
+The evaluation therefore targets engineering properties (expansion ratio, compile time, and safety limits), not musical
+quality or user preference.
 
 \subsection{Theoretical Complexity}\label{detail-subsec:theoretical-complexity}
 

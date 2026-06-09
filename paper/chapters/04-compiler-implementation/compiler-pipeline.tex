@@ -8,13 +8,12 @@ generation, and allows each module to be tested in isolation.
 
 \subsection{Orchestration and Control Flow}\label{detail-subsec:orchestration}
 
-The public entry point \texttt{motivo::compile} in \texttt{compiler/src/motivo/compiler.cpp} orchestrates the full
-pipeline.
+The public entry point \texttt{motivo::compile} orchestrates the full pipeline.
 A single \texttt{DiagnosticsEngine} instance is created at the start and passed by reference into every stage that can
 report structured errors; the engine accumulates \texttt{Diagnostic} records tagged with a \texttt{DiagnosticStage}
 (\texttt{Parsing}, \texttt{Semantic}, \texttt{Lowering}, or \texttt{Output}) and an optional source location.
-After each stage, \texttt{compiler.cpp} checks for stage-specific failures and returns early with the collected
-diagnostics rather than proceeding on invalid input.
+After each stage, the driver checks for stage-specific failures and returns early with the collected diagnostics rather
+than proceeding on invalid input.
 
 The orchestration sequence matches the implementation exactly:
 
@@ -36,7 +35,7 @@ the guard conditions that terminate compilation early.
 
 Each stage consumes a typed result object from its predecessor and produces the input expected by its successor.
 Figure~\ref{fig:compiler-data-artifacts} summarizes the primary data structures and their fields; the annotated AST is
-not a separate tree copy---semantic analysis attaches metadata to the existing \texttt{ast::Program} through
+not a separate tree copy; semantic analysis attaches metadata to the existing \texttt{ast::Program} through
 \texttt{AnalysisResult}.
 
 \topic{\texttt{ParseResult} (\texttt{motivo::parsing}).}
@@ -66,22 +65,22 @@ or throws an exception converted to an output-stage diagnostic.
 
 The transformation process is organized into four conceptual stages aligned with the pipeline diagram above.
 
-\topic{Text to tree (frontend).} Flex (\texttt{parsing/detail/scanner.l}) tokenizes the character stream;
-Bison (\texttt{parsing/detail/parser.y}) reduces tokens to an \texttt{ast::Program}.
+\topic{Text to tree (frontend).} The Flex scanner tokenizes the character stream; the Bison parser reduces tokens to an
+\texttt{ast::Program}.
 The AST captures logical hierarchy (patterns, tracks, voices) without temporal resolution.
 
 \topic{Tree to annotated tree (semantic analysis).} \texttt{detail::Traversal} performs symbol resolution,
 explicit type checking, and musical constraint validation in a single walk.
 Collectors register pattern symbols before bodies are visited; validators enforce operand and call-site rules; visitors
-in \texttt{semantic/detail/traversal/visitors/} dispatch on \texttt{std::variant} node kinds.
+dispatch on \texttt{std::variant} node kinds.
 
 \topic{Tree to timeline (lowering).} \texttt{detail::LowererContext} executes the annotated program like an
-interpreter: \texttt{ast\_lowerers/} emit \texttt{NoteEvent}s, \texttt{expression\_evaluators/} resolve runtime
-\texttt{ir::Value}s, and \texttt{value\_flattener.cpp} expands chords and sequences into atomic events.
+interpreter: statement lowerers emit \texttt{NoteEvent}s, expression evaluators resolve runtime \texttt{ir::Value}s, and
+the value flattener expands chords and sequences into atomic events.
 
-\topic{Timeline to binary (backend).} \texttt{midi/write\_midi.cpp} converts absolute beat positions to MIDI
-ticks, splits each note into Note-On and Note-Off messages, stable-sorts events, and writes delta-time encoded track
-chunks.
+\topic{Timeline to binary (backend).} The MIDI backend converts absolute beat positions to ticks, splits each note
+into Note-On and Note-Off messages, stable-sorts events, and writes delta-time encoded track chunks via
+\texttt{midi::write\_midi}.
 
 \begin{figure}[p]
   \centering
@@ -128,9 +127,9 @@ chunks.
       \draw[motivo/arrow, dashed, draw=motivoRose!55] (diagbox.south) -- ++(0,-0.25) -| (midi.north);
     \end{tikzpicture}%
   }
-  \caption{Full compiler pipeline orchestrated by \texttt{motivo::compile} in \texttt{compiler.cpp},
-    including early-exit guards after each stage and the shared \texttt{DiagnosticsEngine} reference passed to every
-  reporting site.}\label{fig:compiler-pipeline-full}
+  \caption{Full compiler pipeline orchestrated by \texttt{motivo::compile}, including early-exit guards after each
+    stage and the shared \texttt{DiagnosticsEngine} reference passed to every reporting
+  site.}\label{fig:compiler-pipeline-full}
 \end{figure}
 
 \begin{figure}[htbp]
@@ -168,11 +167,6 @@ chunks.
     \texttt{AnalysisResult} $\rightarrow$ \texttt{ir::Program} $\rightarrow$ MIDI
   file.}\label{fig:compiler-data-artifacts}
 \end{figure}
-
-\subsection{Technical Foundations}\label{subsec:implementation-foundations}
-
-The implementation balances high-level musical expressiveness with low-level binary precision.
-The discussion below covers the C++ language features that support this architecture.
 
 \subsection{Language Choice: Modern C++ (C++23)}\label{detail-subsec:language-choice:-modern-c++-(c++23)}
 

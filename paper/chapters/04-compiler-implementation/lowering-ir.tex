@@ -34,21 +34,16 @@ It maintains a ``cursor'' (a \texttt{double} passed by reference) tracking the c
 
 The \texttt{lower\_statement} function utilizes \texttt{std::visit} to dispatch logic based on the statement kind:
 
-\topic{\texttt{PlayStatement}.} The lowerer evaluates the play target.
-It determines the note duration (using the default, or overriding it if the \texttt{:} operator is present).
-The start beat is set to the current cursor value, and the event is emitted.
-Finally, the cursor is advanced by the duration.
-If the \texttt{from} keyword is used, the start beat is overridden by the evaluated offset, and the cursor is
-\textit{not} advanced.
+\topic{\texttt{PlayStatement}.} The lowerer evaluates the play target, resolves duration (default or \texttt{:}
+override), emits the event at the current cursor, and advances the cursor by that duration unless \texttt{from}
+supplies an explicit start beat (in which case the cursor is left unchanged).
 
-\topic{\texttt{LoopStatement} and \texttt{ForStatement}.} The engine evaluates the iteration count or
-condition, then enters a loop in C++, recursively calling \texttt{lower\_block} for the body.
-Because the \texttt{cursor} reference is passed down, the temporal state is naturally preserved across iterations,
-placing notes end-to-end.
+\topic{\texttt{LoopStatement} and \texttt{ForStatement}.} The lowerer evaluates the iteration count or condition,
+then recursively calls \texttt{lower\_block} for each body execution.
+The cursor reference propagates into the body, so consecutive iterations place notes end-to-end on the same timeline.
 
-\topic{\texttt{IfStatement}.} The lowerer evaluates the boolean condition into a concrete \texttt{true} or
-\texttt{false}.
-Only the matching branch is traversed, effectively performing ``compile-time pruning''.
+\topic{\texttt{IfStatement}.} The lowerer evaluates the boolean condition and traverses only the matching branch,
+pruning the other branch at compile time.
 
 \subsection{Dynamic Expression Evaluation}\label{detail-subsec:dynamic-expression-evaluation}
 
@@ -111,8 +106,12 @@ voice block, the
 \texttt{outer\_cursor} is completely unmodified.
 
 This isolation keeps the parent track and sibling voices aligned according to the compiler cursor model at
-their starting beats, without requiring the author to calculate the intervening offsets manually.
+their starting beats, without requiring the composer to calculate the intervening offsets manually.
 
 \texttt{LowererContext} enforces a hard cap of \texttt{MAX\_EVENTS = 20000} total emitted notes across the program.
-Exceeding the limit reports a lowering error rather than producing an unusably large MIDI file.
-This guard complements semantic analysis, which validates structure but does not bound runtime unrolling depth.
+The cap provides a termination guarantee for programs whose iteration count is not statically bounded: Motivo accepts
+\texttt{for (;;)} and other loops whose trip count semantic analysis cannot prove finite, so lowering must stop after a
+fixed number of emitted events rather than unrolling indefinitely.
+Exceeding the limit reports a lowering error.
+This guard complements semantic analysis, which validates structure but does not prove loop termination or bound
+runtime expansion depth.
