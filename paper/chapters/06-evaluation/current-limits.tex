@@ -8,14 +8,16 @@ This is a deliberate compile-time safety boundary.
 The cap provides a termination guarantee for programs whose iteration count is not statically bounded: Motivo accepts
 \texttt{for (;;)} and other loops whose trip count semantic analysis cannot prove finite, so lowering must stop after a
 fixed number of emitted events rather than unrolling indefinitely.
-The value 20{,}000 is an implementation limit that stops unrolling with a diagnostic once reached; it is not a claim about
+The value 20{,}000 is an implementation limit that stops unrolling with a diagnostic once reached; it is not
+a claim about
 maximum composition length in principle.
 
 \subsection{Data layout and retained state}\label{detail-subsec:memory-footprint}
 
 The event cap is the primary resource safeguard; memory use otherwise scales with the materialized timeline rather than
 with abstract control flow.
-The AST stores statements and expressions in \texttt{std::variant} sum types with \texttt{std::visit} dispatch; recursive
+The AST stores statements and expressions in \texttt{std::variant} sum types with \texttt{std::visit}
+dispatch; recursive
 structure uses \texttt{std::unique\_ptr} nodes while symbol and annotation tables live in contiguous vectors indexed by
 opaque IDs.
 The lowering IR holds only atomic fields per event (pitch, start beat, duration, velocity) in tightly packed

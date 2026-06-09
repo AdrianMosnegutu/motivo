@@ -43,7 +43,8 @@ physical deployment and environment differences are in Section~\ref{sec:deployme
 
 The compile path deliberately keeps a narrow boundary: TypeScript in the client and server, C++ only inside
 \texttt{motivoc}.
-The server validates compile bodies, writes source to a temporary file, invokes the embedded \texttt{motivoc} binary, and
+The server validates compile bodies, writes source to a temporary file, invokes the embedded \texttt{motivoc}
+binary, and
 returns either \texttt{audio/midi} bytes or JSON diagnostics parsed from stderr.
 File and auth routes live on the same Express app but require a valid session cookie.
 

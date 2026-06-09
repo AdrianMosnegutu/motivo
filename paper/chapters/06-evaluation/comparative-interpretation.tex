@@ -13,7 +13,8 @@ Version~1.0 inferred types from \texttt{let} initializers, resolved pattern over
 pass (\texttt{validate\_pattern\_instantiation}) that simulated pattern bodies under concrete arguments; version~2.0
 requires explicit declarations, matches overloads by parameter signatures, and checks assignability in a single
 traversal.
-The engineering question for this evaluation is whether those stricter static guarantees impose measurable cost at scale.
+The engineering question for this evaluation is whether those stricter static guarantees impose measurable
+cost at scale.
 
 Table~\ref{tab:benchmark-wall-clock} answers that question on the B1--B3 fixtures.
 End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$, effectively
@@ -67,6 +68,7 @@ did not materially increase compile-time cost relative to version~1.0.
 
 The contrast between Motivo source and raw \texttt{mido}-style MIDI scripting (from \texttt{play (C4, E4, G4):2} to
 the hi-hat loop in Listing~\ref{lst:midi-scripting-comparison}) is developed in
-Section~\ref{sec:motivation} because it motivates the language design rather than the benchmark evidence in this chapter.
+Section~\ref{sec:motivation} because it motivates the language design rather than the benchmark evidence in
+this chapter.
 The B1--B3 measurements neither quantify that verbosity gap nor depend on it; they instead confirm that pursuing
 domain-level abstractions did not materially increase compile-time cost relative to version~1.0.

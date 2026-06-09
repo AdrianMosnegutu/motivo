@@ -16,7 +16,8 @@ Explicit source types in version~2 make contracts visible at declaration sites, 
 call itself instead of being deferred.
 
 The practical consequence is earlier feedback:
-type and binding errors are reported where the mismatch is introduced, and lowering can consume analysis results directly
+type and binding errors are reported where the mismatch is introduced, and lowering can consume analysis
+results directly
 without re-deriving symbol or expression metadata.
 
 \subsection{Scoping model and writable boundaries}
@@ -28,11 +29,11 @@ Let $\Gamma$ be the visible symbol environment and $W$ the innermost scope that 
 position.
 Identifier lookup follows standard lexical rules, but assignment must satisfy both visibility and boundary permissions:
 \[
-\Gamma \vdash x : \tau,\quad
-\Gamma \vdash e : \tau,\quad
-\mathrm{scope}(x) \preceq W
-\;\Rightarrow\;
-\Gamma, W \vdash (x \leftarrow e)\ \text{is valid}
+  \Gamma \vdash x : \tau,\quad
+  \Gamma \vdash e : \tau,\quad
+  \mathrm{scope}(x) \preceq W
+  \;\Rightarrow\;
+  \Gamma, W \vdash (x \leftarrow e)\ \text{is valid}
 \]
 If the declaration scope of $x$ lies outside the writable boundary $W$, assignment is rejected even when the type
 matches.
@@ -54,9 +55,9 @@ Declarable source types are \texttt{int}, \texttt{double}, \texttt{bool}, \textt
 \texttt{chord}.
 Declarations and assignments require exact type equality:
 \[
-\Gamma \vdash e : \tau
-\;\Rightarrow\;
-\Gamma \vdash \text{declare}(x:\tau, e)\ \text{is valid}
+  \Gamma \vdash e : \tau
+  \;\Rightarrow\;
+  \Gamma \vdash \text{declare}(x:\tau, e)\ \text{is valid}
 \]
 and any $\tau' \neq \tau$ is a type error.
 Thus \texttt{int x = 1.0;} is invalid even though numeric operators may produce promoted intermediate results.

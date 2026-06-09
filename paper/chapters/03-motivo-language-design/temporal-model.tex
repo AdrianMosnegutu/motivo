@@ -23,7 +23,8 @@ This separation allows anchoring events to fixed timeline points while preservin
 Pattern execution uses an internal cursor that starts at zero for each call.
 When the call returns, the caller cursor advances by the pattern's \emph{footprint}: the total span reached by that
 internal cursor, including embedded rests and control-flow expansion.
-This makes pattern calls compositional in time: callers can treat a pattern as one durational unit without inspecting its
+This makes pattern calls compositional in time: callers can treat a pattern as one durational unit without
+inspecting its
 internal statement graph.
 
 \subsection{Voice isolation and parallel timelines}
@@ -35,7 +36,8 @@ This isolation is essential for deterministic parallelism:
 multiple lines can begin from related reference beats yet diverge rhythmically without hidden interference.
 
 After lowering, events from track and voice contexts are merged by absolute beat into the same track output stream.
-Consequently, statements that follow a voice declaration in source continue from the track cursor rather than waiting for
+Consequently, statements that follow a voice declaration in source continue from the track cursor rather than
+waiting for
 the longest voice branch to terminate.
 
 \begin{figure}[htbp]
