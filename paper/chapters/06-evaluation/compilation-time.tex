@@ -84,19 +84,20 @@ consistent with explicit type checking, but the absolute cost is negligible comp
         width=0.92\textwidth,
         height=6.5cm,
         ymin=0,
+        ymax=9,
         ylabel={Mean compile time (ms)},
         symbolic x coords={B1,B2,B3},
         xtick=data,
         legend style={at={(0.5,-0.16)}, anchor=north, legend columns=2, font=\scriptsize},
-        bar width=13pt,
-        enlarge x limits=0.15,
+        bar width=14pt,
+        enlarge x limits=0.12,
       ]
-      \addplot[fill=motivoBlue!70, draw=motivoBlue!90] coordinates {
+      \addplot[fill=motivoBlue!75, draw=motivoBlue!90, fill opacity=0.75, solid] coordinates {
         (B1,7.92)
         (B2,5.06)
         (B3,8.07)
       };
-      \addplot[fill=motivoGreen!70, draw=motivoGreen!90] coordinates {
+      \addplot[fill=motivoGreen!75, draw=motivoGreen!90, fill opacity=0.75, solid] coordinates {
         (B1,8.06)
         (B2,5.10)
         (B3,8.06)
@@ -104,7 +105,9 @@ consistent with explicit type checking, but the absolute cost is negligible comp
       \legend{Version 1.0, Version 2.0}
     \end{axis}
   \end{tikzpicture}
-  \caption{End-to-end wall-clock means for benchmark programs B1--B3 (version~1.0 vs.\ version~2.0).}%
+  \caption{End-to-end wall-clock means for benchmark programs B1--B3 (version~1.0 vs.\ version~2.0).
+    Version~2.0 bars use semi-transparent fill so overlapping regions blend and the taller series remains visible at the
+  cap.}%
   \label{fig:benchmark-time}
 \end{figure}
 
