@@ -134,3 +134,9 @@ The semantic phase does not limit loop iteration counts or pattern recursion dep
 A finite loop within the event cap succeeds; an infinite \texttt{for (;;)} terminates only when the event cap is hit.
 This trade-off keeps the semantic pass single-pass and defers cost analysis to lowering, where emitted events are the
 measurable unit of work.
+
+With the pipeline, its data artifacts, and its diagnostic guarantees now accounted for, the compiler stands as a
+complete technical artifact: source text in, validated Standard MIDI File out.
+A compiler alone, however, is not something a composer can use.
+The next chapter wraps \texttt{motivoc} in Motivo Studio, the browser-based product and operations layer that turns the
+toolchain into a deployable service.

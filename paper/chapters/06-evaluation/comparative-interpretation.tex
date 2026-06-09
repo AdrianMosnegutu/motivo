@@ -39,7 +39,7 @@ and a simpler semantic architecture, while preserving output equivalence on the 
 
 Representative music programming systems differ along three axes that also frame this evaluation: live performance
 versus offline artifacts, composition separated from synthesis, and explicit temporal structure versus implicit
-sequencing (Table~\ref{tab:related-work-comparison}).
+sequencing (surveyed in Section~\ref{sec:related-work}).
 Live-coding languages such as Sonic Pi, Tidal, Strudel, and HMusic prioritize interactive pattern manipulation and
 stream events to external synthesis backends.
 Real-time audio languages including ChucK and SuperCollider expose fine-grained timing and concurrent processes at the
@@ -54,8 +54,8 @@ overhead for
 explicit typing in version~2.0.
 Where Sonic Pi advances time through \texttt{sleep} and parallel \texttt{in\_thread} blocks during performance, and
 Tidal and Strudel transform time-varying patterns at live-coding time, Motivo resolves voices and loops entirely at
-compile time into a portable Standard MIDI File, the trade-off already summarized in
-Table~\ref{tab:related-work-comparison} rather than re-derived here.
+compile time into a portable Standard MIDI File, the trade-off already discussed in
+Section~\ref{sec:motivo-position} rather than re-derived here.
 The B1--B3 fixtures stress that offline model through nested loops, chord flattening, and flat 20,000-event expansion
 at the compiler cap.
 

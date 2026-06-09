@@ -2,33 +2,58 @@
 
 Existing music programming systems differ in live versus offline targeting, in whether composition is separated from
 synthesis, and in how temporal structure is expressed.
-This section surveys representative languages; the research-gap section below synthesizes how Motivo differs.
+Several of the systems below belong to the live-coding tradition, in which a performer writes and edits program text
+on stage as an established performance practice in its own right~\cite{Collins_McLean_Rohrhuber_Ward_2003}.
+This section surveys representative languages in turn; for each, it describes how the system approaches composition,
+the niche it shares with Motivo, and the gap that remains relative to this thesis.
+The research-gap section below then synthesizes those gaps into the position Motivo occupies.
 
 \topic{Sonic Pi.} Embeds Ruby for education and live performance~\cite{Aaron_Blackwell_2013,Aaron_2016}, wrapping
 SuperCollider behind \texttt{play} and \texttt{sleep}.
 Its temporal model is imperative: a thread-local clock advances as statements run, so onsets are relative to execution
 time and long-range form is expressed through live program order rather than a pre-materialized timeline.
-
+Like Motivo, it exposes composition as readable, textual source rather than hand-placed events, and it shares the
+conviction that program structure is a natural way to describe music.
 Aaron emphasizes classrooms and on-stage improvisation, where immediate feedback outweighs freezing a finished
-score~\cite{Aaron_2016}.
-Every \texttt{play} assumes a running synthesizer; no compile pass validates a complete song and emits portable MIDI.
-For Motivo, the gap is performance coupling: offline, deterministic symbolic compilation is not a first-class outcome.
+score~\cite{Aaron_2016}, and every \texttt{play} assumes a running synthesizer; no compile pass validates a complete
+song and emits a portable artifact.
+For Motivo, the gap is performance coupling: offline, deterministic symbolic compilation is not a first-class outcome,
+and the rules that generated a passage are recoverable only by re-reading and re-running the live program.
 
 \topic{TidalCycles and Strudel.} Represent music as time-varying patterns composed
 functionally~\cite{McLean_Wiggins_2010}.
 Time is cyclic rather than imperative: patterns describe events within repeating cycles, combined and transformed
 while a performance clock runs, which suits reshaping rhythm and harmony mid-set.
-
-Strudel ports that model to the browser with WebAudio, OSC, and optional MIDI~\cite{Roos_McLean_2023}.
+Their pattern algebra is the closest relative to Motivo's compositional ambitions, since both treat repetition and
+variation as first-class, composable operations rather than as duplicated note data.
+Strudel ports that model to the browser with WebAudio, OSC, and optional MIDI~\cite{Roos_McLean_2023}, broadening reach
+without changing the underlying execution model.
 Both systems evaluate patterns at show time and stream events to external backends; even MIDI output serves a live
-session, not a deterministic compile pass.
-Motivo instead targets a self-contained Format~1 file importable without the pattern engine running.
+session rather than a deterministic compile pass.
+Motivo instead targets a self-contained Format~1 file importable without the pattern engine running, so the timeline
+exists independently of any performance clock.
 
-\topic{HMusic, ChucK, and SuperCollider.} HMusic compiles Haskell tracks to Sonic
-Pi~\cite{Du_Bois_Ribeiro_2019}; ChucK and SuperCollider~\cite{Wang_Cook_2003,Wang_2008,McCartney_2002,
-Wilson_Cottle_Collins_2011} foreground sample-level synthesis.
-Table~\ref{tab:related-work-comparison} records how all three remain performance-coupled rather than oriented toward
-offline symbolic compilation.
+\topic{HMusic.} Compiles Haskell-embedded track and pattern descriptions to Sonic Pi~\cite{Du_Bois_Ribeiro_2019},
+representing music as grid-like patterns and parallel tracks that can be combined with algebraic operators.
+It shares Motivo's interest in a compilation step and in abstracting repetitive structure above the level of individual
+events.
+Its target, however, is Sonic Pi source, so the generated program inherits the same live-synthesis assumptions: the
+output remains performance-coupled rather than a portable symbolic artifact validated independently of a running
+backend.
 
-Across the surveyed languages, composition and execution tend to be intertwined.
+\topic{ChucK.} Foregrounds sample-level synthesis with a \emph{strongly-timed} model in which the program advances
+time explicitly and synchronizes concurrent ``shreds''~\cite{Wang_Cook_2003,Wang_2008}.
+This gives composers fine-grained, deterministic control over \emph{when} computation happens, an interest Motivo
+shares in spirit through its compile-time scheduling of events.
+The control, however, operates at the level of audio time and concurrent processes rather than hierarchical song
+structure; high-level compositional constructs such as motifs, sections, and reusable patterns are not the unit of
+abstraction, and there is no offline pass that emits a portable score.
+
+\topic{SuperCollider.} Separates a synthesis server from a client language and expresses music through unit generators,
+patterns, and streams driven over OSC~\cite{McCartney_2002,Wilson_Cottle_Collins_2011}.
+Its pattern and stream libraries demonstrate, like Motivo, that compact descriptions can generate large amounts of
+musical material.
+Yet composition and execution are not separated: patterns are realized by a running server, so the description and its
+playback are bound together, and there is no notion of compiling a complete piece down to a standalone symbolic file.
+Across all of these systems, composition and execution tend to be intertwined.
 Motivo instead compiles source to a self-contained Format~1 MIDI file with no Motivo runtime at playback time.

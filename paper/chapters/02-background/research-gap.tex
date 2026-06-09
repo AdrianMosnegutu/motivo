@@ -10,32 +10,6 @@ structure~\cite{Wang_Cook_2003,McCartney_2002}.
 None of the surveyed DSLs treats offline, deterministic compilation to a portable symbolic file as its primary design
 goal, nor do they combine typed imperative source with a zero-runtime expansion model.
 
-Table~\ref{tab:related-work-comparison} summarizes those languages and the trade-offs that motivate Motivo.
-
-\begin{table}[htbp]
-  \centering
-  \footnotesize
-  \renewcommand{\arraystretch}{1.5}
-  \begin{tabular}{M{2.2cm}M{2.5cm}M{4cm}M{5cm}}
-    \toprule
-    \textbf{System / Language} & \textbf{Class} & \textbf{Temporal / structural model} & \textbf{Main gap
-    relative to this thesis} \\
-    \midrule
-    Sonic Pi & Live coding & Sequential execution with notes, sleeps, and simple patterns &
-    Live synthesis target; limited structural abstraction for offline MIDI compilation \\
-    Tidal / Strudel & Live coding & Time-varying patterns with functional composition &
-    Event streaming to external backends; no deterministic offline MIDI as primary artifact \\
-    HMusic & Live coding & Grid-like patterns and parallel tracks & Compiles to Sonic Pi; remains performance-coupled \\
-    ChucK & Real-time synthesis & Explicit time advancement and synchronized concurrent shreds &
-    Low-level time management; weak high-level compositional structure \\
-    Super\-Collider & Real-time synthesis & UGens, patterns, and streams over OSC &
-    Synthesis-oriented; composition and execution not separated \\
-    \bottomrule
-  \end{tabular}
-  \caption{Comparison of the main musical domain-specific languages surveyed in this
-  chapter.}\label{tab:related-work-comparison}
-\end{table}
-
 From this analysis, three gaps among existing musical DSLs emerge.
 First, most target live performance or synthesis, leaving offline deterministic compilation underexplored as a primary
 design goal.
@@ -48,3 +22,7 @@ a compiler that validates structure and expands it deterministically into a flat
 File as the portable output artifact.
 Patterns and loops compress repetitive structure in the source program while the lowering stage materializes the full
 event stream, as introduced in the compression argument above.
+
+Having located Motivo against these systems, the next chapter turns from \emph{why} such a language is warranted to
+\emph{what} it actually is: Chapter~\ref{ch:language-design} specifies Motivo's conceptual model, grammar, type system,
+and temporal semantics, making concrete the typed, offline, zero-runtime design just argued for.

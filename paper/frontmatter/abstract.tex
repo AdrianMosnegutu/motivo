@@ -13,12 +13,14 @@ This thesis presents \textit{Motivo}, a domain-specific language, offline C++ co
 keeps compositional structure explicit in typed source and expands it deterministically into a Standard MIDI File
 without a language runtime at playback.
 
-We describe the language semantics, multi-stage compiler pipeline, Motivo Studio integration, and an empirical
-evaluation on synthetic workloads.
+We describe the language semantics, the multi-stage compiler pipeline, and the integration of the toolchain into
+Motivo Studio, followed by an empirical evaluation on synthetic workloads.
+
 The compiler expands programs of fewer than fifteen lines into timelines of up to 20,000 note events in about 5--8~ms
-end-to-end on a local Release build; explicit typing in version~2.0 adds negligible overhead while preserving
+end-to-end on a local Release build, while explicit typing in version~2.0 adds negligible overhead and preserves
 byte-identical MIDI output.
 Automated testing comprises 745 cases (635 compiler, 31 server, 79 client), covering the toolchain from parsing through
 deployment.
+
 Motivo complements established digital audio workstation workflows: it recovers editable structure in source form while
 exporting portable scores that interoperate with conventional production tools.
