@@ -23,6 +23,7 @@ experiments/
     stress/                 # synthetic worst-cases, all <= 20000-event cap
       scaling/  nesting/  voices/  chords/  expr/  cap/
     general/                # real compositions (Fur Elise, Come As You Are, Pirates, example)
+  patches/                  # benchmark instrumentation for the v1/v2 tags (not in the tags)
   results/                              # generated, git-ignored; regenerate with run-all.sh
     reproduction/  stress/  general/    # SUMMARY.md + results.csv + per-fixture JSON
 ```
@@ -114,6 +115,12 @@ A benchmark build emits two stderr lines per compile — `MOTIVO_BENCHMARK_STAGE
 The tagged v1/v2 binaries predate this and use the older runtime `MOTIVO_BENCHMARK=1`
 env-var gate (still set by the harness), so they emit per-stage timings but no event count;
 B1–B3 counts are known by construction (20000 / 9980 / 20000).
+
+That env-gated instrumentation is **not committed to the v1/v2 tags** — it lives in
+`patches/v1-benchmark.patch` and `patches/v2-benchmark.patch`. `run-all.sh` `git apply`s the
+matching patch right after creating each tag worktree, so the per-stage v1/v2 breakdown
+reproduces from a clean checkout. Without the patch, a clean tag build still reproduces v1/v2
+wall-clock and byte-identical MIDI, just not the per-stage split.
 
 To build the current compiler with instrumentation manually:
 

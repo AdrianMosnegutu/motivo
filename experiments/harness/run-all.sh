@@ -28,8 +28,13 @@ build_compiler() { # <build-dir> <src-dir> [extra cmake args...]
   cmake --build "$bdir" -j"$NP" >/dev/null
 }
 
-ensure_worktree() { # <path> <tag>
-  [[ -d "$1" ]] || git worktree add --detach "$1" "$2" >/dev/null
+ensure_worktree() { # <path> <tag> <patch>
+  # The per-stage timing instrumentation is not in the v1/v2 tags, so apply the
+  # benchmark patch when first creating the worktree (idempotent: only on creation).
+  if [[ ! -d "$1" ]]; then
+    git worktree add --detach "$1" "$2" >/dev/null
+    git -C "$1" apply "$3"
+  fi
 }
 
 # --- Current motivoc, built with benchmark instrumentation compiled in ---
@@ -41,14 +46,14 @@ fi
 
 # --- v1 / v2 from tags (self-contained worktrees under build/) ---
 if [[ -z "${DSLRC_V1:-}" || ! -x "${DSLRC_V1:-}" ]]; then
-  echo "==> building v1.0.0-base dslrc (Release)"
-  ensure_worktree "$REPO/build/wt-v1" v1.0.0-base
+  echo "==> building v1.0.0-base dslrc (Release, benchmark patch applied)"
+  ensure_worktree "$REPO/build/wt-v1" v1.0.0-base "$EXP/patches/v1-benchmark.patch"
   build_compiler "$REPO/build/wt-v1/build/rel" "$REPO/build/wt-v1/code/compiler"
   DSLRC_V1="$REPO/build/wt-v1/build/rel/apps/dslrc"
 fi
 if [[ -z "${MOTIVOC_V2:-}" || ! -x "${MOTIVOC_V2:-}" ]]; then
-  echo "==> building v2.0.0-explicit-types motivoc (Release)"
-  ensure_worktree "$REPO/build/wt-v2" v2.0.0-explicit-types
+  echo "==> building v2.0.0-explicit-types motivoc (Release, benchmark patch applied)"
+  ensure_worktree "$REPO/build/wt-v2" v2.0.0-explicit-types "$EXP/patches/v2-benchmark.patch"
   build_compiler "$REPO/build/wt-v2/build/rel" "$REPO/build/wt-v2/code/compiler"
   MOTIVOC_V2="$REPO/build/wt-v2/build/rel/apps/motivoc"
 fi
