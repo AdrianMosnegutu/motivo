@@ -77,9 +77,8 @@ CompileResult compile(FILE* input, const std::string& source_name, const std::st
         diagnostics.report(DiagnosticStage::Output, DiagnosticSeverity::Error, error.what());
     }
 
-    MOTIVO_BENCH(for (const auto& track : lowered.program()->tracks) { timings.note_events += track.events.size(); }
-
-                 timings.emit();)
+    MOTIVO_BENCH(for (const auto& track
+                      : lowered.program()->tracks) { timings.note_events += track.events.size(); } timings.emit();)
 
     return CompileResult(diagnostics.take_diagnostics());
 }
