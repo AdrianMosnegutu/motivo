@@ -1,31 +1,26 @@
 \section{Structure of This Thesis}\label{sec:thesis-structure}
 
-Table~\ref{tab:thesis-roadmap} summarizes the thesis structure.
+The remainder of this thesis follows the path from problem to artifact to evidence.
+The present chapter has set out the problem, its motivation and relevance, the representative use cases, and the
+contributions that frame the work.
 
-\begin{table}[htbp]
-  \centering
-  \footnotesize
-  \renewcommand{\arraystretch}{1.35}
-  \begin{tabular}{M{1.2cm}M{4.5cm}M{7.5cm}}
-    \toprule
-    \textbf{Ch.} & \textbf{Title} & \textbf{What the reader learns} \\
-    \midrule
-    1 & Introduction &
-    Problem, motivation, relevance, use cases, and roadmap \\
-    2 & Background &
-    Digital music context, music and MIDI primers, compiler theory, algorithmic composition overview, related
-    musical DSLs, research gap \\
-    3 & Motivo language design &
-    Grammar, types, semantics, temporal model, version~1 to version~2 evolution \\
-    4 & Compiler implementation &
-    Pipeline, frontend, semantic pass, lowering, MIDI backend \\
-    5 & Motivo Studio and engineering operations &
-    Web IDE, server, persistence, testing, CI/CD, deployment \\
-    6 & Evaluation &
-    Benchmarks, compilation time, event expansion, limits \\
-    7 & Conclusion &
-    Contributions, limitations, future work, use cases revisited \\
-    \bottomrule
-  \end{tabular}
-  \caption{Roadmap of the thesis chapters.}\label{tab:thesis-roadmap}
-\end{table}
+Chapter~\ref{ch:background} establishes the foundations the later chapters build on: it situates the work in its
+digital-music context, gives concise primers on music notation and MIDI and on compiler theory, surveys algorithmic
+composition and related musical domain-specific languages, and from that survey identifies the research gap that
+Motivo addresses.
+
+The two chapters that follow describe the language and the tool that realizes it.
+Chapter~\ref{ch:language-design} presents the design of the Motivo language, covering its grammar, type system,
+semantics, and temporal model, and tracing the evolution from version~1.0 to version~2.0.
+Chapter~\ref{ch:compiler-implementation} then turns to the implementation of \texttt{motivoc}, walking through the
+compilation pipeline from the frontend and semantic pass to lowering and the MIDI backend.
+
+Chapter~\ref{ch:studio-engineering} steps outward from the compiler to Motivo Studio and the engineering operations
+around it: the web IDE, the server and persistence layer, and the testing, continuous integration, and deployment
+practices that maintain it as a product rather than a prototype.
+
+The final chapters return to evidence and reflection.
+Chapter~\ref{ch:evaluation} reports the empirical evaluation, measuring compilation time and event expansion on
+benchmarks and real compositions and noting the limits of the approach.
+Chapter~\ref{ch:conclusion} closes by drawing together the contributions, acknowledging the limitations, outlining
+future work, and revisiting the use cases introduced here in light of the evidence gathered along the way.
