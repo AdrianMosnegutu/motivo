@@ -41,62 +41,19 @@ The resulting ``compression ratio'' is substantial on this example.
 As the composition grows (for example, looping the groove 32 times instead of 3), the size of Motivo source code
 remains completely unchanged, while the output scales to hundreds or thousands of events.
 
-The main measured expressiveness results use three paired fixtures (version~1.0 \texttt{.dsl} and version~2.0
-\texttt{.motivo}) compiled for the timing study:
+This expansion factor varies enormously with how repetitive a program is, and the benchmark suite spans both extremes.
+The synthetic fixtures are written to maximize repetition: the flat scaling loop reaches about $2{,}200$ events per
+source line at the 20{,}000-event cap (Table~\ref{tab:scaling-stages}), and the structural stress fixtures, each
+amplifying a single construct, expand comparably.
+Real compositions sit at the other end: the four pieces in Section~\ref{sec:general-case} expand only $1.9$ to $5.1$
+events per source line (Table~\ref{tab:general-case}), because genuine music interleaves largely unique material rather
+than repeating one statement.
+The leverage of the language therefore depends on the piece: it removes manual event placement in every case, but the
+dramatic ratios appear only where real structural repetition exists.
 
-\begin{itemize}
-  \item \textbf{B1} (\texttt{single\_loop\_20000}): 8 lines, flat \texttt{loop (20000)} emitting one note per
-    iteration $\rightarrow$ 20,000 note events (180,056~B MIDI).
-  \item \textbf{B2} (\texttt{chord\_loop\_5000}): 8 lines, \texttt{loop (4990)} with a two-note chord per iteration
-    $\rightarrow$ 9,980 note events (84,886~B MIDI).
-    The loop count is 4,990 rather than 5,000 so that doubling each iteration's notes stays under the 20,000-event cap.
-  \item \textbf{B3} (\texttt{pattern\_cascade}): 12 lines, triple-nested \texttt{loop} blocks (200$\times$10$\times$10)
-    $\rightarrow$ 20,000 note events (180,056~B MIDI).
-\end{itemize}
-
-These programs demonstrate the intended effect of the language: repeated symbolic structure remains compact in source
-form while the compiler expands it into explicit event data.
-B1 stresses linear lowering expansion; B2 adds chord flattening; B3 stresses nested control-flow depth at the event cap
-through triple-nested \texttt{loop} blocks rather than a flat counter.
-Pattern calls appear in the drum-pattern example above and in studio compositions at smaller scales; B3 isolates nested
-loop unrolling for the throughput study.
-
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}
-    \begin{axis}[
-        motivo/bar,
-        width=0.92\textwidth,
-        height=6.5cm,
-        ymin=0,
-        ylabel={Note events per source line},
-        symbolic x coords={B1,B2,B3},
-        xtick=data,
-        nodes near coords,
-        nodes near coords style={font=\scriptsize, /pgf/number format/fixed, /pgf/number format/precision=0},
-        bar width=16pt,
-        enlarge x limits=0.12,
-      ]
-      \addplot[fill=motivoGreen!70, draw=motivoGreen!90] coordinates {
-        (B1,2500)
-        (B2,1247.5)
-        (B3,1666.7)
-      };
-    \end{axis}
-  \end{tikzpicture}
-  \caption{Source-to-event expansion for benchmark fixtures B1--B3 (note events divided by source lines).}%
-  \label{fig:compression-chart}
-\end{figure}
-
-This expressiveness is consistent with the central design goal: by shifting from a linear, event-based representation
-to a structural, programming-based representation, the manual overhead of repetitive event placement can be reduced on
-workloads like the fixtures above.
-The composer can focus on higher-level musical structure while the lowering engine handles repetitive temporal event
-placement.
-
-This metric should not be overinterpreted.
-More generated events per source line is useful when the source expresses meaningful repetition, but it can also produce
-uninteresting repetition.
-For a bachelor thesis, the metric is still valuable because it connects the language design to a measurable output.
-The compiler removes repetitive manual event placement from the source program and makes the expansion explicit in the
-MIDI artifact.
+This expressiveness is consistent with the central design goal.
+By shifting from a linear, event-based representation to a structural, programming-based one, the manual overhead of
+repetitive event placement is removed from the source program and made explicit only in the generated MIDI artifact.
+The composer works at the level of rules, patterns, and tracks, while the lowering engine materializes the temporal
+event stream; the expansion ratio is simply the measurable shadow of that division of labor, and is most useful read
+together with the compile-time results rather than on its own.

@@ -11,7 +11,7 @@ The practical advantage for this thesis is \textit{source-level compression}: a 
 describes repetition declaratively, and the compiler expands it into a flat event timeline at build time.
 Listing~\ref{lst:compression-example} sketches the idea; later material specifies and implements the mechanism in full.
 
-\begin{lstlisting}[label={lst:compression-example},caption={Compact source that lowering expands into many MIDI events.}]
+\begin{lstlisting}[language={Motivo},label={lst:compression-example},caption={Compact source that lowering expands into many MIDI events.}]
 pattern motif(int dur) {
     play A4 :dur;
     play rest :dur;

@@ -6,11 +6,12 @@ events~\cite{Lerdahl_Jackendoff_1983}, yet common production tools store music a
 When a phrase repeats or varies, the piano roll makes every copy editable by hand, and the rules that generated the
 pattern are rarely recoverable from the event list alone.
 This thesis asks whether a small compiled language can keep that structure explicit in source form and expand it
-deterministically into a standard MIDI file, without requiring a language runtime at playback.
+deterministically into a Standard MIDI File, without requiring a language runtime at playback.
 
 We present \textit{Motivo}, a domain-specific language and offline compiler for symbolic composition, together with
 Motivo Studio, a browser-based studio that wraps the toolchain in a deployable product.
-The C++ compiler comprises approximately 20{,}260 lines of source, excluding third-party dependencies.
+The C++ compiler comprises approximately 5{,}300 lines of hand-written source, excluding the generated lexer and parser,
+the test suite, and third-party dependencies.
 The work is scoped to offline, rule-based expansion into portable symbolic output: Motivo complements established
 digital audio workstation workflows rather than replacing them.
 Section~\ref{sec:use-cases} outlines four representative use cases; the evaluation in Chapter~\ref{ch:evaluation} and

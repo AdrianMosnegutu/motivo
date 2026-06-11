@@ -13,9 +13,9 @@ Table~\ref{tab:test-counts} summarizes the test inventory.
     \toprule
     \textbf{Subsystem} & \textbf{Tooling} & \textbf{Test cases} & \textbf{Test types} \\
     \midrule
-    Compiler & CTest, GoogleTest & 635 & Unit, integration, golden \\
+    Compiler & CTest, GoogleTest & 652 & Unit, integration, golden \\
     Server & Vitest, Supertest & 31 & Unit, integration \\
-    Client & Vitest, Testing Library & 79 & Unit, integration \\
+    Client & Vitest, Testing Library & 88 & Unit, integration \\
     \bottomrule
   \end{tabularx}
   \caption{Test inventory per subsystem.}\label{tab:test-counts}
@@ -46,7 +46,7 @@ GitHub Actions runs four module-scoped workflows (compiler, server, client, and 
     compiler. \\
     Server & static analysis $\rightarrow$ Vitest (with Postgres) $\rightarrow$ build $\rightarrow$ package. \\
     Client & static analysis $\rightarrow$ Vitest $\rightarrow$ build $\rightarrow$ package. \\
-    Paper & format and spell checks $\rightarrow$ PDF build. \\
+    Paper & format, lint, and spell checks $\rightarrow$ PDF build. \\
     \bottomrule
   \end{tabularx}
   \caption{CI workflows and their primary stages.}\label{tab:ci-workflows}
@@ -92,7 +92,7 @@ and packaged image.
     \end{tikzpicture}%
   }
   \caption{Monorepo CI job progressions: static analysis precedes build and test on the compiler and web workflows; the
-  paper workflow gates the PDF build on format and spell checks.}\label{fig:ci-workflows}
+  paper workflow gates the PDF build on format, lint, and spell checks.}\label{fig:ci-workflows}
 \end{figure}
 
 The distribution of tests matches the failure modes of a full-stack language tool: semantics and MIDI correctness in

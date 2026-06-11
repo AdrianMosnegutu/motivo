@@ -10,7 +10,8 @@ Motivo's backend must emit.
 
 \subsection{Event-Based Representation}\label{detail-subsec:event-based-representation}
 
-A MIDI stream is composed of sequential commands.
+A MIDI stream is composed of sequential commands, whose binary encoding and Standard MIDI File container are defined by
+the Standard MIDI Files specification~\cite{MMA_SMF_1996}.
 The most fundamental commands are:
 
 \topic{Note-On.} Instructs the synthesizer to begin sounding a pitch.
@@ -41,7 +42,7 @@ key numbers trigger different drum samples (e.g., Key 36 is the Bass Drum).
 \subsection{Delta-Times and Standard MIDI Files (SMF)}\label{detail-subsec:delta-times-and-standard-midi-files-(smf)}
 
 When saving MIDI data to a file (a \texttt{.mid} file), the Standard MIDI File format uses
-\textit{delta-times}~\cite{Moog_1986,Moore_1988}.
+\textit{delta-times}~\cite{MMA_SMF_1996}.
 Instead of recording the absolute time at which an event occurs, a Standard MIDI File records the number of ``ticks'' to
 wait after the \textit{previous} event before executing the current one.
 Ticks are subdivisions of a quarter note, defined by the file's \textit{Pulses Per Quarter-note} (PPQ) resolution (e.g.,

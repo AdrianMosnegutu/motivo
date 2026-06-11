@@ -51,8 +51,8 @@ Only user-owned documents persist; examples and scratch buffers skip server stor
 \subsection{Piano roll visualization}\label{subsec:piano-roll}
 
 MIDI is symbolic: a successful compile yields event data, not audio.
-\texttt{parse-midi} converts bytes into note structures; \texttt{PianoRoll} draws colored rectangles on an HTML5 canvas
-with a vertical pitch axis (piano-style) and horizontal time.
+\texttt{parse-midi} converts bytes into note structures; \texttt{PianoRoll} renders colored rectangles as
+absolutely-positioned DOM elements (CSS layers) with a vertical pitch axis (piano-style) and horizontal time.
 Hooks track note range for scaling and playhead position during playback so the scroll view stays aligned with heard
 time.
 

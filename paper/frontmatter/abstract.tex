@@ -14,12 +14,13 @@ keeps compositional structure explicit in typed source and expands it determinis
 without a language runtime at playback.
 
 We describe the language semantics, the multi-stage compiler pipeline, and the integration of the toolchain into
-Motivo Studio, followed by an empirical evaluation on synthetic workloads.
+Motivo Studio, followed by an empirical evaluation on synthetic benchmarks and real compositions.
 
 The compiler expands programs of fewer than fifteen lines into timelines of up to 20,000 note events in about 5--8~ms
-end-to-end on a local Release build, while explicit typing in version~2.0 adds negligible overhead and preserves
-byte-identical MIDI output.
-Automated testing comprises 745 cases (635 compiler, 31 server, 79 client), covering the toolchain from parsing through
+end-to-end for typical and flat programs at that scale, and up to roughly 9~ms for the most expression-heavy shapes,
+on a local Release build; explicit typing in version~2.0 adds negligible overhead and preserves byte-identical MIDI
+output.
+Automated testing comprises 771 cases (652 compiler, 31 server, 88 client), covering the toolchain from parsing through
 deployment.
 
 Motivo complements established digital audio workstation workflows: it recovers editable structure in source form while

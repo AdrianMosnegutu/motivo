@@ -11,6 +11,9 @@ fixed number of emitted events rather than unrolling indefinitely.
 The value 20{,}000 is an implementation limit that stops unrolling with a diagnostic once reached; it is not
 a claim about
 maximum composition length in principle.
+The benchmark suite exercises this boundary directly: a fixture that requests 20{,}001 events is rejected during
+lowering with exactly this diagnostic, and the reproducible run asserts that rejection, so the cap is a tested behavior
+rather than an assumed one.
 
 \subsection{Data layout and retained state}\label{detail-subsec:memory-footprint}
 

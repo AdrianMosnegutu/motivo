@@ -1,0 +1,50 @@
+\section{General-Case Compositions}\label{sec:general-case}
+
+The synthetic fixtures are deliberate worst cases built to saturate the event cap.
+To characterize behavior on realistic input, this section compiles four complete, idiomatic Motivo programs shipped with
+Motivo Studio: \textit{Come As You Are}, a layered multi-track demo, a \textit{Pirates} theme, and \textit{F\"ur Elise}.
+These exercise the language as a composer would, with patterns, parallel voices, multiple instrument tracks, chords, and
+conditionals, rather than a single repeated statement.
+Table~\ref{tab:general-case} reports their size and per-stage compile time.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{4.5pt}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    \textbf{Composition} & \textbf{Events} & \textbf{LOC} & \textbf{Parse} & \textbf{Semantic} & \textbf{Lowering} &
+    \textbf{MIDI write} & \textbf{End-to-end} \\
+    \midrule
+    Come As You Are & 147 & 30  & 0.047 & 0.008 & 0.032 & 0.073 & $2.26 \pm 0.04$ \\
+    Layered demo    & 188 & 101 & 0.120 & 0.021 & 0.061 & 0.082 & $2.43 \pm 0.09$ \\
+    Pirates theme   & 191 & 62  & 0.124 & 0.023 & 0.084 & 0.078 & $2.42 \pm 0.06$ \\
+    F\"ur Elise     & 294 & 58  & 0.090 & 0.019 & 0.145 & 0.088 & $2.47 \pm 0.06$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Per-stage mean compile time (ms) for four real compositions on the current \texttt{motivoc}; the end-to-end
+    column reports the mean $\pm$ standard deviation over 50 runs. The four stage timers sum to $0.15$--$0.35$~ms; the
+  gap to the end-to-end column is process startup and file I/O.}\label{tab:general-case}
+\end{table}
+
+Two points stand out.
+First, the realistic expansion ratio is modest: these pieces emit between $1.9$ and $5.1$ events per source line, two to
+three orders of magnitude below the synthetic fixtures, which reach roughly $2{,}200$ events per line at the cap.
+Real music interleaves largely unique material, so the dramatic compression of Section~\ref{sec:compression} is a
+property of repetitive structure, not of typical compositions; the honest expectation for hand-written pieces is a small
+constant factor.
+This tempers the synthetic compression figures rather than contradicting them: the language still removes manual event
+placement, but the leverage depends on how much genuine repetition a piece contains.
+The relationship between length and stages is visible in the table: the most verbose sources (the 101-line demo and the
+Pirates theme) have the highest parse times, while the piece with the most events (\textit{F\"ur Elise}) has the highest
+lowering and MIDI time.
+
+Second, every stage is fast.
+The four pipeline stages together account for only $0.15$--$0.35$~ms; the remaining $2$~ms or so of each compile is the
+fixed process-startup floor identified in Section~\ref{detail-subsec:scaling-sweep}.
+For compositions of this scale, compile time is effectively constant and well below perceptible latency, which is what
+makes the studio's compile-to-preview loop feel immediate
+(Section~\ref{detail-subsec:execution-speed-and-real-time-viability}).
+The synthetic fixtures show where cost eventually appears; the general case shows that realistic programs never approach
+it.

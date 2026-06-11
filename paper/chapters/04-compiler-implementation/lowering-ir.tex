@@ -72,21 +72,18 @@ members, ensuring the next musical statement begins only after the entire chord 
 
 \topic{Pattern Temporal Reconstruction.}
 The most technically complex feature of the lowerer is how it preserves the ``temporal integrity'' of patterns.
-When a \texttt{PatternCallExpression} is evaluated:
+When a \texttt{PatternCallExpression} is evaluated, the lowerer runs the pattern body on a \emph{fresh} internal cursor
+that starts at zero, after pushing a new variable scope and binding the arguments to the parameter names.
+It then rebuilds a \texttt{SequenceValue} from the events the body emitted, walking them in emission order and
+interspersing \texttt{RestValue} items for every gap between groups and for any trailing silence, so internal rests and
+control-flow expansion are preserved exactly.
 
-The lowerer snapshots the current cursor position: \texttt{start\_time = cursor}.
-
-It pushes a new variable scope, binds the arguments to the parameter names, and unrolls the pattern's body.
-
-It captures the final cursor state: \texttt{end\_time = cursor}.
-
-It calculates the total temporal span as the difference between \texttt{end\_time} and \texttt{start\_time}.
-
-To ensure that internal gaps and trailing rests within the pattern are respected, the lowerer rebuilds a
-\texttt{SequenceValue} that intersperses the emitted notes with \texttt{RestValue} items matching the exact temporal
-gaps.
-This reconstructed value is then returned to the caller, allowing the pattern to be treated as a single, opaque rhythmic
-block.
+The pattern's \emph{footprint} is the total span of that reconstructed sequence: the latest beat any emitted event
+reaches, or the internal cursor if it advanced further.
+This span is derived from where events actually land, not from cursor advancement alone, so notes anchored with
+\texttt{from} (which do not move the internal cursor) still extend the footprint.
+The reconstructed value is returned to the caller, which places it at its own cursor and advances by the footprint,
+allowing the pattern to be treated as a single, relocatable rhythmic block that tiles correctly when repeated.
 
 \subsection{Voice Parallelism and Cursor Isolation}\label{detail-subsec:voice-parallelism-and-cursor-isolation}
 

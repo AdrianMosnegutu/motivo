@@ -1,0 +1,63 @@
+\section{Sensitivity to Program Shape}\label{sec:scaling-stress}
+
+Section~\ref{sec:compile-time} established how compile time grows with the size of the generated timeline.
+This section fixes the output near the cap and varies instead the \emph{shape} of the source program, to find which
+language constructs make the same number of events more expensive to compile.
+Each fixture emits 20{,}000 events (15{,}000 for the duration-expression case) but produces them differently: through
+nesting depth, parallel tracks and voices, chord density, or per-note expression evaluation.
+Table~\ref{tab:stress-suite} reports the full per-stage breakdown.
+
+\begin{table}[htbp]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{4.5pt}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    \textbf{Program shape} & \textbf{Events} & \textbf{Parse} & \textbf{Semantic} & \textbf{Lowering} &
+    \textbf{MIDI write} & \textbf{End-to-end} \\
+    \midrule
+    Flat loop (baseline)         & 20,000 & 0.020 & 0.004 & 1.525 & 2.549 & $6.30 \pm 0.12$ \\
+    Nested loops, 4 levels       & 20,000 & 0.022 & 0.004 & 2.107 & 2.566 & $6.93 \pm 0.12$ \\
+    Nested loops, 5 levels       & 20,000 & 0.023 & 0.004 & 2.749 & 2.558 & $7.60 \pm 0.12$ \\
+    20 parallel tracks           & 20,000 & 0.048 & 0.010 & 1.447 & 2.158 & $5.82 \pm 0.12$ \\
+    10 parallel voices           & 20,000 & 0.038 & 0.006 & 1.576 & 2.445 & $6.29 \pm 0.13$ \\
+    Four-note chords             & 20,000 & 0.024 & 0.004 & 1.252 & 2.511 & $6.06 \pm 0.31$ \\
+    Eight-note chords            & 20,000 & 0.024 & 0.004 & 0.896 & 2.452 & $5.62 \pm 0.07$ \\
+    Per-note duration arithmetic & 15,000 & 0.025 & 0.006 & 2.345 & 1.773 & $6.32 \pm 0.09$ \\
+    Nested per-note ternaries    & 20,000 & 0.029 & 0.007 & 4.175 & 2.578 & $9.07 \pm 0.29$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Per-stage mean compile time (ms) for fixtures of equal output size but differing source shape, current
+    \texttt{motivoc}; the end-to-end column reports the mean $\pm$ standard deviation over 50 runs. Lowering varies with
+  shape; MIDI write tracks the event count and is nearly constant.}\label{tab:stress-suite}
+\end{table}
+
+The breakdown separates two sources of cost.
+MIDI write depends almost entirely on the event count: it stays near $2.5$~ms for every 20{,}000-event fixture
+regardless of how the events were produced, because the backend sorts and serializes the same number of records in
+every case.
+The 15{,}000-event duration fixture and the eight-note-chord fixture write proportionally less, consistent with their
+smaller or differently distributed event sets.
+Lowering, in contrast, depends strongly on program shape, and it is where the differences between fixtures appear.
+
+The largest factor is per-note expression evaluation.
+The nested-ternary fixture re-evaluates a small arithmetic tree, three modulo operations and a nested conditional, for
+every one of its 20{,}000 events, raising lowering to $4.18$~ms, about $2.7\times$ the flat baseline at the same event
+count and making it the slowest workload measured anywhere in this chapter.
+The per-note duration fixture shows the same mechanism on the duration path: at only 15{,}000 events its lowering still
+reaches $2.35$~ms, roughly double the flat sweep's value at that size.
+Nesting depth is the next largest factor.
+Five levels of nested loops cost $2.75$~ms in lowering ($1.8\times$ the baseline) and four levels $2.11$~ms, because the
+lowerer descends and restores more control-flow frames for each emitted event.
+Chord density and parallelism, by contrast, stay close to the baseline: flattening four- or eight-note chords and
+interleaving the onsets of twenty tracks or ten voices are all handled by the same per-event machinery and the backend
+tick-sort without disproportionate cost.
+The track- and voice-heavy fixtures show the only visible movement in the frontend, parsing rises to $0.05$~ms because
+those sources are the longest (over a hundred lines), but the increase is still negligible against lowering and MIDI
+write.
+
+The conclusion is consistent across every shape: at a fixed output size, compile time is governed by lowering, and
+within lowering by how much computation each emitted event demands, not by parsing or type checking.
+Even the deliberately adversarial nested-ternary program compiles in about $9$~ms, comfortably within interactive
+latency for the studio's compile-to-preview loop.

@@ -34,7 +34,7 @@ The scope model mirrors the language's lexical nesting:
 Pattern overload resolution does not use arity alone.
 Registration calls \texttt{find\_in\_current\_scope\_by\_signature} with the full parameter-type vector; duplicate
 definitions with identical signatures are rejected at registration time.
-Call sites use \texttt{find\_visible\_pattern\_by\_signature}, which walks outward through parent scopes and selects
+Call sites use \texttt{find\_pattern\_visible\_by\_signature}, which walks outward through parent scopes and selects
 the best-scoring overload where each argument is assignable to the corresponding parameter type (exact type matches
 score higher).
 
