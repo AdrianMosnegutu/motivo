@@ -89,7 +89,7 @@ into Note-On and Note-Off messages, stable-sorts events, and writes delta-time e
         stage/.style={motivo/stage, minimum width=2.55cm, minimum height=1.65cm, text width=2.45cm},
         guard/.style={motivo/guard, text width=2.1cm},
         arrow/.style={motivo/arrow},
-        diag/.style={motivo/panel, fill=motivoRose!10, minimum width=2.2cm, minimum height=6.8cm, align=center}
+        diag/.style={motivo/panel, fill=motivoRose!10, minimum width=2.2cm, minimum height=4cm, align=center}
       ]
       \node[stage, fill=motivoSoft] (input) {\textbf{Input}\\\texttt{FILE*}\\source name\\output path};
       \node[stage, fill=motivoBlue!18, right=0.95cm of input] (parse)
@@ -113,9 +113,8 @@ into Note-On and Note-Off messages, stable-sorts events, and writes delta-time e
       \node[guard, below=0.55cm of low, align=center] {\texttt{!ok()}\\$\rightarrow$ abort};
       \node[guard, below=0.55cm of midi, align=center] {I/O exception\\$\rightarrow$ output error};
 
-      \node[diag, above=0.35cm of sem, yshift=0.15cm] (diagbox) {%
+      \node[diag, above=1cm of sem, yshift=0.15cm] (diagbox) {%
         \textbf{DiagnosticsEngine}\\[0.35em]
-        \scriptsize\sffamily
         shared ref\\[0.2em]
         passed to\\all stages\\[0.2em]
         \texttt{take\_diagnostics()}\\at end
