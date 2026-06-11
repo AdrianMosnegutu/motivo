@@ -1,0 +1,16 @@
+// Asymmetric nesting: four nested loops with uneven trip counts (50x8x5x10) = 20000 events.
+// Stresses frame-walking with imbalanced loop bounds rather than the uniform fan-out of B3.
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    loop (50) {
+        loop (8) {
+            loop (5) {
+                loop (10) {
+                    play C4;
+                }
+            }
+        }
+    }
+}

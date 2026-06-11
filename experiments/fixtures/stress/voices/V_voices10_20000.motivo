@@ -1,0 +1,57 @@
+// Many parallel voices in one track: 10 voices x 2000 notes = 20000 overlapping events.
+// Stresses the MIDI tick-sort with heavily concurrent onsets.
+tempo 120;
+signature 4/4;
+
+track dense using piano {
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+    voice from 0 {
+        loop (2000) {
+            play C4;
+        }
+    }
+}

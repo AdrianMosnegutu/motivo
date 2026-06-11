@@ -23,3 +23,8 @@ The zero-runtime commitment is what lets algorithmic intent survive lowering to 
 For a fixed source file and compiler version, the generated event schedule is reproducible and independent of
 host timing,
 thread scheduling, or interactive interpreter latency; the rules remain readable in source even after expansion.
+
+This chapter has specified \emph{what} Motivo is at the language level: its conceptual model, grammar, type system,
+temporal semantics, and offline compilation strategy.
+The next chapter turns to \emph{how} that specification is realized, walking through \texttt{motivoc} stage by stage,
+from source text to Standard MIDI File bytes.

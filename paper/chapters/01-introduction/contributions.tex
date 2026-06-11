@@ -1,0 +1,23 @@
+\section{Contributions}\label{sec:intro-contributions}
+
+In addressing the problem above, this thesis makes three contributions, revisited with supporting evidence in
+Chapter~\ref{ch:conclusion}.
+
+\begin{itemize}
+  \item \textbf{A language and offline compiler.}
+    We design Motivo, a typed, imperative source language for symbolic composition, and implement \texttt{motivoc},
+    a staged native compiler that validates compositional structure and expands it deterministically into a
+    Standard MIDI File, with no language runtime at playback.
+    Version~2.0 introduces explicit declarations and signature-based overload resolution over the version~1.0
+    design.
+
+  \item \textbf{A deployable studio and engineering pipeline.}
+    We build Motivo Studio, a browser-based environment that wraps \texttt{motivoc} with diagnostics, piano-roll
+    preview, playback, and authenticated file storage, maintained as a tested, continuously integrated product
+    rather than a one-off prototype.
+
+  \item \textbf{An empirical evaluation.}
+    We measure the compiler on synthetic benchmarks and real compositions, showing that compact source expands into
+    large MIDI timelines in low-millisecond compile times, with explicit typing in version~2.0 adding negligible
+    overhead while producing byte-identical output.
+\end{itemize}

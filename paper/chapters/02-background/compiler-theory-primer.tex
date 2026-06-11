@@ -60,6 +60,8 @@ in a general-purpose language. Van Deursen, Klint, and Visser describe DSLs as l
 generality for concise notations and domain-level abstractions~\cite{van_Deursen_Klint_Visser_2000}. Fowler
 makes a similar software-engineering argument: a DSL can be worthwhile when its notation lets domain ideas be
 expressed more directly than the host implementation language~\cite{Fowler_2010}.
+Mernik, Heering, and Sloane survey the decision in more detail, cataloguing when a DSL is justified and the
+implementation patterns available once it is~\cite{Mernik_Heering_Sloane_2005}.
 We apply that argument to symbolic composition: Motivo's implementation is written in C++23, but the user writes musical
 structures rather than C++ vectors of binary MIDI messages.
 The Motivo language and \texttt{motivoc} compiler instantiate the phases outlined above.

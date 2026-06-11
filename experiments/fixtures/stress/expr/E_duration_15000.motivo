@@ -1,0 +1,10 @@
+// Expression load (duration): 15000 notes whose duration is computed per note by arithmetic/ternary.
+// Stresses the expression evaluator on the duration path rather than pitch selection.
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    for (int i = 0; i < 15000; i = i + 1) {
+        play C4 : (i % 4 == 0 ? 0.5 : 0.25);
+    }
+}

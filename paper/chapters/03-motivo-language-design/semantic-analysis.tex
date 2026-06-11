@@ -69,8 +69,9 @@ compatible comparands, and sequence concatenation is not defined through \texttt
 \subsection{Pattern signatures, overloads, and \texttt{play}}
 
 Pattern resolution is signature-based.
-For call-site argument types $\langle \tau_1,\dots,\tau_n \rangle$, the analyzer selects a visible pattern whose
-parameter list exactly matches that sequence.
+For call-site argument types $\langle \tau_1,\dots,\tau_n \rangle$, the analyzer selects the best-scoring visible
+pattern whose parameters are each assignable from the corresponding argument type, using exact type matches as the
+tiebreak; since assignability is currently strict type equality, this reduces to an exact signature match in practice.
 Name equality and arity alone are insufficient; this enables semantically distinct overloads such as rhythmic and
 melodic variants under one pattern name.
 

@@ -1,12 +1,26 @@
 \section{Evaluation Summary}\label{sec:evaluation-summary}
 
-The evaluation supports three bounded conclusions.
-First, Motivo's compiler can expand compact source rules into much larger MIDI event streams, as shown by fixtures B1
-(20,000 events from 8 lines), B2 (9,980 events from 8 lines), and B3 (20,000 events from 12 nested loops).
-Second, version~1.0 and version~2.0 both compile these programs in about 5--8~ms end-to-end on a local Apple M3 Pro
-Release build, with version~2.0 imposing roughly $0$--$2\%$ wall-clock overhead while producing identical MIDI output.
-Third, the implemented system is backed by 745 automated tests (635 compiler, 31 server, 79 client) and CI across
-compiler, server, client, and paper workflows.
+The evaluation supports five bounded conclusions.
+First, the compiler expands compact source rules into much larger MIDI timelines, up to the 20{,}000-event cap from a
+handful of source lines, confirming the structural-compression premise of the language.
+Second, compile time decomposes cleanly across the pipeline: parsing and semantic analysis are negligible (under
+$0.13$~ms on every fixture), and the total is governed by lowering and MIDI serialization.
+Third, that total scales with the size of the generated score, lowering roughly linearly and MIDI serialization
+slightly faster, consistent with the $O(E \log E)$ backend sort, so typical programs at the cap compile in about
+$5$--$8$~ms.
+Fourth, at a fixed output size cost depends on program shape through the lowering stage: per-note expression evaluation
+is the worst case ($\sim$9~ms at the cap, roughly $2.7\times$ a flat loop), nesting depth is second, and chord density
+and parallelism stay near the baseline.
+Fifth, real compositions never approach these worst cases: the four measured pieces compile in $2.3$--$2.5$~ms,
+dominated by process startup, with only $0.15$--$0.35$~ms of actual compiler work and modest $1.9$--$5.1$ events per
+source line.
+A separate comparison confirms that the version~2.0 type system adds no measurable compile-time cost over version~1.0
+while producing byte-identical output.
 
 These conclusions are bounded by the scope stated in Section~\ref{sec:evaluation-methodology} and
-Section~\ref{sec:limits}.
+Section~\ref{sec:limits}; every figure is reproducible from a clean checkout via the \texttt{experiments/} suite.
+
+The evidence gathered here closes the loop opened in the introduction.
+The final chapter consolidates what the project contributes, states plainly what it does not claim, revisits the use
+cases from Chapter~\ref{ch:introduction} against the delivered system, and sketches the extensions this work makes
+possible.

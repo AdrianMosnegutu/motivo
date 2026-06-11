@@ -41,12 +41,12 @@ Motivo achieves the same result with minimal syntax:
 label={lst:midi-scripting-comparison}]
 tempo 120;
 track using drums {
-    loop (8) { play hihat :0.5; }
+    loop (8) { play [hihat :0.5]; }
 }
 \end{lstlisting}
 
 This contrast in verbosity illustrates Motivo's intended role as a domain-specific tool.
 By embedding musical semantics (like default durations, rest tracking, and automatic track/channel
 assignment) directly into
-the language design, the compiler reduces cognitive friction and allows the user to operate strictly within the musical
-domain.
+the language design, Motivo is intended to reduce cognitive friction and let the user operate strictly within the
+musical domain.

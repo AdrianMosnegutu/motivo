@@ -1,0 +1,10 @@
+// Over-cap (EXPECTED FAILURE): 20001 events exceeds MAX_EVENTS = 20000.
+// Compiles to a lowering error; documents the safety-limit behavior. Not part of the timed suite.
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    loop (20001) {
+        play C4;
+    }
+}

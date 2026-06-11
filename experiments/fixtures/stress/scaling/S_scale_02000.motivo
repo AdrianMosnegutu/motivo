@@ -1,0 +1,10 @@
+// Scaling sweep: flat loop emitting 2000 single notes -> 2000 events.
+// Isolates linear lowering expansion and O(E log E) MIDI serialization as event count grows.
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    loop (2000) {
+        play C4;
+    }
+}

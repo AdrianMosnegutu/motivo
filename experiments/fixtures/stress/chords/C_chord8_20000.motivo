@@ -1,0 +1,10 @@
+// Wide chords: 2500 iterations of an eight-note chord = 20000 events.
+// Maximizes simultaneous onsets per tick, stressing chord flattening and the backend tick-sort.
+tempo 120;
+signature 4/4;
+
+track harmony using piano {
+    loop (2500) {
+        play (C3, E3, G3, B3, D4, F#4, A4, C5);
+    }
+}

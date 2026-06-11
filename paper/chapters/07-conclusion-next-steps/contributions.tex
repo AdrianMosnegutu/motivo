@@ -1,7 +1,7 @@
 \section{Contributions}\label{sec:contributions}
 
 Motivo demonstrates that compositional structure can stay explicit in typed source and expand deterministically into a
-standard MIDI file without a language runtime at playback.
+Standard MIDI File without a language runtime at playback.
 We delivered that pipeline end to end.
 
 \topic{Language and compiler.}
@@ -18,7 +18,9 @@ The monorepo enforces quality with automated tests, paper CI, and deployment to 
 maintainable product rather than a one-off prototype.
 
 \topic{Evaluation.}
-Synthetic benchmarks compile up to 20,000 events in about 5--8~ms on a local Release build; lowering and MIDI
-serialization dominate per-stage cost.
+Synthetic benchmarks compile up to 20,000 events in about 5--8~ms for typical and flat programs on a local Release
+build (up to roughly 9~ms for the most expression-heavy shapes); lowering and MIDI serialization dominate per-stage
+cost.
+Four real compositions compile in under $3$~ms, with the compiler's own work under $0.5$~ms.
 These results are consistent with the use cases introduced in Section~\ref{sec:use-cases},
 though the evaluation does not yet include a user study of composer preference or learnability.

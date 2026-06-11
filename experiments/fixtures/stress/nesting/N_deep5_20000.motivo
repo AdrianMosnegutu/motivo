@@ -1,0 +1,18 @@
+// Deep nesting: five nested loops (10x10x10x10x2) = 20000 events.
+// Stresses the lowering engine's recursive control-flow frame walking deeper than B3.
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    loop (10) {
+        loop (10) {
+            loop (10) {
+                loop (10) {
+                    loop (2) {
+                        play C4;
+                    }
+                }
+            }
+        }
+    }
+}

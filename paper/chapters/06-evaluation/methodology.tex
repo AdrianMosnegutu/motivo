@@ -1,26 +1,36 @@
 \section{Methodology}\label{sec:evaluation-methodology}
 
-The evaluation compares two tagged compiler releases on identical synthetic workloads.
-Version~1.0 corresponds to git tag \texttt{v1.0.0-base} and the \texttt{dslrc} CLI over \texttt{.dsl} sources;
-version~2.0 corresponds to \texttt{v2.0.0-explicit-types} and the \texttt{motivoc} CLI over \texttt{.motivo} sources.
-Both binaries were built as separate Release configurations from the same codebase and benchmarked on one
-machine without
-switching versions between runs.
+The evaluation is driven by a versioned, reproducible benchmark suite in the \texttt{experiments/} module of the
+repository.
+A single command (\texttt{make run}) builds the required compilers, runs every workload, and regenerates the result
+tables; the harness wraps each compiler invocation in Python's \texttt{time.perf\_counter}, performs 5 warmup runs, and
+averages 50 measured runs.
+Each measured command compiles one source file and writes a \texttt{.mid} file beside the input, so the end-to-end timer
+includes process startup, parsing, semantic analysis, lowering, MIDI serialization, and file I/O.
+All measurements reported in this chapter were taken on an Apple M3 Pro (arm64, macOS~26.5) with 18~GB of RAM, using
+Release builds.
 
-Measurements were taken on an Apple M3 Pro (arm64, macOS~26.5) with 18~GB of RAM.
-Wall-clock times were recorded by a small benchmark harness that wraps each compiler
-invocation in Python's \texttt{time.perf\_counter}, performs 5 warmup runs, and averages 50 measured runs.
-Each measured command compiles one source file and writes a \texttt{.mid} file beside the input, so the timer includes
-process startup, parsing, semantic analysis, lowering, MIDI serialization, and file I/O.
+The benchmark programs fall into two groups.
+\textit{Synthetic fixtures} push expansion and throughput toward the implementation's 20,000-event cap
+(Section~\ref{sec:limits}) along several independent axes: a scaling sweep that varies only the number of generated
+events, and structural programs that vary nesting depth, parallel tracks and voices, chord density, and per-note
+expression load while holding the event count fixed.
+\textit{Real compositions} are four complete pieces written for Motivo Studio, included to characterize behavior on
+realistic, music-meaningful input rather than worst cases.
+All programs are compiled by the current Motivo compiler, \texttt{motivoc}.
+To isolate the cost of the version~2.0 type system, three fixtures that exist in both source dialects are additionally
+compiled with the original version~1.0 build (\texttt{v1.0.0-base}, the \texttt{dslrc} CLI over \texttt{.dsl} sources)
+alongside version~2.0 (\texttt{v2.0.0-explicit-types}, \texttt{motivoc} over \texttt{.motivo});
+Section~\ref{detail-subsec:typing-cost} reports that comparison.
 
-Per-stage breakdowns use in-process timers enabled through a compile-time benchmark flag in the compiler driver.
-These timers report parse, semantic, lowering, and MIDI-write means independently of subprocess overhead; their sum is
-therefore smaller than the end-to-end wall-clock total.
-
-The fixtures are synthetic stress programs: they exercise expansion and throughput at the implementation's
-20,000-event cap (Section~\ref{sec:limits}) rather than modeling finished compositions.
-The evaluation therefore targets engineering properties (expansion ratio, compile time, and safety limits), not musical
-quality or user preference.
+Compile time is decomposed into the four pipeline stages, parsing, semantic analysis, lowering, and MIDI serialization,
+using in-process timers compiled in through the \texttt{MOTIVO\_ENABLE\_BENCHMARK} build option, which also emits the
+lowered event count.
+These timers report each stage's mean independently of subprocess overhead, so their sum is smaller than the end-to-end
+wall-clock total, which additionally includes process startup and file I/O.
+The instrumentation is gated at compile time, so production builds carry none of it.
+The evaluation targets engineering properties (expansion ratio, compile time, scaling, and safety limits); musical
+quality and user preference are out of scope.
 
 \subsection{Theoretical Complexity}\label{detail-subsec:theoretical-complexity}
 

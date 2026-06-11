@@ -1,0 +1,10 @@
+// Expression load (pitch): 20000 notes, each selected by nested modulo + ternary arithmetic.
+// Stresses the lowering expression evaluator (three modulo, three comparisons, nested ternary per event).
+tempo 120;
+signature 4/4;
+
+track melody using piano {
+    for (int i = 0; i < 20000; i = i + 1) {
+        play (i % 12 == 0 ? C4 : (i % 7 == 0 ? E4 : (i % 5 == 0 ? G4 : A4)));
+    }
+}

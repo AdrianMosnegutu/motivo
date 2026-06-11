@@ -1,0 +1,10 @@
+// Chord density: 5000 iterations of a four-note chord = 20000 events.
+// Stresses chord flattening in lowering (every iteration emits four simultaneous onsets).
+tempo 120;
+signature 4/4;
+
+track harmony using piano {
+    loop (5000) {
+        play (C4, E4, G4, B4);
+    }
+}

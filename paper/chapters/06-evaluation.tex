@@ -1,13 +1,21 @@
 \chapter{Empirical Evaluation}\label{ch:evaluation}
 
 This chapter tests whether Motivo's structural compression works in practice: can compact symbolic source expand
-deterministically into much larger MIDI timelines without a playback-time runtime?
-The evidence covers source-to-event expansion (Section~\ref{sec:compression}), compile time on a local benchmark corpus
-(Section~\ref{sec:compile-time}), and implementation limits (Section~\ref{sec:limits}).
+deterministically into much larger MIDI timelines, fast enough for interactive use, without a playback-time runtime?
+The evidence is drawn from a reproducible benchmark suite (Section~\ref{sec:evaluation-methodology}) and is organized
+around the compiler's four pipeline stages.
+Section~\ref{sec:compile-time} measures how compile time decomposes across those stages and grows with the size of the
+generated score; Section~\ref{sec:scaling-stress} holds the output fixed and varies the shape of the source program;
+Section~\ref{sec:general-case} turns to real compositions; and Section~\ref{sec:compression} quantifies the
+source-to-event expansion that motivates the language.
+Section~\ref{sec:limits} states the implementation limits, and Section~\ref{sec:comparative-interpretation} places the
+results in the context of related tools.
 No user study was conducted; musical quality and learnability are out of scope.
 
 \input{chapters/06-evaluation/methodology}
 \input{chapters/06-evaluation/compilation-time}
+\input{chapters/06-evaluation/scaling-and-stress}
+\input{chapters/06-evaluation/general-case}
 \input{chapters/06-evaluation/source-to-event-expansion}
 \input{chapters/06-evaluation/current-limits}
 \input{chapters/06-evaluation/comparative-interpretation}

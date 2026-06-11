@@ -1,0 +1,6 @@
+# Generated benchmark artifacts — reproducible via harness/run-all.sh, not versioned.
+results/
+
+# Throwaway MIDI written beside fixtures during benchmarking
+*.mid
+fixtures/**/*.mid

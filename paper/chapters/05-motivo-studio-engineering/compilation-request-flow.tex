@@ -52,8 +52,8 @@ Infrastructure failures (missing binary, I/O errors, missing output file) map to
 codes for the client.
 
 On success, the controller sets \texttt{Content-Type: audio/midi} and sends the file bytes.
-On semantic or syntax failure, the controller responds with HTTP~400 and a JSON body \texttt{\{ kind: 'error',
-diagnostics: [...] \}}.
+When compilation produces diagnostics at any stage, the controller responds with HTTP~400 and a JSON body
+\texttt{\{ kind: 'error', diagnostics: [...] \}}.
 
 The client clears previous MIDI and editor markers, then either loads bytes into \texttt{MidiContext} for piano-roll
 rendering and playback, or converts diagnostics to Monaco markers via \texttt{setError} and \texttt{jumpTo} on the first

@@ -39,11 +39,13 @@ This intent is mapped directly to the General MIDI (GM) Level 1 specification.
 
 The implementation utilizes two primary mapping strategies:
 
-\topic{Melodic Instruments.} Standard instruments are mapped to their GM program numbers.
-For example, \texttt{Piano} maps to 1, \texttt{Guitar} to 24, \texttt{Bass} to 32, and \texttt{Violin} to 40.
-These mappings are stored in the \texttt{music::Instrument} enum.
-During backend serialization, they are emitted as \textit{Program Change} events on standard MIDI channels (0--8,
-11--15).
+\topic{Melodic Instruments.} Standard instruments are stored in the \texttt{music::Instrument} enum and written
+verbatim as the \textit{Program Change} data byte.
+That data byte is zero-based, so a byte value $p$ selects General MIDI program number $p{+}1$ in the convention of
+Section~\ref{detail-subsec:channels-and-general-midi}; \texttt{Piano}, \texttt{Guitar}, \texttt{Bass}, and
+\texttt{Violin} use data bytes 1, 24, 32, and 40 respectively.
+During backend serialization these Program Change events are emitted on the melodic channels (0--8 and 10--15; index~9
+is reserved for percussion, as below).
 
 \topic{Percussion Logic.} Unlike melodic tracks, the MIDI standard rigidly reserves \textbf{Channel 10}
 specifically for unpitched percussion.

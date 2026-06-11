@@ -1,45 +1,14 @@
-\section{Comparative Interpretation}\label{sec:comparative-interpretation}
+\section{Positioning the Measurements}\label{sec:comparative-interpretation}
 
-Sections~\ref{sec:compression} through~\ref{sec:limits} report expansion ratios, compile times, and compiler limits.
-The interpretation proceeds from two angles.
-First, version~1.0 (implicit typing, \texttt{.dsl}) is compared with version~2.0 (explicit typing, \texttt{.motivo}) on
-identical workloads.
-Second, Motivo is situated within the broader ecosystem of music programming tools.
-
-\subsection{Version 1.0 versus Version 2.0}\label{detail-subsec:version-comparison}
-
-The explicit-typing release changes the surface language and semantic pipeline without altering the lowering or MIDI
-backend architecture; the semantic rationale is specified in Section~\ref{sec:semantic-rules}.
-Version~1.0 inferred types from \texttt{let} initializers, resolved pattern overloads by arity alone, and ran a second
-pass (\texttt{validate\_pattern\_instantiation}) that simulated pattern bodies under concrete arguments; version~2.0
-requires explicit declarations, matches overloads by parameter signatures, and checks assignability in a single
-traversal.
-The engineering question for this evaluation is whether those stricter static guarantees impose measurable
-cost at scale.
-
-Table~\ref{tab:benchmark-wall-clock} answers that question on the B1--B3 fixtures.
-End-to-end wall-clock overhead of version~2.0 relative to version~1.0 is between $-0.08\%$ and $+1.74\%$, effectively
-$0$--$2\%$ on an Apple M3 Pro Release build.
-MIDI output sizes match byte-for-byte (Table~\ref{tab:benchmark-midi-size}), confirming that both compilers lower the
-same workloads to equivalent artifacts.
-
-The per-stage breakdown (Table~\ref{tab:benchmark-per-stage}) shows where the small difference arises.
-Semantic time increases slightly in version~2.0 (for example B1: $+0.0009$~ms mean), which is expected because explicit
-type annotations and signature-based pattern lookup add work per AST node.
-That increase is dwarfed by lowering ($\sim$1.7--2.2~ms) and MIDI writing ($\sim$1.3--2.9~ms) on 20,000-event
-programs.
-Removing the second semantic pass in version~2.0 does not produce a dramatic speedup because both passes were already
-sub-millisecond on these small ASTs; the win is primarily structural simplicity and earlier error reporting rather than
-raw throughput.
-
-In summary, the move from implicit to explicit typing trades a negligible wall-clock cost for stricter static guarantees
-and a simpler semantic architecture, while preserving output equivalence on the benchmark corpus.
+The preceding sections quantify what Motivo's compiler does and how fast it does it.
+This section situates those numbers within the broader landscape of music programming tools surveyed in
+Chapter~\ref{ch:background}.
 
 \subsection{Positioning within the Music Programming Landscape}\label{detail-subsec:positioning-dsl-ecosystem}
 
 Representative music programming systems differ along three axes that also frame this evaluation: live performance
 versus offline artifacts, composition separated from synthesis, and explicit temporal structure versus implicit
-sequencing (Table~\ref{tab:related-work-comparison}).
+sequencing (surveyed in Section~\ref{sec:related-work}).
 Live-coding languages such as Sonic Pi, Tidal, Strudel, and HMusic prioritize interactive pattern manipulation and
 stream events to external synthesis backends.
 Real-time audio languages including ChucK and SuperCollider expose fine-grained timing and concurrent processes at the
@@ -49,21 +18,18 @@ Motivo's combination of typed variables, parameterized patterns, and imperative 
 
 The benchmark evidence in this chapter does not reproduce those qualitative comparisons quantitatively.
 It is instead consistent with the engineering side of Motivo's positioning: a zero-runtime compiler can expand compact
-structural rules into thousands of MIDI events within the \texttt{MAX\_EVENTS} safety cap while incurring negligible
-overhead for
-explicit typing in version~2.0.
+structural rules into thousands of MIDI events within the \texttt{MAX\_EVENTS} safety cap in low-millisecond time.
 Where Sonic Pi advances time through \texttt{sleep} and parallel \texttt{in\_thread} blocks during performance, and
 Tidal and Strudel transform time-varying patterns at live-coding time, Motivo resolves voices and loops entirely at
-compile time into a portable Standard MIDI File, the trade-off already summarized in
-Table~\ref{tab:related-work-comparison} rather than re-derived here.
-The B1--B3 fixtures stress that offline model through nested loops, chord flattening, and flat 20,000-event expansion
-at the compiler cap.
+compile time into a portable Standard MIDI File, the trade-off already discussed in Section~\ref{sec:motivo-position}
+rather than re-derived here.
+The synthetic fixtures stress that offline model along every axis it exposes, nested loops, chord flattening, parallel
+voices and tracks, per-note expression evaluation, and flat expansion at the compiler cap.
 
-Unlike raw MIDI scripting, Motivo keeps compositional
-intent at the level of beats, patterns, and tracks; unlike ABC notation, the source is executable and procedurally
-generative.
-These distinctions motivated the language design; on the tested workloads, the measurements suggest that pursuing them
-did not materially increase compile-time cost relative to version~1.0.
+Unlike raw MIDI scripting, Motivo keeps compositional intent at the level of beats, patterns, and tracks; unlike ABC
+notation, the source is executable and procedurally generative.
+These distinctions motivated the language design; on the tested workloads, the measurements show that pursuing them
+keeps compilation comfortably within interactive latency.
 
 \subsection{Comparison with Raw MIDI Scripting}\label{detail-subsec:comparison-with-raw-midi-scripting}
 
@@ -71,5 +37,5 @@ The contrast between Motivo source and raw \texttt{mido}-style MIDI scripting (f
 the hi-hat loop in Listing~\ref{lst:midi-scripting-comparison}) is developed in
 Section~\ref{sec:motivation} because it motivates the language design rather than the benchmark evidence in
 this chapter.
-The B1--B3 measurements neither quantify that verbosity gap nor depend on it; they instead confirm that pursuing
-domain-level abstractions did not materially increase compile-time cost relative to version~1.0.
+The benchmark measurements neither quantify that verbosity gap nor depend on it; they instead confirm that pursuing
+domain-level abstractions keeps compilation in the low-millisecond range across the whole suite.

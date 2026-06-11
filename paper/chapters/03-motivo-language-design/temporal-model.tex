@@ -11,7 +11,7 @@ A \texttt{play} statement without \texttt{from} emits material at the current cu
 duration.
 For primitive values, this duration follows the value kind:
 notes and rests use their explicit or default duration, chords advance by the longest member span, and sequences advance
-by the sum of their flattened members.
+by the sum of their members' durations.
 The colon modifier sets an explicit duration expression (for example \texttt{play C4:0.5}).
 
 \topic{Absolute placement.}
@@ -21,11 +21,14 @@ This separation allows anchoring events to fixed timeline points while preservin
 \subsection{Pattern footprints and caller advancement}
 
 Pattern execution uses an internal cursor that starts at zero for each call.
-When the call returns, the caller cursor advances by the pattern's \emph{footprint}: the total span reached by that
-internal cursor, including embedded rests and control-flow expansion.
-This makes pattern calls compositional in time: callers can treat a pattern as one durational unit without
-inspecting its
-internal statement graph.
+When the call returns, the caller cursor advances by the pattern's \emph{footprint}: the full temporal span the pattern
+occupies, taken as the latest beat it reaches, whether through sequential cursor advancement or through material
+anchored with \texttt{from}, and including embedded rests and control-flow expansion.
+Because absolutely placed events still extend the footprint, a pattern built entirely from \texttt{from} placements
+(such as the drum pattern in Listing~\ref{lst:motivo-groove}) still occupies its full width and therefore tiles
+correctly when repeated, rather than collapsing onto a single beat.
+This makes pattern calls compositional in time: callers can treat a pattern as one durational unit without inspecting
+its internal statement graph.
 
 \subsection{Voice isolation and parallel timelines}
 
